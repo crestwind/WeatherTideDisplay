@@ -78,6 +78,7 @@ The first time it runs, the settings panel opens. Type your town or ZIP code, pi
 - **Background scene** and **Time of day:** preview any background. Set them back to **Match current weather** and **Match the sun** for normal use.
 - **Test alert notice** and **Test state of emergency:** preview the alert notices (see [Testing alerts](#testing-alerts)).
 - **Alert history, last 30 days:** a list of every alert the display has shown.
+- **Send feedback:** type a message (and, if you'd like a reply, your email) and press **Send**. It's emailed to the site owner; nothing is stored. There's a limit of 40 messages a day across the whole site.
 
 ## What's on screen
 
