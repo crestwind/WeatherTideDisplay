@@ -37,6 +37,9 @@
       linear-gradient(90deg, rgba(0,0,0,.22), rgba(0,0,0,0) 45%),
       radial-gradient(ellipse at 50% 35%, rgba(0,0,0,0) 55%, rgba(0,0,0,.32) 100%);
   }
+  /* The background layers are as tall as the screen with a phone's address bar hidden (the "large viewport"),
+     so they don't resize, or leave a gap, while the bar slides in and out during scrolling. */
+  @supports (height: 100lvh) { .bg, #sky, #glass, #shade { bottom: auto; height: 100lvh; } }
 
   #app {
     position: relative; height: 100vh; padding: 3.4vh 3.4vw;   /* the first screen; radar and history are below it */
@@ -1812,7 +1815,11 @@ const Sky = (() => {
     build(); start();
   }
   function resize() {
-    Wd = cv.width = gc.width = innerWidth; Hd = cv.height = gc.height = innerHeight;
+    // Use the large viewport height (see the CSS), which stays the same while a phone's address bar slides in and out
+    // as you scroll. Rebuilding the scene for those small changes made the stars, flares and clouds jump (white blips).
+    const w = innerWidth, h = Math.round(cv.getBoundingClientRect().height) || innerHeight;
+    if (w === Wd && h === Hd) return;
+    Wd = cv.width = gc.width = w; Hd = cv.height = gc.height = h;
     if (mode.kind) set(mode.kind, mode.tod);
   }
   return { set, resize };
