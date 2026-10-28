@@ -1293,7 +1293,8 @@ const Sky = (() => {
   }
   function drawBirds() {
     const dusk = mode.tod === 'golden';   // sunlit white by day with black wingtips, dark silhouettes at sunrise and sunset
-    g.fillStyle = dusk ? 'rgb(52,34,44)' : 'rgb(246,248,252)';   // solid colours, so the overlapping parts don't show
+    // solid colours, so the overlapping parts don't show; grey under an overcast sky, where white gulls fade into the clouds
+    g.fillStyle = dusk ? 'rgb(52,34,44)' : mode.kind === 'cloudy' ? 'rgb(78,86,98)' : 'rgb(246,248,252)';
     for (const b of flock) {
       const S = 22 * b.s, d = Math.sign(b.vx);
       g.save(); g.translate(b.x, b.y); g.rotate(b.tilt * d); g.scale(d, 1);   // face the way it's flying
@@ -1572,7 +1573,7 @@ const Sky = (() => {
     }
     flakes = []; for (let i = 0; i < Math.round((sc.snow || 0) * k * area); i++) { const r = rnd(1.2, 3.8) * sy * (sc.size || 1); flakes.push({ x: rnd(0, Wd), y: rnd(0, Hd), r, v: (20 + r * 18) * sy * (sc.fall || 1), ph: rnd(0, 6.3) }); }
     meteor = null; nextMeteor = performance.now() / 1000 + rnd(6, 25);
-    birds = !night && (kind === 'clear' || kind === 'partly'); flock = []; nextFlock = performance.now() / 1000 + rnd(4, 12);   // first gulls soon after the scene starts
+    birds = !night && ['clear', 'partly', 'cloudy'].includes(kind); flock = []; nextFlock = performance.now() / 1000 + rnd(4, 12);   // first gulls soon after the scene starts
     stars = []; if (night && (kind === 'clear' || kind === 'partly' || kind === 'windy')) for (let i = 0; i < 170 * area; i++) stars.push({ x: rnd(0, Wd), y: rnd(0, .75) * Hd, r: rnd(.6, 1.9), ph: rnd(0, 6.3), sp: rnd(.4, 1.8) });
     fogs = [];
     for (let i = 0; i < (sc.fog || 0); i++) {
