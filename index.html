@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Weather &amp; Tides</title>
+<title>Tidal Weather</title>
+<link rel="icon" href="icon.png">
 <style>
   :root {
     --fg: #fff;
@@ -42,6 +43,8 @@
 
   /* ---------- left column ---------- */
   .left { display: flex; flex-direction: column; min-height: 0; }
+  .brand { display: flex; align-items: center; gap: .7rem; font-size: 1.05rem; font-weight: 600; letter-spacing: .32em; text-transform: uppercase; color: var(--dim); margin-bottom: .8rem; }
+  .brand svg { width: 2.4rem; height: 1.8rem; fill: #4aa8f0; }   /* breaking ocean wave */
   .clock { font-size: 5rem; font-weight: 300; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
   .clock small { font-size: 1.8rem; font-weight: 400; margin-left: .4rem; color: var(--dim); }
   .date { font-size: 1.45rem; color: var(--dim); margin-top: .5rem; }
@@ -196,7 +199,7 @@
 <main id="app">
   <section class="left">
     <div class="top">
-      <div><div class="clock" id="clock">--:--</div><div class="date" id="date"></div></div>
+      <div><div class="brand"><svg viewBox="0 0 32 24" aria-hidden="true"><path d="M1 22C6 21 8.5 17 10.5 12.5C13 7 17.5 3 23 3C27.5 3 30.5 6 30 9.6C29.6 12.4 26.8 13.6 24.6 12.4C22.6 11.3 22.6 8.5 24.8 8C22 6.4 18.5 8.5 17.3 12.5C16 17 18 20.5 22 22Z"/><path d="M1 22H31" fill="none" stroke="#4aa8f0" stroke-width="2" stroke-linecap="round"/></svg>Tidal Weather</div><div class="clock" id="clock">--:--</div><div class="date" id="date"></div></div>
       <div class="alert" id="alert" hidden></div>
     </div>
     <div class="soe" id="soe" hidden></div>
@@ -289,7 +292,7 @@
 </div>
 <div id="toast"></div>
 
-<!-- version.js is written by make-flashdrive.bat; it's missing on the development copy -->
+<!-- version.js is written when the website is published; the test copy on the PC has none -->
 <script src="version.js"></script>
 <script>
 'use strict';
@@ -512,7 +515,7 @@ async function refreshAlerts(liveToo = true) {
   renderAlert(); applyScene();
 }
 // New Jersey's own (governor-declared) states of emergency. NJ's website can't be read from a web page,
-// so nj-emergency.sh (run by start-display.sh, or by the website build) reads it and writes nj-emergency.js next to this file.
+// so nj-emergency.sh (run by the website build, or by preview.bat) reads it and writes nj-emergency.js next to this file.
 let liveState = [];
 function loadNjEmergency() {
   return new Promise(resolve => {
@@ -530,7 +533,7 @@ async function refreshDeclarations(liveToo = true) {
     liveState = [];
     if (county && county.state === 'NJ') {
       const nj = await loadNjEmergency();
-      if (nj && Date.now() - Date.parse(nj.checked) < 24 * 3600e3)   // ignore if the helper hasn't run in a day
+      if (nj && Date.now() - Date.parse(nj.checked) < 24 * 3600e3)   // ignore if the NJ check hasn't run in a day
         liveState = nj.active.map(e => ({ key: 'nj|' + e.eo, stateEo: true, state: 'NJ', eo: e.eo, scope: e.scope, reason: e.reason, effective: e.effective, date: Date.parse(e.issued) }));
     }
     logNotices([
@@ -1602,7 +1605,7 @@ function openSettings(msg) {
   box.innerHTML = msg ? `<div class="msg">${msg}</div>` : '';
   renderLog();
   const v = window.APP_VERSION;
-  $('#verLine').textContent = v ? `Version ${v.version} · built ${v.built}` : 'Development copy (not installed from the flash drive)';
+  $('#verLine').textContent = v ? `Website · updated ${v.built}` : 'Test copy on this PC (not the live website)';
   $('#settings').hidden = false;
   setTimeout(() => { $('#locInput').focus(); $('#locInput').select(); }, 50);
 }
@@ -1656,7 +1659,7 @@ $('#locInput').addEventListener('keydown', async e => {
 $('#cancelBtn').onclick = closeSettings;
 $('#gear').onclick = () => openSettings();
 
-// Full screen: the corner button, the button in settings, or the F key. (The Linux launcher already starts full screen.)
+// Full screen: the corner button, the button in settings, or the F key.
 const FS_ICON = {
   enter: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
   exit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>',

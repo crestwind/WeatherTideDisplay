@@ -1,136 +1,53 @@
-# Weather & Tide Display
+# Tidal Weather
 
-A full-screen weather, tide and emergency-alert display for a TV. It runs in a web browser in kiosk mode. You don't need API keys, accounts or a server. It's built for a Seneca N3350D running Debian 13 Linux, connected to a non-smart TV. It also runs on Windows PCs.
+A full-screen weather, tide and emergency-alert display for a TV, published as a website. Open the website on any computer or smart TV browser connected to a TV, and press **F** for full screen. You don't need API keys, accounts or a server.
 
 ## Files
 
 | File | What it is |
 |---|---|
 | `index.html` | The whole display. |
-| `start-display.sh` | Linux launcher. Opens the display full-screen, stops the screen blanking and runs the NJ emergency helper while the display is open. |
-| `start-display.bat` | Windows launcher. Does the same, with the NJ helper hidden in the background. |
-| `nj-emergency.sh` | Linux helper that checks New Jersey's state-of-emergency orders every 15 minutes. |
-| `nj-emergency.ps1` | The same helper for Windows. |
-| `nj-emergency.js` | Written by the helper. Don't edit it. |
-| `icon.png`, `icon.ico`, `icon.svg` | The app icon used for the shortcuts. |
-| `VERSION` | The version number, e.g. `1.2.1`. See [Version numbers](#version-numbers). |
-| `version.js` | Written by `make-flashdrive.bat` so the settings panel can show the version. It isn't on the main PC's copy. |
-| `installer\` | Installers and the flash drive builder. These live on the main PC only. |
+| `nj-emergency.sh` | Checks New Jersey's state-of-emergency orders. The website runs it every 30 minutes. |
+| `nj-emergency.js` | Written by `nj-emergency.sh`. Don't edit it. It isn't uploaded; the website makes its own. |
+| `icon.png`, `icon.ico` | The app icon (a blue wave), used for the browser tab and the desktop shortcut. |
+| `preview.bat` | Opens the test copy on this PC. |
+| `.github\workflows\website.yml` | Tells GitHub how to publish the website. |
 
-## Install, move and update with a flash drive
+## The website and the test copy
 
-The easiest way to put the display on a computer, or to update it, is the installer on the flash drive. `HOW-TO-INSTALL.txt` on the drive has the short version of these steps.
+There are two copies of the display:
 
-### Linux (the Seneca)
-
-1. Plug in the flash drive.
-2. Open a terminal: press the **Windows key**, type `terminal` and press **Enter**.
-3. Type `sh` followed by a **space**. Don't press Enter yet.
-4. In the file manager, open the drive's `WeatherTideDisplay` folder and **drag `INSTALL-Linux.sh` into the terminal**. This fills in its full location.
-5. Click the terminal window and press **Enter**.
-
-Alternatively, type the path yourself: `sh /media/$USER/ESD-USB/WeatherTideDisplay/INSTALL-Linux.sh`. If the drive has a different name, run `ls /media/$USER/` to find it.
-
-- **Always put `sh` in front.** Linux won't run files directly from a Windows-formatted (FAT32) flash drive, so leaving `sh` out gives **"permission denied"**.
-- It installs to `~/WeatherTideDisplay`, and the installer prints which browser it found.
-- If the desktop asks whether to trust the new shortcut, right-click it and choose **Allow Launching**.
-- Debian's file manager has no "Open in Terminal" option by default, which is why these steps use drag and drop.
-
-### Windows
-
-Double-click `INSTALL-Windows.bat` on the drive. It installs to `%LOCALAPPDATA%\WeatherTideDisplay` and doesn't need admin rights. If Windows shows "Windows protected your PC", click **More info → Run anyway**.
-
-### Both
-
-Either installer creates a **desktop shortcut** and an applications or Start menu entry. On a first install, it asks whether to start the display automatically when the computer turns on.
-
-To **update** a computer, run the same installer again. It shows "Updating from version X to Y", replaces the program files and keeps that computer's settings. If the display is open, close it with **Alt+F4** and reopen it to load the new version.
-
-To **put a new version on the flash drive** after changing the program on the main PC, plug the drive in and run `installer\make-flashdrive.bat`. It asks what changed, gives the new version its number, and copies the program and installers to `D:\WeatherTideDisplay`.
-- For a different drive, pass the letter, e.g. `make-flashdrive.bat E:`.
-- To skip the question, add the kind of change, e.g. `make-flashdrive.bat D: fix`.
-- It always converts the Linux scripts to Linux line endings, and stops with an error if it can't. Scripts saved with Windows line endings fail on Linux with confusing errors.
-
-### Version numbers
-
-Versions are numbered **major.minor.patch**, e.g. `1.2.1`. When you run `make-flashdrive.bat`, it asks what changed:
-
-| Key | Change | Example |
+| | Where | Used for |
 |---|---|---|
-| **F** | A fix or small tweak | 1.2.0 → 1.2.1 |
-| **N** | A new feature | 1.2.1 → 1.3.0 |
-| **B** | A big change | 1.3.0 → 2.0.0 |
-| **S** | Nothing, copy the same version again (e.g. to a second drive) | 1.3.0 → 1.3.0 |
+| **Test copy** | `C:\Users\pc\WeatherTideDisplay` on this PC | Making and checking changes. Nobody else sees it. |
+| **Website** | GitHub account **crestwind**, project **WeatherTideDisplay**, at **tidalweather.com** | The TV. It only changes when the test copy is uploaded. |
 
-The current number is kept in the `VERSION` file on the main PC. The version and build date show at the bottom of the settings panel, e.g. "Version 1.0.0 · built 2026-10-27", so you can see on the TV which version a computer is running. The installer also shows it when updating.
+### Testing a change
 
-Version **1.0.0** was the first release under this scheme, on 2026-10-27. Earlier builds used date stamps like `2026.10.27-1336`.
+1. Make the change in the test copy.
+2. Double-click **Tidal Weather (test copy)** on the desktop. It opens the display in its own browser window, with its own settings, so testing never changes anything else.
+3. The bottom of the settings panel says **Test copy on this PC**, so you can tell it apart from the website.
 
-To **uninstall**, run `UNINSTALL-Linux.sh` (with `sh` in front) or `UNINSTALL-Windows.bat` from the drive. This removes the program, its shortcuts and its settings.
+### Uploading a change
 
-### Browsers
+When the test copy looks right, upload it to GitHub (Claude does this with `git push`). GitHub rebuilds the website within a couple of minutes. The bottom of the settings panel on the website shows the date of the last upload, e.g. "Website · updated 2026-10-28".
 
-| | Uses | Fallback |
-|---|---|---|
-| **Linux** | Chromium (or Chrome) | **Firefox**, which Debian installs with the desktop, so it works without installing anything |
-| **Windows** | Chrome | Edge, which every Windows PC has |
+A TV that already has the website open picks up the new version the next time the page is reloaded: press **F5**, or turn the TV computer off and on.
 
-Chromium usually runs the animations a little more smoothly than Firefox on the Seneca. The display switches to Chromium automatically once it's installed.
+### What GitHub does on its own
 
-The NJ helper downloads with `curl`, or `wget` if curl isn't installed. Debian installs wget by default.
+- **Every 30 minutes** it checks New Jersey's state-of-emergency orders and republishes the website with the result.
+- **Every 45 days without an upload** it adds an empty "keep-alive" update. GitHub pauses automatic jobs on projects that have been quiet for 60 days, and this stops that happening.
 
-### Settings are kept per computer
+### Settings are kept per browser
 
-Settings (location, units and so on) are saved in a browser profile that belongs only to the display. Updates never touch it.
+Settings (location, units and so on) are saved in the browser that shows the display. The TV's browser keeps its own settings, and uploading a new version never touches them. Clearing that browser's history or site data resets them.
 
-| | Settings folder |
-|---|---|
-| Linux, Chromium | `~/WeatherTideDisplay/browser-profile` |
-| Linux, Firefox | `~/WeatherTideDisplay/firefox-profile` |
-| Windows | `%LOCALAPPDATA%\WeatherTideDisplay-browser` |
-
-On Linux, the profile is in a visible folder on purpose: Ubuntu's Chromium (a "snap") isn't allowed to use hidden folders.
-
-### Debian installed offline: getting software updates
-
-If Debian was installed from a USB stick without internet, it only looks for software on that stick, so `apt install` can't find anything online. The display doesn't need this, since it uses Firefox and wget. But it's worth doing for Debian security updates, and to install Chromium.
-
-1. Check the internet works: `ping -c 3 deb.debian.org`. If it doesn't, plug in a network cable; Wi-Fi drivers are sometimes missing after an offline install.
-2. Switch to the administrator account: `su -`, then enter the root password you set during install.
-3. Stop Debian looking for software on the install USB:
-
-   ```sh
-   sed -i 's/^deb cdrom/# deb cdrom/' /etc/apt/sources.list
-   ```
-
-4. Add Debian's online software servers:
-
-   ```sh
-   cat > /etc/apt/sources.list.d/debian.sources <<'EOF'
-   Types: deb
-   URIs: http://deb.debian.org/debian
-   Suites: trixie trixie-updates
-   Components: main contrib non-free non-free-firmware
-   Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
-
-   Types: deb
-   URIs: http://security.debian.org/debian-security
-   Suites: trixie-security
-   Components: main contrib non-free non-free-firmware
-   Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
-   EOF
-   ```
-
-5. Install the updates, Chromium and curl, then leave the administrator account:
-
-   ```sh
-   apt update && apt upgrade -y && apt install -y chromium curl
-   exit
-   ```
+To set up a TV without typing in the settings panel, put the location in the address, e.g. `https://tidalweather.com/?lat=38.935&lon=-74.906&name=Cape%20May`. The display saves it the first time it opens.
 
 ### Keeping the TV on
 
-The launcher turns off screen blanking with `xset`, but that only works on X11 desktops, not Wayland. Also set **Settings → Power → Screen Blank** to **Never** and turn automatic suspend **off**.
+Set the TV computer's power settings so the screen never turns off or goes to sleep. The display can't control this from a web page.
 
 ## Using it
 
@@ -140,9 +57,9 @@ The launcher turns off screen blanking with `xset`, but that only works on X11 d
 | **Esc** | Close settings |
 | **R** | Refresh everything now |
 | **F** | Toggle full screen |
-| **Alt+F4** | Close the display |
+| **F5** | Reload the page (loads a newly uploaded version) |
 
-Moving the mouse shows two buttons in the bottom-right corner: **full screen** and **settings**. The settings panel also has a **Full screen** button. The cursor and buttons hide again after 3 seconds. The launchers already start the display full screen.
+Moving the mouse shows two buttons in the bottom-right corner: **full screen** and **settings**. The settings panel also has a **Full screen** button. The cursor and buttons hide again after 3 seconds.
 
 The first time it runs, the settings panel opens. Type your town or ZIP code, pick it from the list and press **Save**.
 
@@ -249,11 +166,11 @@ It's yellow under magnitude 5, orange from 5 to 6, and red at 6 or more. These a
 The banner sits under the date and time.
 
 - **New Jersey state declarations:** emergencies declared by the governor's Executive Orders on nj.gov.
-  - **How they're read:** a web page isn't allowed to read nj.gov directly, so a helper does it: `nj-emergency.sh` on Linux, `nj-emergency.ps1` on Windows.
-  - **When the helper runs:** the launcher starts it whenever the display opens, whether from the shortcut or at power-on. It checks straight away, then every 15 minutes, and stops when the display is closed. Only one copy ever runs.
+  - **How they're read:** a web page isn't allowed to read nj.gov directly, so `nj-emergency.sh` reads it on GitHub and publishes the result with the website.
+  - **How often:** every 30 minutes. The display rechecks the result every 30 minutes too.
   - **What's shown:** only weather and safety emergencies. Agricultural ones (crops, farms, livestock) are left out.
   - **When a declaration drops off:** when a later order ends it, or 180 days after it was issued.
-  - **Out-of-date data:** if the helper hasn't updated in 24 hours, the display ignores its last result rather than show something out of date.
+  - **Out-of-date data:** if the check hasn't updated in 24 hours, the display ignores its last result rather than show something out of date.
 - **Federal declarations:** FEMA emergency and major-disaster declarations for your county or your whole state, in any US state. They're checked every 30 minutes.
 
 ### Alert history
@@ -289,23 +206,17 @@ If the internet drops, the display keeps showing the last data it got and says i
 - Earthquake notices are reports of quakes that already happened. Early warnings (the ShakeAlert system) only go to phones.
 - State-declared emergencies only work for New Jersey. Other states publish them differently. Every US state still gets the FEMA banner.
 - NJ declarations that cover only certain counties show as "Certain counties", because NJ's list doesn't name the counties.
-- If nj.gov redesigns its Executive Orders page, `nj-emergency.sh` and `nj-emergency.ps1` may need updating. Until then the NJ banner just won't appear; nothing breaks.
-- There's no Mac installer.
+- If nj.gov redesigns its Executive Orders page, `nj-emergency.sh` may need updating. Until then the NJ banner just won't appear; nothing breaks.
 - The display is a handy heads-up, not a replacement for phone emergency alerts or a weather radio.
 
 ## Troubleshooting
 
-- **"Permission denied" when installing on Linux:** put `sh` and a space in front of the installer's path (see [Linux (the Seneca)](#linux-the-seneca)).
-- **`apt install` can't find anything:** Debian was installed offline. See [Debian installed offline](#debian-installed-offline-getting-software-updates).
-- **The shortcut does nothing on Linux:** right-click it and choose **Allow Launching**.
-- **The animation is choppy:** in settings, set **Background animation** to **Light**, or install Chromium.
-- **The TV goes dark:** set **Settings → Power → Screen Blank** to **Never** and turn automatic suspend off.
+- **The TV still shows the old version after an upload:** wait two minutes, then press **F5** on the TV. On GitHub, the project's **Actions** tab shows whether the last "Publish website" run succeeded (green tick) or failed (red cross).
+- **The animation is choppy:** in settings, set **Background animation** to **Light**. Older or slower TV computers may need this.
+- **The TV goes dark:** turn off screen sleep and automatic sleep in the TV computer's power settings.
+- **The settings were lost:** the browser's history or site data was cleared. Set the location again, or use an address with the location in it (see [Settings are kept per browser](#settings-are-kept-per-browser)).
 - **A test alert won't go away:** open settings, set both test options to **Off** and press **Save**. Saving also clears any test options from the page address.
-- **The NJ banner never appears:** that's normal when there's no active NJ weather or safety emergency. To check that the helper works, run it once in the install folder, then look at `nj-emergency.js`:
-  - Linux: `sh nj-emergency.sh`
-  - Windows: `powershell -ExecutionPolicy Bypass -File nj-emergency.ps1`
-
-  The file should contain today's date in its `"checked"` time.
+- **The NJ banner never appears:** that's normal when there's no active NJ weather or safety emergency. To check the NJ check is working, open `https://tidalweather.com/nj-emergency.js`. Its `"checked"` time (in UTC) should be within the last hour.
 - **Previewing from the address bar:** you can add test options to the end of the page address:
   - `?scene=hurricane&tod=night` previews a background
   - `?alert=demo` turns on the alert tests
