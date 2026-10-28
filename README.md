@@ -101,7 +101,7 @@ On a wide screen (TV, PC, laptop, phone turned sideways), the display is two col
 
 ## Below the main screen: forecast map and weather history
 
-Scroll down (mouse wheel, or swipe on a phone) to see three more sections. On a PC, a small **▼ Radar & history** button at the bottom of the screen jumps there when you move the mouse. The TV never needs to scroll: these sections only download anything when someone scrolls to them. They're hidden in smart mirror mode, since a mirror can't scroll.
+Scroll down (mouse wheel, or swipe on a phone) to see three more sections. On a computer you can also use the scrollbar on the right edge: it's invisible until you move the mouse onto that edge, then drag the handle or click above or below it to move a screen at a time. On a PC, a small **▼ Radar & history** button at the bottom of the screen jumps there when you move the mouse. The TV never needs to scroll: these sections only download anything when someone scrolls to them. They're hidden in smart mirror mode, since a mirror can't scroll.
 
 - **Rain & snow forecast, next 24 hours:** a dark map of the area around your location (the white dot), with forecast rain (green → yellow → orange → red → purple as it gets heavier) and snow (blue → white). It starts paused on the current time. **Click or tap the map** (or the play button) to play through the next 24 hours in 15-minute steps, and again to stop. The slider jumps to a particular time. The map is fixed: no zooming or dragging. This is a **forecast model**, not live radar, so it shows where rain and snow are *expected*.
 - **Weather history** for your location, back to 1940:
