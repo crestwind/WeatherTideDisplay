@@ -83,7 +83,11 @@
   .logrow i.advisory { background: #ffd34d; } .logrow i.emergency { background: #d48bff; }
   #logList .m { color: var(--faint); font-size: .84rem; }
   .place { font-size: 2rem; font-weight: 600; }
-  .status { font-size: .95rem; color: var(--faint); margin-top: .25rem; }
+  .statusrow { display: flex; align-items: baseline; gap: .7rem; margin-top: .25rem; }
+  .status { font-size: .95rem; color: var(--faint); }
+  /* opens settings at the location box; fades out with the corner buttons when the mouse is idle */
+  .chgloc { font: inherit; font-size: .95rem; color: var(--water); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: .15em; transition: opacity .6s; }
+  body.idle .chgloc, .mirror .chgloc { opacity: 0; pointer-events: none; }
   .status.warn { color: #ffcf7a; }
   .temp { font-size: 8.8rem; font-weight: 200; line-height: 1; letter-spacing: -.05em; margin: .4rem 0 0 -.4rem; }
   .cond { font-size: 2rem; font-weight: 500; display: flex; align-items: center; gap: .5rem; }
@@ -322,7 +326,7 @@
     </div>
     <div class="spacer"></div>
     <div class="place" id="place">Weather &amp; Tides</div>
-    <div class="status" id="status">Loading…</div>
+    <div class="statusrow"><div class="status" id="status">Loading…</div><button type="button" class="chgloc" id="chgLoc">Change location</button></div>
     <div class="temp" id="temp">--°</div>
     <div class="cond" id="cond"></div>
     <div class="hl" id="hl"></div>
@@ -2698,6 +2702,7 @@ new IntersectionObserver(es => es.forEach(e => Radar.show(e.isIntersecting)),
 new IntersectionObserver(es => es.forEach(e => History.show(e.isIntersecting)), { rootMargin: '200px' }).observe($('#hist'));
 new IntersectionObserver(es => es.forEach(e => TideYear.show(e.isIntersecting)), { rootMargin: '200px' }).observe($('#tideYear'));
 $('#moreHint').onclick = () => $('#more').scrollIntoView({ behavior: 'smooth' });
+$('#chgLoc').onclick = () => openSettings();   // settings opens with the location box selected, ready to type
 
 // The right-edge scrollbar: drag the handle, or click above or below it to move a screen at a time.
 (() => {

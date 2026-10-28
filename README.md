@@ -62,7 +62,7 @@ Set the TV computer's power settings so the screen never turns off or goes to sl
 
 Moving the mouse shows two buttons in the bottom-right corner: **full screen** and **settings**. The settings panel also has a **Full screen** button. The cursor and buttons hide again after 3 seconds.
 
-The first time it runs, the settings panel opens. Type your town or ZIP code, pick it from the list and press **Save**.
+The first time it runs, the settings panel opens. Type your town or ZIP code, pick it from the list and press **Save**. To change it later, click or tap **Change location** next to the "Updated" time under the town name (it shows when you move the mouse or touch the screen).
 
 ### Settings
 
