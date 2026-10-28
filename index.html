@@ -1341,15 +1341,15 @@ const Sky = (() => {
     const top = Hd * (Hd > Wd ? .55 : .6), N = 8, dir = sc.cloudDir || 1;   // a little higher on tall screens, so the boat clears the tiles
     const layers = Array.from({ length: N }, (_, i) => {
       // rough seas get shorter, busier waves rather than ever-bigger peaks (which looked like mountains)
-      const d = (i + .5) / N, lam = (40 + 420 * d) * sx * (rough > 2 ? .8 : 1 + .2 * rough);
+      const d = (i + .5) / N, lam = (40 + 420 * d) * sx * (rough > 2 ? 1.05 : 1 + .2 * rough);
       return { d, y: top + (Hd * 1.02 - top) * Math.pow(d, 1.5), A: (1.2 + 15 * d) * sy * (rough > 2 ? 2 + .8 * (rough - 2) : rough), k: 2 * Math.PI / lam,
         w: (.6 + 1.2 * (1 - d)) * (.6 + .25 * rough) * dir, ph: [rnd(0, 6.3), rnd(0, 6.3), rnd(0, 6.3)],
         fill: `rgb(${mix(pal[0], pal[1], Math.pow(d, .9))})`, crest: `rgba(255,255,255,${(night ? .08 : .16) + .1 * d})`,
-        step: Math.max(5, lam / 12) };
+        step: Math.max(3, lam / 28) };   // enough points that the curves stay smooth
     });
     const portrait = Hd > Wd;
     const pose = sc.swirl || sc.storm || kind === 'heavy' ? 'hold' : sc.wind ? 'hat' : sc.snow ? 'mug' : 'fish';
-    return { top, layers, pal, rough, night, golden, lean: Math.min(.7, .2 + .14 * rough) * Math.sign(dir), boatLayer: 2,
+    return { top, layers, pal, rough, night, golden, lean: Math.min(.45, .15 + .1 * rough) * Math.sign(dir), boatLayer: 2,
       bx: Wd * (portrait ? .7 : .34), bs: Math.min(sy, Wd / 700) * (portrait ? 1 : 1.25),
       pose, coat: sc.rain ? 'rain' : sc.snow ? 'snow' : 'plain', lantern: night || kind === 'fog', snowy: !!sc.snow,
       tint: night ? 'rgba(10,18,40,.55)' : golden ? 'rgba(70,32,44,.5)' : sc.storm ? 'rgba(30,38,44,.35)' : sc.tone === 'dark' ? 'rgba(30,40,50,.2)' : null,
@@ -1361,7 +1361,7 @@ const Sky = (() => {
   // wave rather than a symmetrical peak), with a longer swell under it and, in rough seas, smaller chop on top.
   function waveY(L, x, t) {
     const a = L.k * x - L.w * t + L.ph[0], s1 = Math.sin(a - sea.lean * Math.sin(a));   // squeezes the side facing the way it moves
-    const chop = sea.rough > 1.2 ? .22 * Math.sin(a * 3.1 + L.ph[1] * 2 - t * 1.1) : 0;
+    const chop = sea.rough > 1.2 ? .1 * Math.sin(a * 2.3 + L.ph[1] * 2 - t * .8) : 0;   // gentle, so crests stay rounded
     return L.y - L.A * (s1 + .4 * Math.sin(a * 1.7 + L.ph[1] - t * .3) + .5 * Math.sin(a * .55 + L.ph[2] + t * .2) + chop) / 2;
   }
   function drawLayer(L, t) {
@@ -1379,7 +1379,7 @@ const Sky = (() => {
   // the ends, with a ragged bubbly underside), plus a little spray off the tallest crests. The raggedness is tied to
   // the wave's phase, so the foam travels with the wave instead of shimmering in place.
   function drawFoam(L, t) {
-    const step = Math.max(2, L.step / 6), lift = L.A * .55, a = Math.min(.7, .25 + .1 * sea.rough), sy = Hd / 1080;
+    const step = Math.max(2, L.step / 2), lift = L.A * .55, a = Math.min(.7, .25 + .1 * sea.rough), sy = Hd / 1080;
     let run = [];
     // one foam layer: top edge on the wave, ragged underside `depth` deep at the middle, tapering to the ends
     const layer = (depth, alpha, wob) => {
