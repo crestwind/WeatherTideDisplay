@@ -6,9 +6,9 @@ Notes for picking this project back up later. `README.md` is the user manual; th
 
 - **Test copy:** `C:\Users\pc\WeatherTideDisplay\` on the Windows PC. Make all edits here and check them with `preview.bat` (desktop shortcut **Tidal Weather (test copy)**) before uploading.
 - **Website:** GitHub Pages, built by `.github/workflows/website.yml` from the `main` branch of `github.com/crestwind/WeatherTideDisplay` (public). Domain **tidalweather.com**, registered on Cloudflare.
-- **Git:** the folder is a git repo. Commits use the identity `crestwind <349392150+crestwind@users.noreply.github.com>`, set in the repo's own config. Never commit with the user's Gmail address.
+- **Git:** the folder is a git repo. Commits use the identity `crestwind <349392150+crestwind@users.noreply.github.com>`, set in the repo's own config. Never commit with a personal email address.
 - **GitHub CLI:** `C:\Program Files\GitHub CLI\gh.exe`. It isn't on PATH in the tools' shells, so call it by full path. It's logged in as crestwind with the `workflow` scope (needed to push changes to the workflow file). Push with `git -c credential.helper= -c credential.helper='!"/c/Program Files/GitHub CLI/gh.exe" auth git-credential' push`.
-- **Why a website:** the user's work IT wouldn't allow a non-company device (the Seneca mini PC) on their Wi-Fi, so a company device opens the website instead. The old flash-drive installers, the Seneca/Windows launchers, `nj-emergency.ps1` and the `VERSION` scheme were removed on 2026-10-28; they're in the first commit if ever needed. The Seneca at the user's home still runs version 1.0.0 from the flash drive, unmaintained.
+- **Why a website:** a website runs on any device that already has a browser, so nothing extra has to be installed or connected to the network where the display is shown. The old flash-drive installers, the mini-PC/Windows launchers, `nj-emergency.ps1` and the `VERSION` scheme were removed on 2026-10-28; they're in the first commit if ever needed. A mini PC installed from the old flash drive still runs version 1.0.0, unmaintained.
 
 ## How it works
 
@@ -19,7 +19,7 @@ Notes for picking this project back up later. `README.md` is the user manual; th
 - **Keep-alive:** GitHub disables scheduled workflows after 60 days without a commit, so on scheduled runs the workflow pushes an empty commit if the last one is over 45 days old.
 - **Test copy:** `preview.bat` opens `index.html` in Chrome (or Edge) with its own profile in `%LOCALAPPDATA%\TidalWeather-preview`, after running `nj-emergency.sh` with Git for Windows' `sh.exe` so the NJ data is fresh. `nj-emergency.js` and `version.js` are git-ignored.
 - **Settings** live in `localStorage`, per browser. URL parameters (`lat`, `lon`, `name`, …) pre-fill settings, which is handy for setting up the TV.
-- **Branding:** the user's logo (`Downloads/Gemini_Generated_Image_4bj1jf4bj1jf4bj1.jfif`: a wave with a compass rose over the words TIDAL WEATHER) sits above the clock as `logo.png` (`.logo`, 14.5rem wide, about the most that fits; 17rem pushed the tiles off a 1080p screen). It was cut out of its white background, with the wave recoloured ocean blue (#4aa8f0) and the words white so it shows on the dark sky. The app icon (`icon.png` 256 px, `icon.ico` with 16–256 px PNG frames) was made from the user's Gemini image `Downloads\Gemini_Generated_Image_etvqd3etvqd3etvq.jfif`: cropped and placed on a white rounded tile.
+- **Branding:** the user's logo (a wave with a compass rose over the words TIDAL WEATHER) sits above the clock as `logo.png` (`.logo`, 14.5rem wide, about the most that fits; 17rem pushed the tiles off a 1080p screen). It was cut out of its white background, with the wave recoloured ocean blue (#4aa8f0) and the words white so it shows on the dark sky. The app icon (`icon.png` 256 px, `icon.ico` with 16–256 px PNG frames) was made from the user's wave picture: cropped and placed on a white rounded tile.
 - **Tall screens** (`@media (max-aspect-ratio: 1/1)`: upright phones, tablets, portrait mirrors) get a one-column, scrolling layout. rem becomes `min(3.6vw, 2.2vh)`, the hours scroll sideways, the tiles go two across under 600px wide, and `renderTide` shows 3h back to 15h ahead instead of 6h back to 24h ahead.
 - **Smart mirror mode** (`S.mirror`, `?mirror=on`, the "Display style" setting) puts a `mirror` class on `<html>`. It hides the sky, shade and glass canvases, stops the Sky animation, and makes the cards transparent on black. On a tall mirror, which can't scroll, `fitMirror()` (run at the end of `render()`) shrinks the root font size in two passes until `#app` fits the screen, then redraws the tide chart.
 - **Notices:** the weather alert and the state of emergency are two same-size boxes (`.notice`) in `.notices` beside the logo and clock, each half the column height, so they never push the layout down.
@@ -83,11 +83,11 @@ Built the display, the animated backgrounds, alerts (NWS, USGS, FEMA, NJ), the a
 - Rewrote the README for the website.
 - Added today's rain/snow chance next to the high and low, shrank the clock and temperature, moved the alert and state-of-emergency notices to two same-size boxes at the top, and added the tall-screen layout and smart mirror mode.
 
-**Where we left off:** not yet published. Still to do, after the user finishes their edits and explicitly OKs it:
-1. Create the public repo, push, and set Pages to build from GitHub Actions (`gh api -X POST repos/crestwind/WeatherTideDisplay/pages -f build_type=workflow`).
-2. Watch the first workflow run; check that `nj-emergency.sh` works from GitHub's servers.
-3. Connect tidalweather.com: the user picks the main address or a sub-address (e.g. `weather.tidalweather.com`). Add the custom domain in Pages settings, add the DNS records in Cloudflare (DNS only, grey cloud, until GitHub issues the HTTPS certificate), verify the domain in GitHub's account settings, and turn on Enforce HTTPS.
-4. Give the user the link to open on the TV, ideally with the location in the address.
+- **Published:** public repo created and pushed, Pages set to build from GitHub Actions, first run green (`nj-emergency.sh` works from GitHub's servers). Custom domain **tidalweather.com** set in Pages (`gh api -X PUT repos/crestwind/WeatherTideDisplay/pages -f cname=tidalweather.com`). Cloudflare DNS: four A records for `@` (185.199.108–111.153) and a CNAME `www` → `crestwind.github.io`, all DNS only (grey cloud), TTL Auto.
+- **Security check:** no secrets or personal email anywhere in the history; a Content-Security-Policy meta tag limits the page to its own files and the seven API hosts (tested: everything still loads); `<meta name="referrer" content="no-referrer">`; the picked place name in settings is now escaped; Actions limited to GitHub-owned actions; workflow token defaults to read; secret scanning and push protection are on. Personal details were removed from these notes (they remain in the earlier commits).
+- **The user does not want the work location in the TV link.** The TV just opens `tidalweather.com` and the location is set once in settings.
+
+**Where we left off:** waiting for GitHub to issue the HTTPS certificate, then turn on Enforce HTTPS (`gh api -X PUT repos/crestwind/WeatherTideDisplay/pages -F https_enforced=true`). Recommended to the user: two-factor sign-in on GitHub and Cloudflare, and verifying tidalweather.com in GitHub's account settings (Settings → Pages → Add a domain, then a TXT record in Cloudflare) to protect against domain takeover.
 
 ## Ideas not done yet
 

@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Security: the page may only load its own files and talk to the weather services below, and never tells them which page asked. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://api.open-meteo.com https://marine-api.open-meteo.com https://geocoding-api.open-meteo.com https://api.tidesandcurrents.noaa.gov https://api.weather.gov https://earthquake.usgs.gov https://www.fema.gov; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
 <title>Tidal Weather</title>
 <link rel="icon" href="icon.png">
 <style>
@@ -1700,7 +1703,7 @@ function showResults(res) {
 }
 function choose(r) {
   pick = r; $('#locInput').value = r.name;
-  box.innerHTML = `<div class="picked">✓ ${r.name} — press Save</div>`;
+  box.innerHTML = `<div class="picked">✓ ${esc(r.name)} — press Save</div>`;
   ++searchSeq;
 }
 
