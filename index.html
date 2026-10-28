@@ -1145,6 +1145,43 @@ const Sky = (() => {
     g.fillStyle = glow; g.beginPath(); g.arc(hx, hy, 9 * Hd / 1080, 0, 7); g.fill();
   }
 
+  // Seagulls: on clear and partly cloudy days, a gull or a small flock flies across every 20 s to 1 min,
+  // flapping with the odd glide. Each is a simple "M" silhouette whose wings move between up (1) and down (-1).
+  let birds = false, flock = [], nextFlock = 0;
+  function newFlock() {
+    const sx = Wd / 1920, dir = Math.random() < .5 ? 1 : -1, n = Math.random() < .45 ? 1 : Math.floor(rnd(2, 6));
+    const y0 = rnd(.1, .42) * Hd, v = rnd(110, 170) * sx, size = rnd(.8, 1.25);
+    return Array.from({ length: n }, (_, i) => ({
+      x: (dir > 0 ? -60 * sx : Wd + 60 * sx) - dir * i * rnd(45, 80) * sx, y: y0 + (i ? rnd(-50, 50) * sx : 0),
+      vx: v * dir * rnd(.95, 1.05), s: size * rnd(.8, 1.1) * sx, ph: rnd(0, 6.3), fq: rnd(5.5, 7.5), w: 0, glide: 0, bob: rnd(0, 6.3) }));
+  }
+  function updateBirds(dt, t) {
+    for (const b of flock) {
+      b.x += b.vx * dt; b.y += Math.sin(t * .7 + b.bob) * 6 * dt * Hd / 1080;
+      if (b.glide > 0) b.glide -= dt;
+      else { b.ph += b.fq * dt; if (Math.random() < dt * .25) b.glide = rnd(1, 2.5); }   // flap, then now and then glide
+      const target = b.glide > 0 ? .3 : Math.sin(b.ph);
+      b.w += (target - b.w) * Math.min(1, dt * 12);   // ease into a glide instead of snapping
+    }
+    const had = flock.length;
+    flock = flock.filter(b => b.vx > 0 ? b.x < Wd + 80 : b.x > -80);
+    if (had && !flock.length) nextFlock = t + rnd(20, 60);
+    if (!flock.length && t > nextFlock) flock = newFlock();
+  }
+  function drawBirds() {
+    g.lineCap = g.lineJoin = 'round';
+    g.strokeStyle = g.fillStyle = mode.tod === 'golden' ? 'rgba(48,30,38,.85)' : 'rgba(255,255,255,.92)';   // sunlit white by day, silhouettes at sunrise and sunset
+    for (const b of flock) {
+      const span = 20 * b.s, tipY = -b.w * span * .55, elbowY = -span * .3 - b.w * span * .2;
+      g.lineWidth = 2.8 * b.s;
+      g.beginPath();
+      g.moveTo(b.x - span, b.y + tipY); g.quadraticCurveTo(b.x - span * .4, b.y + elbowY, b.x, b.y);
+      g.quadraticCurveTo(b.x + span * .4, b.y + elbowY, b.x + span, b.y + tipY);
+      g.stroke();
+      g.beginPath(); g.ellipse(b.x, b.y + b.s, 2.6 * b.s, 1.5 * b.s, 0, 0, 7); g.fill();
+    }
+  }
+
   function moonSprite() {
     const r = Hd * .048, R = Math.round(r * 6), [c, x] = mk(R * 2, R * 2);
     // Real moon phase: 0 = new, .5 = full.
@@ -1199,6 +1236,7 @@ const Sky = (() => {
     }
     flakes = []; for (let i = 0; i < Math.round((sc.snow || 0) * k * area); i++) { const r = rnd(1.2, 3.8) * sy * (sc.size || 1); flakes.push({ x: rnd(0, Wd), y: rnd(0, Hd), r, v: (20 + r * 18) * sy * (sc.fall || 1), ph: rnd(0, 6.3) }); }
     meteor = null; nextMeteor = performance.now() / 1000 + rnd(6, 25);
+    birds = !night && (kind === 'clear' || kind === 'partly'); flock = []; nextFlock = performance.now() / 1000 + rnd(4, 12);   // first gulls soon after the scene starts
     stars = []; if (night && (kind === 'clear' || kind === 'partly' || kind === 'windy')) for (let i = 0; i < 170 * area; i++) stars.push({ x: rnd(0, Wd), y: rnd(0, .75) * Hd, r: rnd(.6, 1.9), ph: rnd(0, 6.3), sp: rnd(.4, 1.8) });
     fogs = [];
     for (let i = 0; i < (sc.fog || 0); i++) {
@@ -1296,6 +1334,7 @@ const Sky = (() => {
       if (meteor) { meteor.t += dt; if (meteor.t > meteor.dur) { meteor = null; nextMeteor = t + rnd(30, 120); } }
       else if (t > nextMeteor) meteor = newMeteor();
     }
+    if (birds) updateBirds(dt, t);
     updateGlass(dt, t);
     for (const c of clouds) {
       c.x += c.v * gust * dt;
@@ -1357,6 +1396,7 @@ const Sky = (() => {
       g.restore(); g.globalAlpha = 1;
     }
     for (const c of clouds) { g.globalAlpha = c.a; g.drawImage(c.img, c.x, c.y, c.w, c.h); }
+    if (flock.length) { g.globalAlpha = 1; drawBirds(); }
     g.globalAlpha = 1;
     if (swirl) {
       g.strokeStyle = 'rgb(222,230,234)'; g.lineCap = 'round';

@@ -121,7 +121,9 @@ The background changes on its own to match the current weather, the time of day 
 
 It appears on clear, partly cloudy and windy nights.
 
-**Shooting stars** appear on clear nights only: the first within about half a minute of the scene starting, then every 30 seconds to 2 minutes at random.
+**Seagulls** fly across on clear and partly cloudy days: a single gull or a small group of up to five, every 20 seconds to a minute (the first within about 10 seconds). They flap with the odd glide, and they're white by day and dark silhouettes at sunrise and sunset.
+
+&: the first within about half a minute of the scene starting, then every 30 seconds to 2 minutes at random.
 
 The **high wind** scene comes on with sustained winds of 25 mph or more, gusts of 40 mph or more, or a High Wind Warning. Rain, snow, thunderstorm and fog scenes take priority over it.
 
