@@ -476,7 +476,7 @@ const $ = s => document.querySelector(s);
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 /* ======================= settings ======================= */
-const DEFAULTS = { name: '', lat: null, lon: null, units: 'imperial', clock: '12', tideStation: '', motion: 'full', scene: 'auto', tod: 'auto', alertPreview: '', soePreview: '', display: 'normal' };
+const DEFAULTS = { name: '', lat: null, lon: null, units: 'imperial', clock: '12', tideStation: '', motion: 'full', scene: 'auto', tod: 'auto', alertPreview: '', soePreview: '', display: 'ocean' };   // the Ocean style is the default
 let S = loadSettings();
 function loadSettings() {
   let s = { ...DEFAULTS };

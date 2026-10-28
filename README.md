@@ -70,7 +70,7 @@ The first time it runs, the settings panel opens. Type your town or ZIP code, pi
 - **Units:** °F, mph and ft, or °C, km/h and metres.
 - **Clock:** 12-hour or 24-hour.
 - **Tide station:** leave it blank to use the nearest NOAA station, or enter a station ID.
-- **Display style:**
+- **Display style** (Ocean is the default for new visitors):
   - **Normal:** the animated sky.
   - **Ocean:** the sky over open sea, with a small fishing boat riding the waves right of the temperature. The sea follows the weather (calm and glassy on nice days, choppy in rain and snow, big swells with whitecaps in storms) and the sky (blue by day, warm at sunrise and sunset, dark with moonlight at night), with a sparkling path of sun or moonlight. The fisherman fishes on nice days: every so often he gets a bite, reels in a catch picked at random (striped bass, bluefish, mackerel, red snapper, flounder or black sea bass, each a different colour, and once in a while an old boot) and casts again, while fish leap out of the sea every few seconds with a splash. He also wears a yellow raincoat in rain, sits with a steaming mug in snow, holds his hat on in high wind, and holds on tight in heavy rain, thunderstorms and hurricanes. A lantern is lit at night and in fog. A lighthouse in the style of Barnegat Light (white below, red above) stands on a little jetty on the horizon, right of the boat: its lantern glows at sunset, and at night and in fog its light turns, sweeping a beam across the sky. On nice days a small pod of dolphins swims across now and then, arcing out of the water.
   - **Smart mirror:** a black background so the mirror shows through, no animation, and clear boxes. On a tall mirror, everything shrinks to fit on one screen.
