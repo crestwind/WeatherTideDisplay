@@ -1348,7 +1348,7 @@ const Sky = (() => {
       bx: Wd * (portrait ? .7 : .34), bs: Math.min(sy, Wd / 700) * (portrait ? 1 : 1.25),
       pose, coat: sc.rain ? 'rain' : sc.snow ? 'snow' : 'plain', lantern: night || kind === 'fog', snowy: !!sc.snow,
       tint: night ? 'rgba(10,18,40,.55)' : golden ? 'rgba(70,32,44,.5)' : sc.storm ? 'rgba(30,38,44,.35)' : sc.tone === 'dark' ? 'rgba(30,40,50,.2)' : null,
-      fishing: { st: 'wait', t: 0, dur: rnd(4, 10) }, off: document.createElement('canvas'),
+      fishing: { st: 'wait', t: 0, dur: rnd(4, 10) }, off: document.createElement('canvas'), jumps: [], nextJump: rnd(2, 6),
       sparks: Array.from({ length: 220 }, () => ({ f: Math.pow(Math.random(), 1.4), o: (Math.random() + Math.random() - 1) * .9, w: rnd(.4, 1.2), sp: rnd(1.5, 4), ph: rnd(0, 6.3) })) };
   }
   // height of a wave layer at x: three swells, the main one with sharper crests in rough seas
@@ -1393,12 +1393,89 @@ const Sky = (() => {
     g.globalCompositeOperation = 'source-over';
   }
 
-  // The fishing routine: wait, a bite, reel in a fish, drop it in the boat, cast again.
+  // What he can catch: local saltwater fish (length and depth in 1080p units), and now and then an old boot.
+  const FISH = [
+    { len: 24, h: 4.6, back: '#7f909c', belly: '#e3e8ec', marks: 'lines' },   // striped bass
+    { len: 22, h: 4.4, back: '#2e6b7a', belly: '#d6e2e6' },                    // bluefish
+    { len: 20, h: 3.8, back: '#3f6f8a', belly: '#c9d3da', marks: 'bars' },    // mackerel
+    { len: 20, h: 5.2, back: '#d2584a', belly: '#f0b0a4' },                    // red snapper
+    { len: 18, h: 7, back: '#8a7354', belly: '#b39b78', marks: 'spots' },     // flounder
+    { len: 16, h: 5.6, back: '#9aa3ad', belly: '#e8ddd8' },                    // porgy
+  ];
+  // A fish with its mouth at (0,0) and its body along -x. `mono` draws a plain silhouette (night and sunset jumps).
+  function drawFishShape(c, f, k, flap, mono) {
+    const L = f.len, H = f.h;
+    c.save(); c.scale(k, k);
+    c.fillStyle = mono || f.back;
+    c.beginPath(); c.moveTo(-L + 2, 0); c.lineTo(-L - 6, -H - 1 + flap); c.lineTo(-L - 6, H + 1 + flap); c.closePath(); c.fill();   // tail
+    c.beginPath(); c.moveTo(-L * .42, -H * .8); c.lineTo(-L * .58, -H * 1.55); c.lineTo(-L * .7, -H * .7); c.fill();                // fin
+    const body = new Path2D(); body.ellipse(-L / 2, 0, L / 2, H, 0, 0, 7);
+    if (mono) { c.fill(body); c.restore(); return; }
+    c.fillStyle = f.belly; c.fill(body);
+    c.save(); c.clip(body); c.fillStyle = f.back; c.fillRect(-L - 1, -H - 1, L + 2, H + .5);   // darker back, paler belly
+    c.strokeStyle = 'rgba(30,38,46,.55)'; c.lineWidth = .7; c.fillStyle = 'rgba(40,30,20,.45)';
+    if (f.marks === 'lines') for (const y of [-.5, -.1, .3]) { c.beginPath(); c.moveTo(-L * .85, y * H); c.lineTo(-L * .12, y * H); c.stroke(); }
+    if (f.marks === 'bars') for (let px = -L * .8; px < -L * .15; px += 3) { c.beginPath(); c.moveTo(px, -H); c.quadraticCurveTo(px + 2, -H * .6, px, -H * .15); c.stroke(); }
+    if (f.marks === 'spots') for (const [sx, sy] of [[-.3, -.4], [-.55, .2], [-.7, -.3], [-.45, -.1]]) { c.beginPath(); c.arc(sx * L, sy * H, 1.1, 0, 7); c.fill(); }
+    c.restore();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(-3.2, -H * .3, 1.4, 0, 7); c.fill();   // eye
+    c.fillStyle = '#1d2630'; c.beginPath(); c.arc(-3.2, -H * .3, .8, 0, 7); c.fill();
+    c.restore();
+  }
+  function drawBoot(c, k) {   // hooked by the top of the shaft, toe hanging down
+    c.save(); c.scale(k, k);
+    c.fillStyle = '#5a4030'; c.fillRect(-16, -4.5, 16, 9); c.fillRect(-22, -4.5, 8, 13);
+    c.fillStyle = '#3a2a20'; c.fillRect(-23, -4.5, 2, 13); c.fillRect(-22, 7.5, 8, 2);
+    c.fillStyle = 'rgba(120,180,90,.7)'; c.fillRect(-12, -5, 2, 3);   // a bit of seaweed
+    c.restore();
+  }
+
+  // The fishing routine: wait, a bite, reel in a catch (a random fish, or now and then an old boot), drop it in the boat, cast again.
   function fishingTick(dt) {
     const f = sea.fishing; f.t += dt;
     if (f.t < f.dur) return;
     const next = { wait: ['bite', 1.6], bite: ['reel', 2.2], reel: ['land', 1], land: ['cast', 1.2], cast: ['wait', rnd(10, 25)] }[f.st];
     f.st = next[0]; f.dur = next[1]; f.t = 0;
+    if (f.st === 'reel') { f.catch = Math.random() < 1 / 15 ? 'boot' : FISH[Math.floor(Math.random() * FISH.length)]; f.size = rnd(.85, 1.2); }
+  }
+  // Fish leaping out of the sea every few seconds, away from the boat, with a splash going out and coming back in.
+  function jumpTick(dt) {
+    for (const j of sea.jumps) j.t += dt;
+    sea.jumps = sea.jumps.filter(j => j.t < j.dur + .8);
+    if ((sea.nextJump -= dt) > 0) return;
+    sea.nextJump = rnd(4, 12);
+    // On a wide screen, only in the open sea on the left (the forecast boxes cover the right), and not right by the boat
+    const li = 1 + Math.floor(Math.random() * 3), L = sea.layers[li], sx = Wd / 1920, sy = Hd / 1080, wide = Wd > Hd;
+    const lo = wide ? .03 * Wd : .05 * Wd, hi = wide ? .46 * Wd : .95 * Wd, gap = 170 * sea.bs;
+    let x = rnd(lo, hi);
+    if (Math.abs(x - sea.bx) < gap) x = sea.bx - gap - rnd(0, Math.max(0, sea.bx - gap - lo));
+    const dir = Math.random() < .5 ? -1 : 1;
+    sea.jumps.push({ li, x, t: 0, dur: rnd(.9, 1.4), h: (25 + 55 * L.d) * sy * rnd(.8, 1.2), dx: (40 + 90 * L.d) * sx * dir,
+      k: (.45 + 1.3 * L.d) * sea.bs, kind: FISH[Math.floor(Math.random() * FISH.length)] });
+  }
+  function drawJumps(t) {
+    const mono = sea.night ? 'rgb(14,22,38)' : sea.golden ? 'rgb(54,32,44)' : null;
+    for (const j of sea.jumps) {
+      const L = sea.layers[j.li];
+      // splash rings where it leaves the water and where it comes back down
+      for (const [te, xe] of [[0, j.x], [j.dur, j.x + j.dx]]) {
+        const a = j.t - te;
+        if (a < 0 || a > .8) continue;
+        const ye = waveY(L, xe, t), r = (5 + 34 * a) * j.k, f = 1 - a / .8;
+        g.strokeStyle = `rgba(255,255,255,${.55 * f})`; g.lineWidth = Math.max(1, 1.4 * j.k);
+        g.beginPath(); g.ellipse(xe, ye, r, r * .28, 0, 0, 7); g.stroke();
+        g.fillStyle = `rgba(255,255,255,${.6 * f})`;
+        for (let n = -2; n <= 2; n++) { g.beginPath(); g.arc(xe + n * 4 * j.k * (1 + a * 3), ye - (14 * a - 22 * a * a) * j.k * (3 - Math.abs(n)), 1.3 * j.k, 0, 7); g.fill(); }
+      }
+      const p = j.t / j.dur;
+      if (p > 1) continue;
+      const x = j.x + j.dx * p, y = waveY(L, x, t) - j.h * 4 * p * (1 - p), ang = Math.atan2(-j.h * 4 * (1 - 2 * p), j.dx);
+      g.save(); g.globalAlpha = Math.min(1, p / .08, (1 - p) / .08);   // slips in and out of the water
+      g.translate(x, y); g.rotate(ang); if (j.dx < 0) g.scale(1, -1);   // mirrored when leaping left, so it stays belly-down
+      g.translate(j.kind.len * j.k / 2, 0);
+      drawFishShape(g, j.kind, j.k, Math.sin(t * 30) * 1.5, mono);
+      g.restore();
+    }
   }
   // The boat and fisherman are drawn into a small canvas in the boat's own coordinates (waterline centre = 0,0,
   // 1 unit = 1 px on a 1080p screen), tinted for night or sunset, then placed on the wave and tilted with it.
@@ -1500,13 +1577,10 @@ const Sky = (() => {
       x.strokeStyle = 'rgba(240,240,240,.8)'; x.lineWidth = .8; x.beginPath(); x.moveTo(tip[0], tip[1]);   // line, sagging a little
       x.quadraticCurveTo((tip[0] + end[0]) / 2, Math.max(tip[1], end[1]) + 8, end[0], end[1]); x.stroke();
       if (f.st === 'wait' || f.st === 'bite') { x.fillStyle = '#e74c3c'; x.beginPath(); x.arc(bob[0], bob[1] - 2, 3, 0, 7); x.fill(); x.fillStyle = '#fff'; x.fillRect(bob[0] - 3, bob[1] - 2, 6, 2); }
-      if (fish) {   // a silver fish hooked by the mouth, swinging and flapping its tail until it's in the boat
-        x.save(); x.translate(fish[0], fish[1]); x.rotate(-Math.PI / 2 + Math.sin(t * 16) * .45);   // +x now points up the line
-        const flap = Math.sin(t * 30) * 2;
-        x.fillStyle = '#b8c4cc'; x.beginPath(); x.ellipse(-9, 0, 9, 3.6, 0, 0, 7); x.fill();
-        x.beginPath(); x.moveTo(-16, 0); x.lineTo(-23, -4 + flap); x.lineTo(-23, 4 + flap); x.closePath(); x.fill();   // tail
-        x.fillStyle = '#8a98a2'; x.beginPath(); x.moveTo(-8, -3); x.lineTo(-12, -6); x.lineTo(-13, -3); x.fill();         // fin
-        x.fillStyle = '#1d2630'; x.beginPath(); x.arc(-3, -1.2, .9, 0, 7); x.fill();                                      // eye
+      if (fish) {   // the catch hooked by the mouth, swinging (and a fish flapping its tail) until it's in the boat
+        const c = f.catch || FISH[0], boot = c === 'boot';
+        x.save(); x.translate(fish[0], fish[1]); x.rotate(-Math.PI / 2 + Math.sin(t * 16) * (boot ? .12 : .45));   // +x now points up the line
+        if (boot) drawBoot(x, f.size || 1); else drawFishShape(x, c, (f.size || 1) * .8, Math.sin(t * 30) * 2);
         x.restore();
       }
     }
@@ -1525,6 +1599,7 @@ const Sky = (() => {
     const img = drawBoatSprite(t);
     g.save(); g.translate(sea.bx, y + 4 * sea.bs); g.rotate(roll); g.drawImage(img, -280 * sea.bs, -250 * sea.bs); g.restore();
     for (let i = b + 1; i < L.length; i++) drawLayer(L[i], t);
+    if (sea.pose === 'fish') drawJumps(t);   // leaping fish, only where he's fishing
     drawGlint(t, y, Hd);
   }
 
@@ -1682,7 +1757,7 @@ const Sky = (() => {
       else if (t > nextMeteor) meteor = newMeteor();
     }
     if (birds) updateBirds(dt, t);
-    if (sea && sea.pose === 'fish') fishingTick(dt);
+    if (sea && sea.pose === 'fish') { fishingTick(dt); jumpTick(dt); }
     updateGlass(dt, t);
     for (const c of clouds) {
       c.x += c.v * gust * dt;
