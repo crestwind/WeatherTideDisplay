@@ -142,9 +142,19 @@
   .tide-sum b { font-weight: 600; }
   .tide-sum .dim { color: var(--dim); }
   #tideCard { overflow: hidden; }   /* the curve runs an hour past each edge; keep it inside the box */
+  /* the chart scrolls sideways through all the loaded days; the edges fade to hint there's more */
+  .tide-scroll {
+    flex: 1; min-height: 0; display: flex; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; cursor: grab;
+    margin-bottom: -.85rem;   /* use the card's bottom padding, where the labels used to spill into */
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 1.2rem, #000 calc(100% - 1.2rem), transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 1.2rem, #000 calc(100% - 1.2rem), transparent 100%);
+  }
+  .tide-scroll::-webkit-scrollbar { display: none; }
+  .tide-scroll.dragging { cursor: grabbing; }
+  .tide-inner { flex: none; display: flex; flex-direction: column; }
   .chart { flex: 1; min-height: 8rem; position: relative; margin: .4rem 0; }
   .chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-  .tide-marks { position: relative; height: 3.8rem; }
+  .tide-marks { position: relative; height: 3.9rem; flex: none; }   /* never squeezed: the scrolling strip would clip the heights underneath */
   .tide-marks .mk { position: absolute; top: .1rem; transform: translateX(-50%); text-align: center; white-space: nowrap; font-size: .9rem; line-height: 1.2; color: var(--dim); }
   .tide-marks .mk strong { display: block; font-size: 1.2rem; color: var(--fg); font-weight: 500; }
   .tide-marks .mk.past { opacity: .45; }
@@ -1970,35 +1980,46 @@ function renderTide() {
   const inMin = next ? Math.round((next.t - now) / 60e3) : 0;
   const inTxt = next ? (inMin >= 60 ? `${Math.floor(inMin / 60)}h ${inMin % 60}m` : `${inMin}m`) : '';
 
+  // The chart covers all the tide data loaded (about 4 days) in a strip that scrolls sideways: swipe on a phone,
+  // drag with the mouse. It opens on the usual window (t0 to t1), and returns there 2 minutes after the last scroll.
   body.innerHTML = `
     <div class="tide-sum"><b>${rising ? '▲ Rising' : '▼ Falling'}</b> <span class="dim">· ${fv(vNow)} now</span>
       ${next ? `<span class="dim">· ${next.type === 'high' ? 'High' : 'Low'} tide in</span> <b>${inTxt}</b>` : ''}</div>
-    <div class="chart"><svg id="tideSvg"></svg></div>
-    <div class="tide-marks" id="tideMarks"></div>`;
+    <div class="tide-scroll" id="tideScroll"><div class="tide-inner" id="tideInner">
+      <div class="chart"><svg id="tideSvg"></svg></div>
+      <div class="tide-marks" id="tideMarks"></div>
+    </div></div>`;
 
-  const svg = $('#tideSvg'), w = svg.clientWidth, hgt = svg.clientHeight;
-  if (!w || !hgt) return;
+  const scroller = $('#tideScroll'), vw = scroller.clientWidth;
+  if (!vw) return;
+  const all = T.pts, tA = Math.min(t0, all[0].t), tB = Math.max(t1, all[all.length - 1].t);
+  const w = Math.round(vw * (tB - tA) / (t1 - t0));   // full width of the strip
+  $('#tideInner').style.width = w + 'px';
+  const svg = $('#tideSvg'), hgt = svg.clientHeight;
+  if (!hgt) return;
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
   const padT = rem * .9, padB = rem * .9;
-  const vs = pts.map(p => p.v), lo = Math.min(...vs), hi = Math.max(...vs), rng = (hi - lo) || 1;
-  const X = t => (t - t0) / (t1 - t0) * w, Y = v => padT + (1 - (v - lo) / rng) * (hgt - padT - padB);
-  const xy = pts.map(p => [X(p.t), Y(p.v)]);
+  const vs = all.map(p => p.v), lo = Math.min(...vs), hi = Math.max(...vs), rng = (hi - lo) || 1;
+  const X = t => (t - tA) / (tB - tA) * w, Y = v => padT + (1 - (v - lo) / rng) * (hgt - padT - padB);
+  const xy = all.map(p => [X(p.t), Y(p.v)]);
   const line = smoothPath(xy), base = hgt - padB + rem * .4;
 
   let ticks = '';
-  for (let t = Math.ceil(t0 / 3600e3) * 3600e3; t <= t1; t += 3600e3) {
-    if (localHour(t) % 6) continue;
-    ticks += `<line x1="${X(t)}" y1="${padT * .5}" x2="${X(t)}" y2="${base}" stroke="rgba(255,255,255,.08)"/>`;
+  for (let t = Math.ceil(tA / 3600e3) * 3600e3; t <= tB; t += 3600e3) {
+    const h = localHour(t);
+    if (h % 6) continue;
+    ticks += `<line x1="${X(t)}" y1="${padT * .5}" x2="${X(t)}" y2="${base}" stroke="rgba(255,255,255,${h ? .08 : .2})"/>`;
+    if (!h) ticks += `<text x="${X(t) + rem * .3}" y="${padT * .5 + rem * .75}" font-size="${rem * .75}" fill="rgba(255,255,255,.55)">${fmt(t, { weekday: 'short' })}</text>`;   // day names at midnight
   }
   // Each high/low gets a dot on the curve with a dotted line down to its time and height underneath the chart.
-  const ext = T.ext.filter(e => e.t > t0 && e.t < t1);
+  const ext = T.ext.filter(e => e.t > tA && e.t < tB);
   const labels = ext.map(e => {
     const x = X(e.t), y = Y(e.v), op = e.t < now ? .45 : 1;
     return `<line x1="${x}" y1="${y + rem * .3}" x2="${x}" y2="${hgt}" stroke="rgba(255,255,255,${.35 * op})" stroke-dasharray="2 4"/>
       <circle cx="${x}" cy="${y}" r="${rem * .22}" fill="#fff" opacity="${op}"/>`;
   }).join('');
   $('#tideMarks').innerHTML = ext.map(e => {
-    const x = Math.min(Math.max(X(e.t), rem * 2.6), w - rem * 2.6);   // keep edge labels on screen
+    const x = Math.min(Math.max(X(e.t), rem * 2.6), w - rem * 2.6);   // keep edge labels inside the strip
     const day = sameDay(e.t, now) ? '' : ' · ' + fmt(e.t, { weekday: 'short' });
     return `<div class="mk${e.t < now ? ' past' : ''}" style="left:${x}px">${e.type === 'high' ? 'High' : 'Low'}${day}<strong>${fmtTime(e.t)}</strong>${fv(e.v)}</div>`;
   }).join('');
@@ -2014,6 +2035,28 @@ function renderTide() {
     ${labels}
     <circle cx="${nx}" cy="${ny}" r="${rem * .55}" fill="rgba(143,211,255,.3)"/>
     <circle cx="${nx}" cy="${ny}" r="${rem * .3}" fill="#fff"/>`;
+
+  // Where to scroll: back where the person left it if they scrolled in the last 2 minutes, otherwise the usual window.
+  const at = Date.now() - tideView.userAt < 120e3 ? tideView.leftT : t0;
+  tideView.expect = scroller.scrollLeft = Math.round(X(at));
+  tideView.toT = x => tA + x / w * (tB - tA);
+  scroller.onscroll = () => {
+    if (Math.abs(scroller.scrollLeft - tideView.expect) < 2) return;   // our own scrolling, not the person's
+    tideView.userAt = Date.now(); tideView.leftT = tideView.toT(scroller.scrollLeft); tideView.expect = -1;
+  };
+  dragScroll(scroller);
+}
+// The tide chart's scroll position, kept across the once-a-minute redraws.
+const tideView = { userAt: 0, leftT: 0, expect: -1, toT: null };
+// Drag-to-scroll with the mouse (touch screens already swipe).
+function dragScroll(el) {
+  el.onpointerdown = e => {
+    if (e.pointerType !== 'mouse') return;
+    const x0 = e.clientX, s0 = el.scrollLeft;
+    el.setPointerCapture(e.pointerId); el.classList.add('dragging');
+    el.onpointermove = m => { el.scrollLeft = s0 - (m.clientX - x0); };
+    el.onpointerup = el.onpointercancel = () => { el.onpointermove = null; el.classList.remove('dragging'); };
+  };
 }
 
 /* ======================= settings UI ======================= */

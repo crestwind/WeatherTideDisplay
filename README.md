@@ -93,7 +93,7 @@ On a wide screen (TV, PC, laptop, phone turned sideways), the display is two col
 - **Tides:**
   - whether the tide is rising or falling
   - the current height and the time until the next high or low
-  - a curve covering 6 hours back to 24 hours ahead, with a marker for now
+  - a curve covering 6 hours back to 24 hours ahead, with a marker for now. **Swipe it sideways** on a phone, or **drag it** with the mouse, to see about 4 days of tides, with day names at each midnight. It springs back to now 2 minutes after you stop.
   - each high and low tide's time and height, directly under its point on the curve (past ones are dimmed)
 - **7-day forecast:**
   - each day's chance of rain and expected rain amount (blue) and snowfall (white with a snowflake)
