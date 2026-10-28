@@ -10,6 +10,7 @@ A full-screen weather, tide and emergency-alert display for a TV, published as a
 | `nj-emergency.sh` | Checks New Jersey's state-of-emergency orders. The website runs it every 30 minutes. |
 | `nj-emergency.js` | Written by `nj-emergency.sh`. Don't edit it. It isn't uploaded; the website makes its own. |
 | `icon.png`, `icon.ico` | The app icon (a blue wave), used for the browser tab and the desktop shortcut. |
+| `logo.png` | The Tidal Weather logo shown above the clock. |
 | `preview.bat` | Opens the test copy on this PC. |
 | `.github\workflows\website.yml` | Tells GitHub how to publish the website. |
 

@@ -19,7 +19,7 @@ Notes for picking this project back up later. `README.md` is the user manual; th
 - **Keep-alive:** GitHub disables scheduled workflows after 60 days without a commit, so on scheduled runs the workflow pushes an empty commit if the last one is over 45 days old.
 - **Test copy:** `preview.bat` opens `index.html` in Chrome (or Edge) with its own profile in `%LOCALAPPDATA%\TidalWeather-preview`, after running `nj-emergency.sh` with Git for Windows' `sh.exe` so the NJ data is fresh. `nj-emergency.js` and `version.js` are git-ignored.
 - **Settings** live in `localStorage`, per browser. URL parameters (`lat`, `lon`, `name`, …) pre-fill settings, which is handy for setting up the TV.
-- **Branding:** "Tidal Weather" with an ocean-blue (#4aa8f0) breaking-wave SVG above the clock (`.brand`). The app icon (`icon.png` 256 px, `icon.ico` with 16–256 px PNG frames) was made from the user's Gemini image `Downloads\Gemini_Generated_Image_etvqd3etvqd3etvq.jfif`: cropped and placed on a white rounded tile.
+- **Branding:** the user's logo (`DownloadsGemini_Generated_Image_4bj1jf4bj1jf4bj1.jfif`: a wave with a compass rose over the words TIDAL WEATHER) sits above the clock as `logo.png` (`.logo`, 12.5rem wide; 17rem pushed the tiles off a 1080p screen). It was cut out of its white background, with the wave recoloured ocean blue (#4aa8f0) and the words white so it shows on the dark sky. The app icon (`icon.png` 256 px, `icon.ico` with 16–256 px PNG frames) was made from the user's Gemini image `Downloads\Gemini_Generated_Image_etvqd3etvqd3etvq.jfif`: cropped and placed on a white rounded tile.
 - **Two canvases:**
   - `#sky`, behind the UI: the background scenes.
   - `#glass`, above the UI with `pointer-events: none`: rain and snow drops on the screen, and stuck leaves.
@@ -74,7 +74,7 @@ Built the display, the animated backgrounds, alerts (NWS, USGS, FEMA, NJ), the a
 
 - Made the folder a git repo and added the GitHub Pages workflow with the 30-minute NJ check and keep-alive.
 - Created GitHub account crestwind (by the user) and logged in the GitHub CLI.
-- Added the "Tidal Weather" name and ocean-blue wave above the clock, the page title, a browser-tab icon, and the user's wave picture as the app icon.
+- Added the user's Tidal Weather logo above the clock, the page title, a browser-tab icon, and the user's wave picture as the app icon.
 - Removed the flash drive, Seneca and Windows-launcher files; added `preview.bat` and the desktop shortcut **Tidal Weather (test copy)**.
 - Rewrote the README for the website.
 
@@ -87,4 +87,4 @@ Built the display, the animated backgrounds, alerts (NWS, USGS, FEMA, NJ), the a
 ## Ideas not done yet
 
 - State emergency readers for states other than NJ. Each state publishes differently.
-- Replace the small on-screen wave next to "TIDAL WEATHER" with the user's wave picture (offered, not decided).
+

@@ -43,8 +43,7 @@
 
   /* ---------- left column ---------- */
   .left { display: flex; flex-direction: column; min-height: 0; }
-  .brand { display: flex; align-items: center; gap: .7rem; font-size: 1.05rem; font-weight: 600; letter-spacing: .32em; text-transform: uppercase; color: var(--dim); margin-bottom: .8rem; }
-  .brand svg { width: 2.4rem; height: 1.8rem; fill: #4aa8f0; }   /* breaking ocean wave */
+  .logo { display: block; width: 12.5rem; height: auto; margin-bottom: 1rem; }   /* logo.png: the user's Tidal Weather logo, recoloured for the dark sky */
   .clock { font-size: 5rem; font-weight: 300; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
   .clock small { font-size: 1.8rem; font-weight: 400; margin-left: .4rem; color: var(--dim); }
   .date { font-size: 1.45rem; color: var(--dim); margin-top: .5rem; }
@@ -199,7 +198,7 @@
 <main id="app">
   <section class="left">
     <div class="top">
-      <div><div class="brand"><svg viewBox="0 0 32 24" aria-hidden="true"><path d="M1 22C6 21 8.5 17 10.5 12.5C13 7 17.5 3 23 3C27.5 3 30.5 6 30 9.6C29.6 12.4 26.8 13.6 24.6 12.4C22.6 11.3 22.6 8.5 24.8 8C22 6.4 18.5 8.5 17.3 12.5C16 17 18 20.5 22 22Z"/><path d="M1 22H31" fill="none" stroke="#4aa8f0" stroke-width="2" stroke-linecap="round"/></svg>Tidal Weather</div><div class="clock" id="clock">--:--</div><div class="date" id="date"></div></div>
+      <div><img class="logo" src="logo.png" alt="Tidal Weather"><div class="clock" id="clock">--:--</div><div class="date" id="date"></div></div>
       <div class="alert" id="alert" hidden></div>
     </div>
     <div class="soe" id="soe" hidden></div>
