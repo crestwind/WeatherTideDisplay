@@ -206,6 +206,9 @@
   .radar .pin { position: absolute; left: 50%; top: 50%; width: .9rem; height: .9rem; margin: -.45rem; border-radius: 50%; background: #fff; box-shadow: 0 0 0 .25rem rgba(47,127,214,.6); }
   .radar .stamp { position: absolute; left: 1rem; top: .8rem; font-size: 1.5rem; font-weight: 600; text-shadow: 0 1px 6px #000; }
   .radar .stamp small { display: block; font-size: .95rem; font-weight: 400; color: var(--dim); }
+  .radar { cursor: pointer; }
+  .radar .hint { position: absolute; right: 1rem; top: .9rem; font-size: 1rem; color: var(--dim); background: rgba(0,0,0,.45); border-radius: 1rem; padding: .25rem .8rem; text-shadow: none; }
+  .radar .hint:empty { display: none; }
   .radar .note { position: absolute; left: 1rem; bottom: 1.8rem; font-size: 1.05rem; color: var(--dim); text-shadow: 0 1px 6px #000; }
   .radar .credit { position: absolute; right: .6rem; bottom: .4rem; font-size: .7rem; color: rgba(255,255,255,.55); text-shadow: none; }
   .radar-bar { display: flex; align-items: center; gap: 1rem; margin-top: .7rem; }
@@ -214,7 +217,7 @@
   #radarSlider { flex: 1; min-width: 0; accent-color: var(--water); }
   .legend { display: flex; align-items: center; gap: .5rem; font-size: .85rem; color: var(--dim); white-space: nowrap; }
   .legend i { display: inline-block; width: 4.5rem; height: .6rem; border-radius: 1rem; }
-  .hist { display: grid; grid-template-columns: 1.5fr 1fr 1.2fr; gap: 2rem; }
+  .hist { display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 2rem; }
   .hist h4 { font-size: 1.05rem; font-weight: 600; margin-bottom: .4rem; }
   .hist table { width: 100%; border-collapse: collapse; font-size: 1.05rem; }
   .hist td, .hist th { padding: .38rem .4rem; border-top: 1px solid rgba(255,255,255,.07); text-align: right; white-space: nowrap; }
@@ -303,6 +306,7 @@
       <canvas id="radarMap"></canvas><canvas id="radarRain"></canvas>
       <div class="pin"></div>
       <div class="stamp" id="radarStamp"></div>
+      <div class="hint" id="radarHint"></div>
       <div class="note" id="radarNote"></div>
       <div class="credit">Forecast model (Open-Meteo), not live radar · Map © Esri, HERE, Garmin, © OpenStreetMap contributors</div>
     </div>
@@ -1924,7 +1928,7 @@ const MERC = {
 // Forecast "radar": a fixed (no zoom) dark map around the location, with Open-Meteo's 15-minute precipitation
 // forecast for a grid of points drawn over it as smooth colour, stepping through the next 24 hours.
 const Radar = (() => {
-  let view = null, frames = null, shown = false, idx = 0, hold = 0, playing = true, loading = false;
+  let view = null, frames = null, shown = false, idx = 0, hold = 0, playing = false, loading = false;
   const box = $('#radar'), mapCv = $('#radarMap'), rainCv = $('#radarRain'), slider = $('#radarSlider');
   const PLAY = '<svg viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg>', PAUSE = '<svg viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>';
 
@@ -2021,10 +2025,13 @@ const Radar = (() => {
     if (idx >= frames.length - 1) { if (++hold < 6) return; hold = 0; idx = 0; } else idx++;
     drawFrame();
   }
-  function setPlaying(p) { playing = p; $('#radarPlay').innerHTML = p ? PAUSE : PLAY; $('#radarPlay').setAttribute('aria-label', p ? 'Pause' : 'Play'); }
-  $('#radarPlay').onclick = () => setPlaying(!playing);
+  function setPlaying(p) {
+    playing = p; $('#radarPlay').innerHTML = p ? PAUSE : PLAY; $('#radarPlay').setAttribute('aria-label', p ? 'Pause' : 'Play');
+    $('#radarHint').textContent = p ? '' : 'Click or tap the map to play';
+  }
+  $('#radarPlay').onclick = box.onclick = () => setPlaying(!playing);   // click the map or the button to start and stop it
   slider.oninput = () => { idx = +slider.value; hold = 0; setPlaying(false); drawFrame(); };
-  setPlaying(true);
+  setPlaying(false);   // starts paused on the current time
   setInterval(tick, 330);
 
   // (Re)load when shown and the forecast is over an hour old, or the location or box size changed.
@@ -2033,8 +2040,8 @@ const Radar = (() => {
   return { show, refresh: () => show(shown), reset() { view = frames = null; mapCv.width = rainCv.width = 0; show(shown); } };
 })();
 
-// Weather history from Open-Meteo's archive (ERA5 reanalysis, daily since 1940): this year so far vs last year and
-// the 1991-2020 normal, records for today's date, and all-time records. The download is big (~1.5 MB, ~10 s),
+// Weather history from Open-Meteo's archive (ERA5 reanalysis, daily since 1940): this year so far vs last year,
+// records for today's date (with its 1991-2020 normal), and all-time records. The download is big (~1.5 MB, ~10 s),
 // so only the finished summary is kept, for a day, per location and units.
 const History = (() => {
   let shown = false, busy = false, doneKey = '';
@@ -2055,10 +2062,8 @@ const History = (() => {
       return { avgHi: avg(ix, hi), avgLo: avg(ix, lo), warm: w < 0 ? null : [hi[w], T[w]], cold: c < 0 ? null : [lo[c], T[c]],
                rain: sum(ix, pr), snow: sum(ix, sn), wetDays: ix.filter(i => pr[i] >= wet).length, gust: g < 0 ? null : [gu[g], T[g]] };
     };
-    // this year so far, the same dates last year, and the average of the same dates over 1991-2020
+    // this year so far, and the same dates last year
     const ytd = y => stats(range(`${y}-01-01`, `${y}-${mmdd}`));
-    const norm = Array.from({ length: 30 }, (_, k) => ytd(1991 + k));
-    const mean = key => norm.reduce((s, n) => s + n[key], 0) / norm.length;
     // today's date in every year, and every full year
     const today = localDay().slice(5), onDay = T.map((t, i) => i).filter(i => i <= last && T[i].slice(5) === today);
     const onNorm = onDay.filter(i => +T[i].slice(0, 4) >= 1991 && +T[i].slice(0, 4) <= 2020);
@@ -2070,7 +2075,7 @@ const History = (() => {
     const at = i => i < 0 ? null : i;
     return {
       end, year, first: T[0].slice(0, 4),
-      ytd: [ytd(year), ytd(year - 1), { avgHi: mean('avgHi'), avgLo: mean('avgLo'), rain: mean('rain'), snow: mean('snow'), wetDays: mean('wetDays') }],
+      ytd: [ytd(year), ytd(year - 1)],
       day: { hi: at(best(onDay, hi, (a, b) => a > b)), lo: at(best(onDay, lo, (a, b) => a < b)), wet: at(best(onDay, pr, (a, b) => a > b)),
              avgHi: avg(onNorm, hi), avgLo: avg(onNorm, lo), lastYear: onDay.find(i => +T[i].slice(0, 4) === +localDay().slice(0, 4) - 1) },
       rec: { hot: best(all, hi, (a, b) => a > b), cold: best(all, lo, (a, b) => a < b), wet: best(all, pr, (a, b) => a > b),
@@ -2092,21 +2097,21 @@ const History = (() => {
     const sn = v => v == null ? '—' : v.toFixed(1) + sU, w = v => v == null ? '—' : Math.round(v) + wU, n = v => v == null ? '—' : Math.round(v);
     const withDate = (pair, f) => pair ? `${f(pair[0])}<small>${md(pair[1])}</small>` : '—';
     const D = i => s.days[i], yr = i => D(i) ? D(i).t.slice(0, 4) : '';
-    const [a, b, c] = s.ytd;
-    const row = (label, x, y, z) => `<tr><td>${label}</td><td>${x}</td><td>${y}</td><td>${z}</td></tr>`;
+    const [a, b] = s.ytd;
+    const row = (label, x, y) => `<tr><td>${label}</td><td>${x}</td><td>${y}</td></tr>`;
     const rec = (label, i, key, f) => D(i) ? `<tr><td>${label}</td><td>${f(D(i)[key])}<small>${mdy(D(i).t)}</small></td></tr>` : '';
     const ly = D(s.day.lastYear);
     $('#hist').innerHTML = `<div class="hist">
       <div><h4>This year so far vs last year <span style="font-weight:400;color:var(--faint)">(Jan 1 – ${md(s.end)})</span></h4><table>
-        <tr><th></th><th>${s.year}</th><th>${s.year - 1}</th><th>Normal</th></tr>
-        ${row('Average high', t(a.avgHi), t(b.avgHi), t(c.avgHi))}
-        ${row('Average low', t(a.avgLo), t(b.avgLo), t(c.avgLo))}
-        ${row('Warmest day', withDate(a.warm, t), withDate(b.warm, t), '—')}
-        ${row('Coldest day', withDate(a.cold, t), withDate(b.cold, t), '—')}
-        ${row('Precipitation', p(a.rain), p(b.rain), p(c.rain))}
-        ${row('Snowfall', sn(a.snow), sn(b.snow), sn(c.snow))}
-        ${row('Wet days', n(a.wetDays), n(b.wetDays), n(c.wetDays))}
-        ${row('Strongest gust', withDate(a.gust, w), withDate(b.gust, w), '—')}
+        <tr><th></th><th>${s.year}</th><th>${s.year - 1}</th></tr>
+        ${row('Average high', t(a.avgHi), t(b.avgHi))}
+        ${row('Average low', t(a.avgLo), t(b.avgLo))}
+        ${row('Warmest day', withDate(a.warm, t), withDate(b.warm, t))}
+        ${row('Coldest day', withDate(a.cold, t), withDate(b.cold, t))}
+        ${row('Precipitation', p(a.rain), p(b.rain))}
+        ${row('Snowfall', sn(a.snow), sn(b.snow))}
+        ${row('Wet days', n(a.wetDays), n(b.wetDays))}
+        ${row('Strongest gust', withDate(a.gust, w), withDate(b.gust, w))}
       </table></div>
       <div><h4>On this date (${md(localDay())})</h4><table>
         ${D(s.day.hi) ? `<tr><td>Record high</td><td>${t(D(s.day.hi).hi)}<small>${yr(s.day.hi)}</small></td></tr>` : ''}
