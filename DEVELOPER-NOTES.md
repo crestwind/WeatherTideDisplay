@@ -50,11 +50,11 @@ Notes for picking this project back up later. `README.md` is the user manual; th
 
 1. **Line endings.** `.gitattributes` keeps `.sh` as LF (CRLF breaks it on GitHub's Linux runner) and `.bat` as CRLF. Git Bash `sed -i` silently turns CRLF files into LF, so after editing `preview.bat` with sed, restore CRLF with PowerShell: `[IO.File]::WriteAllText($f, ([IO.File]::ReadAllText($f) -replace "`r?`n","`r`n"), (New-Object Text.UTF8Encoding($false)))`.
 2. **Headless Chrome window width.** Headless Chrome won't make a window narrower than about 485px, so a 390px "phone" screenshot is really a cropped 485px layout. To test phone widths, load the page in iframes of the exact size on a scratch HTML page and screenshot that.
-2. **Headless Chrome timing.** In `--headless --virtual-time-budget` screenshots, `requestAnimationFrame` timestamps don't line up with `performance.now()`, so anything scheduled that way (lightning, leaf slaps, shooting stars) usually doesn't show up. To check one visually, make a scratch copy with sed that forces it on (e.g. `nextSlap = 1e12; stuck = [newStuck()]`).
-3. **NWS and FEMA date quirks.** Open-Meteo daily timestamps are local midnight with a fixed UTC offset, so across a daylight-saving change the weekday shifted. The code adds 12 hours before formatting. FEMA's `declarationDate` is midnight UTC, so it's formatted with `timeZone: 'UTC'`.
-4. **GitHub sign-in.** `gh auth login` typed by the user with `!` didn't save a login. Running `echo "" | gh auth login --web …` in the background and giving the user the one-time code worked. Pushing a workflow file needs the `workflow` scope (`gh auth refresh -s workflow`).
-5. **Auto mode** blocks creating a public repo until the user explicitly says yes in the conversation.
-6. **`.jfif` images** can't be viewed directly by the Read tool; convert them to PNG with System.Drawing first.
+3. **Headless Chrome timing.** In `--headless --virtual-time-budget` screenshots, `requestAnimationFrame` timestamps don't line up with `performance.now()`, so anything scheduled that way (lightning, leaf slaps, shooting stars) usually doesn't show up. To check one visually, make a scratch copy with sed that forces it on (e.g. `nextSlap = 1e12; stuck = [newStuck()]`).
+4. **NWS and FEMA date quirks.** Open-Meteo daily timestamps are local midnight with a fixed UTC offset, so across a daylight-saving change the weekday shifted. The code adds 12 hours before formatting. FEMA's `declarationDate` is midnight UTC, so it's formatted with `timeZone: 'UTC'`.
+5. **GitHub sign-in.** `gh auth login` typed by the user with `!` didn't save a login. Running `echo "" | gh auth login --web …` in the background and giving the user the one-time code worked. Pushing a workflow file needs the `workflow` scope (`gh auth refresh -s workflow`).
+6. **Auto mode** blocks creating a public repo until the user explicitly says yes in the conversation.
+7. **`.jfif` images** can't be viewed directly by the Read tool; convert them to PNG with System.Drawing first.
 
 ## Testing recipe (on this PC)
 
