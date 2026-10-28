@@ -354,7 +354,7 @@
       </label>
     </div>
     <label>Display style
-      <select id="mirrorSel"><option value="off">Normal (animated sky)</option><option value="on">Smart mirror (black background, no animation)</option></select>
+      <select id="displaySel"><option value="normal">Normal (animated sky)</option><option value="ocean">Ocean (the sea and a fishing boat)</option><option value="mirror">Smart mirror (black background, no animation)</option></select>
     </label>
     <div class="row">
       <label>Background scene
@@ -407,7 +407,7 @@ const $ = s => document.querySelector(s);
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 /* ======================= settings ======================= */
-const DEFAULTS = { name: '', lat: null, lon: null, units: 'imperial', clock: '12', tideStation: '', motion: 'full', scene: 'auto', tod: 'auto', alertPreview: '', soePreview: '', mirror: 'off' };
+const DEFAULTS = { name: '', lat: null, lon: null, units: 'imperial', clock: '12', tideStation: '', motion: 'full', scene: 'auto', tod: 'auto', alertPreview: '', soePreview: '', display: 'normal' };
 let S = loadSettings();
 function loadSettings() {
   let s = { ...DEFAULTS };
@@ -415,7 +415,10 @@ function loadSettings() {
   // URL parameters win, e.g. index.html?lat=38.93&lon=-74.91&name=Cape%20May
   const q = new URLSearchParams(location.search);
   if (q.has('lat') && q.has('lon')) { s.lat = +q.get('lat'); s.lon = +q.get('lon'); s.name = q.get('name') || s.name || `${s.lat}, ${s.lon}`; }
-  for (const k of ['units', 'scene', 'tod', 'motion', 'mirror']) if (q.has(k)) s[k] = q.get(k);
+  for (const k of ['units', 'scene', 'tod', 'motion', 'display']) if (q.has(k)) s[k] = q.get(k);
+  // older settings and links used mirror=on for smart mirror mode
+  if (s.mirror === 'on' || q.get('mirror') === 'on') s.display = 'mirror';
+  delete s.mirror;
   // ?alert=demo or ?alert=<alert name> just pre-fills the test options; settings take over from there
   if (q.has('alert')) { s.alertPreview = q.get('alert'); if (s.alertPreview === 'demo') s.soePreview = 'on'; }
   if (q.has('soe')) s.soePreview = q.get('soe');
@@ -423,7 +426,7 @@ function loadSettings() {
 }
 function saveSettings() { try { localStorage.setItem('wt-settings', JSON.stringify(S)); } catch (e) {} }
 // Smart mirror mode is a class on <html>, so it can also change the text size (rem).
-function applyMirror() { document.documentElement.classList.toggle('mirror', S.mirror === 'on'); }
+function applyMirror() { document.documentElement.classList.toggle('mirror', S.display === 'mirror'); }
 // On a tall mirror (which can't scroll), shrink the text until everything fits on the screen, then redraw the tide chart at the new size.
 function fitMirror() {
   const html = document.documentElement;
@@ -1273,6 +1276,204 @@ const Sky = (() => {
     }
   }
 
+  /* ---------- Ocean display style: the sea across the bottom 40% and a fishing boat riding it ---------- */
+  // The sea is layers of moving waves, far (small, slow) to near (big). How rough it is, its colours and what the
+  // fisherman does all follow the weather. The boat sits right of the temperature, where the screen is open.
+  let sea = null;
+  const mix = (a, b, k) => a.map((v, i) => Math.round(v + (b[i] - v) * k));
+  function buildSea() {
+    if (S.display !== 'ocean') return null;
+    const { kind, tod } = mode, night = tod === 'night', golden = tod === 'golden', sx = Wd / 1920, sy = Hd / 1080;
+    const rough = sc.swirl ? 4 : sc.storm ? 3 : sc.wind || kind === 'heavy' ? 2.2 : sc.rain || kind === 'heavysnow' ? 1.5
+      : kind === 'cloudy' || kind === 'fog' || sc.snow ? 1 : .6;
+    // sea colours near the horizon and close up
+    const pal = night ? [[40, 56, 86], [6, 14, 30]] : golden ? [[214, 150, 136], [36, 38, 78]]
+      : sc.storm ? [[74, 88, 92], [16, 30, 34]] : sc.tone && sc.tone !== 'light' || kind === 'fog' ? [[122, 140, 152], [34, 56, 70]] : [[96, 156, 200], [14, 56, 96]];
+    const top = Hd * (Hd > Wd ? .55 : .6), N = 8, dir = sc.cloudDir || 1;   // a little higher on tall screens, so the boat clears the tiles
+    const layers = Array.from({ length: N }, (_, i) => {
+      const d = (i + .5) / N, lam = (40 + 420 * d) * sx * (1 + .2 * rough);
+      return { d, y: top + (Hd * 1.02 - top) * Math.pow(d, 1.5), A: (1.2 + 15 * d) * sy * rough * (rough > 2 ? 1.7 : 1), k: 2 * Math.PI / lam,   // storms get much bigger swells
+        w: (.6 + 1.2 * (1 - d)) * (.6 + .25 * rough) * dir, ph: [rnd(0, 6.3), rnd(0, 6.3), rnd(0, 6.3)],
+        fill: `rgb(${mix(pal[0], pal[1], Math.pow(d, .9))})`, crest: `rgba(255,255,255,${(night ? .08 : .16) + .1 * d})`,
+        step: Math.max(5, lam / 12) };
+    });
+    const portrait = Hd > Wd;
+    const pose = sc.swirl || sc.storm || kind === 'heavy' ? 'hold' : sc.wind ? 'hat' : sc.snow ? 'mug' : 'fish';
+    return { top, layers, pal, rough, night, golden, sharp: 1 + rough * .35, boatLayer: 2,
+      bx: Wd * (portrait ? .7 : .34), bs: Math.min(sy, Wd / 700) * (portrait ? 1 : 1.25),
+      pose, coat: sc.rain ? 'rain' : sc.snow ? 'snow' : 'plain', lantern: night || kind === 'fog', snowy: !!sc.snow,
+      tint: night ? 'rgba(10,18,40,.55)' : golden ? 'rgba(70,32,44,.5)' : sc.storm ? 'rgba(30,38,44,.35)' : sc.tone === 'dark' ? 'rgba(30,40,50,.2)' : null,
+      fishing: { st: 'wait', t: 0, dur: rnd(4, 10) }, off: document.createElement('canvas'),
+      sparks: Array.from({ length: 220 }, () => ({ f: Math.pow(Math.random(), 1.4), o: (Math.random() + Math.random() - 1) * .9, w: rnd(.4, 1.2), sp: rnd(1.5, 4), ph: rnd(0, 6.3) })) };
+  }
+  // height of a wave layer at x: three swells, the main one with sharper crests in rough seas
+  function waveY(L, x, t) {
+    const a = L.k * x - L.w * t, s1 = Math.pow((1 + Math.sin(a + L.ph[0])) / 2, sea.sharp) * 2 - 1;
+    return L.y - L.A * (s1 + .45 * Math.sin(a * 1.7 + L.ph[1] - t * .3) + .6 * Math.sin(a * .55 + L.ph[2] + t * .2)) / 2;
+  }
+  function drawLayer(L, t) {
+    g.beginPath(); g.moveTo(0, Hd);
+    for (let x = 0; x <= Wd + L.step; x += L.step) g.lineTo(x, waveY(L, x, t));
+    g.lineTo(Wd, Hd); g.closePath();
+    g.fillStyle = L.fill; g.fill();
+    g.strokeStyle = L.crest; g.lineWidth = Math.max(1, (.6 + 1.6 * L.d) * Hd / 1080);
+    g.beginPath();
+    for (let x = 0; x <= Wd + L.step; x += L.step) { const y = waveY(L, x, t); x ? g.lineTo(x, y) : g.moveTo(x, y); }
+    g.stroke();
+    if (sea.rough >= 1.4 && L.d > .25) {   // whitecaps on the crests in rough seas
+      g.strokeStyle = `rgba(255,255,255,${.25 + .12 * sea.rough})`; g.lineWidth = Math.max(1, 2.2 * L.d * Hd / 1080); g.lineCap = 'round';
+      g.beginPath();
+      for (let x = 0; x <= Wd; x += L.step) {
+        const y = waveY(L, x, t);
+        if (L.y - y > L.A * .55) { g.moveTo(x - L.step * .6, y + 1); g.lineTo(x + L.step * .6, y + 1); }
+      }
+      g.stroke();
+    }
+  }
+  // a shimmering path of sun or moonlight on the water below it
+  function drawGlint(t, y0, y1) {
+    if (!orb || sc.rain || sc.storm) return;
+    // lots of small glints scattered in a cone that widens toward the viewer, each twinkling on and off
+    const col = sea.night ? '220,230,255' : sea.golden ? '255,196,130' : '255,244,214', sx = Wd / 1920;
+    g.globalCompositeOperation = 'lighter';
+    for (const s of sea.sparks) {
+      const y = sea.top + (Hd - sea.top) * s.f;
+      if (y < y0 || y > y1) continue;
+      const on = Math.sin(t * s.sp + s.ph);
+      if (on < .2) continue;
+      const w = (4 + 46 * s.f) * sx * s.w * on;
+      g.fillStyle = `rgba(${col},${(.55 - .35 * s.f) * on * (sea.night ? .75 : 1)})`;
+      g.fillRect(orb.x + s.o * (12 + 260 * s.f) * sx - w / 2, y, w, Math.max(1, (1 + 2.5 * s.f) * Hd / 1080));
+    }
+    g.globalCompositeOperation = 'source-over';
+  }
+
+  // The fishing routine: wait, a bite, reel in a fish, drop it in the boat, cast again.
+  function fishingTick(dt) {
+    const f = sea.fishing; f.t += dt;
+    if (f.t < f.dur) return;
+    const next = { wait: ['bite', 1.6], bite: ['reel', 2.2], reel: ['land', 1], land: ['cast', 1.2], cast: ['wait', rnd(10, 25)] }[f.st];
+    f.st = next[0]; f.dur = next[1]; f.t = 0;
+  }
+  // The boat and fisherman are drawn into a small canvas in the boat's own coordinates (waterline centre = 0,0,
+  // 1 unit = 1 px on a 1080p screen), tinted for night or sunset, then placed on the wave and tilted with it.
+  function drawBoatSprite(t) {
+    const B = sea.off, s = sea.bs, W = 560, H = 380, ox = 280, oy = 250;
+    B.width = W * s; B.height = H * s;
+    const x = B.getContext('2d'); x.scale(s, s); x.translate(ox, oy); x.lineCap = x.lineJoin = 'round';
+    const wind = sc.swirl ? 1.6 : sc.storm || sc.wind ? 1.2 : .35, wd = sc.cloudDir || 1;   // the flag streams downwind, the way the clouds go
+    // mast and flag
+    x.strokeStyle = '#5a4a3a'; x.lineWidth = 3; x.beginPath(); x.moveTo(-36, -76); x.lineTo(-36, -130); x.stroke();
+    x.fillStyle = '#d64b3c'; x.beginPath(); x.moveTo(-36, -130);
+    for (let k = 0; k <= 6; k++) x.lineTo(-36 + wd * k * 4.2 * (1 + .1 * wind), -130 + 1.2 * k + Math.sin(t * 6 * wind + k * .9) * wind * 1.8);
+    for (let k = 6; k >= 0; k--) x.lineTo(-36 + wd * k * 4.2 * (1 + .1 * wind), -118 - .6 * k + Math.sin(t * 6 * wind + k * .9) * wind * 1.8);
+    x.closePath(); x.fill();
+    if (sea.lantern) { x.fillStyle = '#3a3a3a'; x.fillRect(-41, -104, 10, 3); x.fillStyle = '#ffd98a'; x.fillRect(-40, -101, 8, 10); }
+    // cabin
+    x.fillStyle = '#f3efe6'; x.fillRect(-58, -70, 44, 46);
+    x.fillStyle = '#2f5d7c'; x.beginPath(); x.moveTo(-63, -70); x.lineTo(-9, -70); x.lineTo(-13, -78); x.lineTo(-59, -78); x.closePath(); x.fill();
+    x.fillStyle = sea.lantern ? '#ffd98a' : '#a9d2ef'; x.fillRect(-51, -62, 15, 12); x.fillRect(-31, -62, 11, 12);
+    if (sea.snowy) { x.fillStyle = '#fff'; x.beginPath(); x.ellipse(-36, -79, 27, 4, 0, 0, 7); x.fill(); }
+    // hull: white above a navy stripe, red below the waterline, with a rail along the deck
+    const hull = new Path2D('M-82 -24 L80 -36 Q70 -6 46 10 L-66 10 Q-80 6 -82 -24 Z');
+    x.fillStyle = '#eef0f2'; x.fill(hull);
+    x.save(); x.clip(hull);
+    x.fillStyle = '#1f3a5a'; x.beginPath(); x.moveTo(-84, -16); x.lineTo(84, -28); x.lineTo(84, -22); x.lineTo(-84, -10); x.fill();
+    x.fillStyle = '#b3423a'; x.fillRect(-90, -2, 180, 20);
+    x.restore();
+    x.strokeStyle = '#8b939b'; x.lineWidth = 2; x.beginPath(); x.moveTo(-76, -33); x.lineTo(70, -44); x.stroke();
+    for (let px = -66; px <= 60; px += 21) { x.beginPath(); x.moveTo(px, -25 - px * .074); x.lineTo(px, -33 - px * .074); x.stroke(); }
+    drawFisher(x, t);
+    if (sea.tint) { x.globalCompositeOperation = 'source-atop'; x.fillStyle = sea.tint; x.fillRect(-ox, -oy, W, H); x.globalCompositeOperation = 'source-over'; }
+    if (sea.lantern) {   // the lantern and cabin windows stay bright after the tint
+      const glow = x.createRadialGradient(-36, -96, 1, -36, -96, 26);
+      glow.addColorStop(0, 'rgba(255,220,140,.9)'); glow.addColorStop(1, 'rgba(255,200,120,0)');
+      x.fillStyle = glow; x.beginPath(); x.arc(-36, -96, 26, 0, 7); x.fill();
+      x.fillStyle = 'rgba(255,217,138,.85)'; x.fillRect(-51, -62, 15, 12); x.fillRect(-31, -62, 11, 12);
+    }
+    return B;
+  }
+  // The fisherman, standing on the deck at (26, -31). Poses: fishing, holding his hat in wind, holding on in storms,
+  // or sitting on the cooler with a hot drink in snow.
+  function drawFisher(x, t) {
+    const coat = sea.coat === 'rain' ? '#f2c230' : sea.coat === 'snow' ? '#c0392b' : '#2f4f6f', pants = '#2d3e50', skin = '#e8b991';
+    x.save(); x.translate(26, -31);
+    const limb = (col, w, ...pts) => { x.strokeStyle = col; x.lineWidth = w; x.beginPath(); pts.forEach(([a, b], i) => i ? x.lineTo(a, b) : x.moveTo(a, b)); x.stroke(); };
+    const head = (hx, hy) => {
+      x.fillStyle = skin; x.beginPath(); x.arc(hx, hy, 6.5, 0, 7); x.fill();
+      if (sea.coat === 'rain') { x.fillStyle = coat; x.beginPath(); x.arc(hx, hy - 1, 8, Math.PI * .95, Math.PI * 2.05); x.fill(); }      // hood
+      else if (sea.coat === 'snow') { x.fillStyle = '#e8e8e8'; x.beginPath(); x.arc(hx, hy - 2, 7.2, Math.PI, 0); x.fill(); x.beginPath(); x.arc(hx, hy - 10, 2.6, 0, 7); x.fill(); }   // beanie
+      else { x.fillStyle = '#8a6d3b'; x.fillRect(hx - 10, hy - 6, 20, 2.5); x.fillRect(hx - 6, hy - 12, 12, 7); }                       // bucket hat
+    };
+    const body = (x0, y0, x1, y1) => limb(coat, 12, [x0, y0], [x1, y1]);
+    if (sea.pose === 'mug') {
+      x.fillStyle = '#3b7dbf'; x.fillRect(-12, -14, 22, 14); x.fillStyle = '#e8eef4'; x.fillRect(-12, -15, 22, 3);                    // cooler
+      if (sea.snowy) { x.fillStyle = '#fff'; x.fillRect(-12, -17, 22, 3); }
+      limb(pants, 5, [-2, -16], [10, -14], [12, 0]); body(-2, -16, -2, -36); head(-1, -43);
+      limb(coat, 4, [-2, -32], [6, -26], [9, -28]);
+      x.fillStyle = '#eee'; x.fillRect(7, -32, 6, 7);                                                                                   // mug
+      for (let k = 0; k < 3; k++) {   // steam
+        const p = (t * .5 + k / 3) % 1;
+        x.fillStyle = `rgba(255,255,255,${.45 * (1 - p)})`; x.beginPath(); x.arc(10 + Math.sin(t * 2 + k * 2) * 3, -35 - p * 18, 2 + p * 3, 0, 7); x.fill();
+      }
+    } else if (sea.pose === 'hold') {   // crouched, both hands gripping the cabin
+      const sway = Math.sin(t * 3) * 2;
+      limb(pants, 5, [-6, 0], [-2, -10], [-8, -18]); limb(pants, 5, [6, 0], [4, -10], [-4, -18]);
+      body(-6, -18, -14 + sway, -32); head(-17 + sway, -40);
+      limb(coat, 4, [-13 + sway, -30], [-24, -34], [-34, -40]); limb(coat, 4, [-11 + sway, -28], [-26, -26], [-34, -28]);
+    } else if (sea.pose === 'hat') {   // braced against the wind, one hand holding his hat on
+      limb(pants, 5, [-7, 0], [-3, -18]); limb(pants, 5, [7, 0], [3, -18]);
+      body(0, -18, 2, -38); head(3, -45);
+      limb(coat, 4, [2, -35], [10, -44], [6, -52]); limb(coat, 4, [0, -34], [-10, -24], [-16, -14]);
+      x.fillStyle = coat; x.beginPath(); x.moveTo(-4, -22); x.lineTo(-14 - Math.sin(t * 9) * 3, -18); x.lineTo(-4, -28); x.fill();   // coat flapping
+    } else {   // fishing
+      const f = sea.fishing, p = Math.min(1, f.t / f.dur);
+      let a = .75, end = null, fish = null;   // rod angle (radians above horizontal), where the line ends
+      const hand = [12, -30], L = 74;
+      if (f.st === 'bite') a = .75 - .12 * Math.abs(Math.sin(f.t * 14));
+      if (f.st === 'reel') a = .75 + .55 * p;
+      if (f.st === 'land') a = 1.3 + .25 * p;
+      if (f.st === 'cast') a = p < .4 ? 1.55 + p : 1.95 - (1.95 - .75) * Math.min(1, (p - .4) / .35);
+      const bend = f.st === 'bite' ? .25 : f.st === 'reel' ? .2 : 0;
+      const tip = [hand[0] + Math.cos(a) * L, hand[1] - Math.sin(a) * L + bend * 18];
+      const bob = [118, 31 + Math.sin(t * 2) * 1.5 + (f.st === 'bite' ? 4 * Math.abs(Math.sin(f.t * 14)) : 0)];   // bobber on the water
+      if (f.st === 'reel') { end = [bob[0] + (tip[0] - bob[0]) * p, bob[1] + (tip[1] + 22 - bob[1]) * p]; fish = end; }
+      else if (f.st === 'land') { end = [tip[0] + (-10 - tip[0]) * p, tip[1] + 22 + (2 - tip[1] - 22) * p * p]; fish = p < .9 ? end : null; }
+      else if (f.st === 'cast') end = p < .5 ? [tip[0], tip[1] + 14] : [tip[0] + (bob[0] - tip[0]) * (p - .5) * 2, tip[1] + 14 + (bob[1] - tip[1] - 14) * (p - .5) * 2];
+      else end = bob;
+      limb(pants, 5, [-6, 0], [-3, -18]); limb(pants, 5, [6, 0], [3, -18]);
+      body(0, -18, 0, -38); head(1, -45);
+      limb(coat, 4, [0, -34], [8, -28], hand); limb(coat, 4, [1, -33], [10, -36], [hand[0] + 4, hand[1] - 4]);
+      x.strokeStyle = '#3b2f2a'; x.lineWidth = 2; x.beginPath(); x.moveTo(hand[0] - 8, hand[1] + 6);   // rod
+      x.quadraticCurveTo(hand[0] + Math.cos(a) * L * .6, hand[1] - Math.sin(a) * L * .6, tip[0], tip[1]); x.stroke();
+      x.strokeStyle = 'rgba(240,240,240,.8)'; x.lineWidth = .8; x.beginPath(); x.moveTo(tip[0], tip[1]);   // line, sagging a little
+      x.quadraticCurveTo((tip[0] + end[0]) / 2, Math.max(tip[1], end[1]) + 8, end[0], end[1]); x.stroke();
+      if (f.st === 'wait' || f.st === 'bite') { x.fillStyle = '#e74c3c'; x.beginPath(); x.arc(bob[0], bob[1] - 2, 3, 0, 7); x.fill(); x.fillStyle = '#fff'; x.fillRect(bob[0] - 3, bob[1] - 2, 6, 2); }
+      if (fish) {   // a silver fish, wriggling
+        x.save(); x.translate(fish[0], fish[1] + 7); x.rotate(Math.PI / 2 + Math.sin(t * 18) * .5);
+        x.fillStyle = '#b8c4cc'; x.beginPath(); x.ellipse(0, 0, 9, 3.6, 0, 0, 7); x.fill();
+        x.beginPath(); x.moveTo(-8, 0); x.lineTo(-14, -4); x.lineTo(-14, 4); x.fill();
+        x.restore();
+      }
+    }
+    x.restore();
+  }
+  function drawSea(ts) {
+    const t = ts / 1000, L = sea.layers, b = sea.boatLayer;
+    const base = g.createLinearGradient(0, sea.top, 0, Hd);
+    base.addColorStop(0, `rgb(${sea.pal[0]})`); base.addColorStop(1, `rgb(${sea.pal[1]})`);
+    g.fillStyle = base; g.fillRect(0, sea.top - 2, Wd, Hd - sea.top + 2);
+    for (let i = 0; i <= b; i++) drawLayer(L[i], t);
+    // the boat rides layer b, rising, falling and tilting with the wave under it
+    const bl = L[b], y = waveY(bl, sea.bx, t), slope = (waveY(bl, sea.bx + 30, t) - waveY(bl, sea.bx - 30, t)) / 60;
+    const roll = Math.atan(slope) * .9 + Math.sin(t * 1.3) * .015 * sea.rough + (sea.rough > 2 ? Math.sin(t * 1.9) * .05 * (sea.rough - 2) : 0);   // extra rocking in storms
+    drawGlint(t, 0, y);
+    const img = drawBoatSprite(t);
+    g.save(); g.translate(sea.bx, y + 4 * sea.bs); g.rotate(roll); g.drawImage(img, -280 * sea.bs, -250 * sea.bs); g.restore();
+    for (let i = b + 1; i < L.length; i++) drawLayer(L[i], t);
+    drawGlint(t, y, Hd);
+  }
+
   function moonSprite() {
     const r = Hd * .048, R = Math.round(r * 6), [c, x] = mk(R * 2, R * 2);
     // Real moon phase: 0 = new, .5 = full.
@@ -1347,6 +1548,7 @@ const Sky = (() => {
     } else if (sc.veiledSun && !night) orb = { img: hazeSprite(), x: Wd * .40, y: Hd * .14 };
     flares = orb && orb.rays && kind === 'clear' ? makeFlares(tod === 'golden') : [];
     flashes = []; bolt = null; nextBolt = performance.now() + 3000;
+    sea = buildSea();
   }
 
   // Lightning: a jagged main channel from the clouds to the ground with forking branches,
@@ -1426,6 +1628,7 @@ const Sky = (() => {
       else if (t > nextMeteor) meteor = newMeteor();
     }
     if (birds) updateBirds(dt, t);
+    if (sea && sea.pose === 'fish') fishingTick(dt);
     updateGlass(dt, t);
     for (const c of clouds) {
       c.x += c.v * gust * dt;
@@ -1499,6 +1702,7 @@ const Sky = (() => {
       for (const d of debris) g.fillRect(swirl.x + Math.cos(d.a) * d.r, swirl.y + Math.sin(d.a) * d.r, d.s, d.s * .6);
       g.globalAlpha = 1;
     }
+    if (sea) { g.globalAlpha = 1; drawSea(ts); }   // Ocean display style: below the sky, under the rain, snow and fog
     for (const f of flares) { g.fillStyle = f.gr; g.beginPath(); g.arc(f.x, f.y, f.r, 0, 7); g.fill(); }
     if (windLines.length) {   // faint streaks of wind
       g.strokeStyle = 'rgb(255,255,255)'; g.lineWidth = Math.max(1, 1.4 * Hd / 1080); g.lineCap = 'round';
@@ -1564,7 +1768,7 @@ const Sky = (() => {
   }
   function start() {
     cancelAnimationFrame(raf);
-    if (S.motion === 'off' || S.mirror === 'on') { draw(performance.now()); return; }   // mirror mode hides the sky, so don't animate it
+    if (S.motion === 'off' || S.display === 'mirror') { draw(performance.now()); return; }   // mirror mode hides the sky, so don't animate it
     last = performance.now(); raf = requestAnimationFrame(loop);
   }
 
@@ -1580,7 +1784,7 @@ const Sky = (() => {
 
   function set(kind, tod) {
     setBg(kind, tod);
-    const s = [kind, tod, Wd, Hd, S.motion, S.mirror].join('|');
+    const s = [kind, tod, Wd, Hd, S.motion, S.display].join('|');
     if (s === sig) return;
     sig = s; mode = { kind, tod }; sc = SCENES[kind] || SCENES.clear;
     build(); start();
@@ -1791,7 +1995,7 @@ function openSettings(msg) {
   pick = null;
   $('#locInput').value = S.name;
   $('#unitsSel').value = S.units; $('#clockSel').value = S.clock; $('#stationInput').value = S.tideStation;
-  $('#motionSel').value = S.motion; $('#sceneSel').value = S.scene; $('#todSel').value = S.tod; $('#mirrorSel').value = S.mirror;
+  $('#motionSel').value = S.motion; $('#sceneSel').value = S.scene; $('#todSel').value = S.tod; $('#displaySel').value = S.display;
   $('#alertSel').value = S.alertPreview; $('#soeSel').value = S.soePreview;
   box.innerHTML = msg ? `<div class="msg">${msg}</div>` : '';
   renderLog();
@@ -1876,7 +2080,7 @@ $('#setForm').addEventListener('submit', e => {
   if (pick) { S.name = pick.name; S.lat = pick.lat; S.lon = pick.lon; }
   if (S.lat == null) { toast('Search for a location and pick one first'); return; }
   S.units = $('#unitsSel').value; S.clock = $('#clockSel').value; S.tideStation = $('#stationInput').value.trim();
-  S.motion = $('#motionSel').value; S.scene = $('#sceneSel').value; S.tod = $('#todSel').value; S.mirror = $('#mirrorSel').value; applyMirror();
+  S.motion = $('#motionSel').value; S.scene = $('#sceneSel').value; S.tod = $('#todSel').value; S.display = $('#displaySel').value; applyMirror();
   S.alertPreview = $('#alertSel').value; S.soePreview = $('#soeSel').value;
   saveSettings(); closeSettings();
   // Settings are now the source of truth: drop preview options from the address so a reload can't bring them back.

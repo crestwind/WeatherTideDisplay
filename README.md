@@ -70,7 +70,10 @@ The first time it runs, the settings panel opens. Type your town or ZIP code, pi
 - **Units:** °F, mph and ft, or °C, km/h and metres.
 - **Clock:** 12-hour or 24-hour.
 - **Tide station:** leave it blank to use the nearest NOAA station, or enter a station ID.
-- **Display style:** **Normal** (animated sky) or **Smart mirror**: a black background so the mirror shows through, no animation, and clear boxes. On a tall mirror, everything shrinks to fit on one screen.
+- **Display style:**
+  - **Normal:** the animated sky.
+  - **Ocean:** the sky over open sea, with a small fishing boat riding the waves right of the temperature. The sea follows the weather (calm and glassy on nice days, choppy in rain and snow, big swells with whitecaps in storms) and the sky (blue by day, warm at sunrise and sunset, dark with moonlight at night), with a sparkling path of sun or moonlight. The fisherman fishes on nice days (every so often he gets a bite, reels in a fish and casts again), wears a yellow raincoat in rain, sits with a steaming mug in snow, holds his hat on in high wind, and holds on tight in heavy rain, thunderstorms and hurricanes. A lantern is lit at night and in fog.
+  - **Smart mirror:** a black background so the mirror shows through, no animation, and clear boxes. On a tall mirror, everything shrinks to fit on one screen.
 - **Background animation:** **Full**, **Light** (half the particles at 15 fps; use this if it stutters) or **Off** (a still picture).
 - **Background scene** and **Time of day:** preview any background. Set them back to **Match current weather** and **Match the sun** for normal use.
 - **Test alert notice** and **Test state of emergency:** preview the alert notices (see [Testing alerts](#testing-alerts)).
@@ -240,7 +243,7 @@ If the internet drops, the display keeps showing the last data it got and says i
 - **Previewing from the address bar:** you can add test options to the end of the page address:
   - `?scene=hurricane&tod=night` previews a background
   - `?alert=demo` turns on the alert tests, and `?soe=nj` (or `?soe=on` for FEMA) shows a test state of emergency
-  - `?mirror=on` turns on smart mirror mode, e.g. `https://tidalweather.com/?mirror=on&lat=38.935&lon=-74.906&name=Cape%20May`
+  - `?display=ocean` or `?display=mirror` picks the display style (old `?mirror=on` links still work)
   - `?lat=38.935&lon=-74.906&name=Cape%20May` sets a location
 
   Saving settings removes these again.
