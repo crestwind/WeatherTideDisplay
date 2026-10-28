@@ -2127,7 +2127,7 @@ const History = (() => {
         ${s.yrs.warm ? `<tr><td>Warmest / coolest year</td><td>${t(s.yrs.warm.temp)}<small>${s.yrs.warm.y}</small> · ${t(s.yrs.cool.temp)}<small>${s.yrs.cool.y}</small></td></tr>` : ''}
       </table></div>
     </div>
-    <p class="src">From Open-Meteo's historical weather data (the ERA5 reconstruction, about 25 km across), so figures can differ a little from official weather-station records. Data runs to ${mdy(s.end)}; it lags a few days behind.</p>`;
+    <p class="src">From Open-Meteo's historical weather data.</p>`;
   }
 
   async function load() {
