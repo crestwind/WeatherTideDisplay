@@ -21,6 +21,8 @@ concurrency:
 
 jobs:
   publish:
+    # The same files also go to the test site (crestwind/tidal-weather-test), which only publishes when pushed to
+    if: github.event_name != 'schedule' || github.repository == 'crestwind/WeatherTideDisplay'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -37,6 +39,14 @@ jobs:
           sh _site/nj-emergency.sh || echo "NJ check failed; publishing without it"
           rm _site/nj-emergency.sh
 
+      - name: Mark the test site
+        if: github.repository != 'crestwind/WeatherTideDisplay'
+        run: |
+          # keep it out of search engines, and show a small TEST SITE tag at the top
+          sed -i 's|<title>|<meta name="robots" content="noindex, nofollow">\n<title>|' _site/index.html
+          sed -i 's|</body>|<div style="position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99;background:#c0392b;color:#fff;font:600 12px sans-serif;letter-spacing:.08em;padding:2px 12px;border-radius:0 0 6px 6px">TEST SITE</div>\n</body>|' _site/index.html
+          grep -q 'name="robots"' _site/index.html && grep -q 'TEST SITE' _site/index.html
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -46,7 +56,7 @@ jobs:
 
       # GitHub pauses scheduled runs after 60 days without a commit, so add an empty one every 45 days
       - name: Keep the schedule alive
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' && github.repository == 'crestwind/WeatherTideDisplay'
         run: |
           if [ $(( $(date +%s) - $(git log -1 --format=%ct) )) -gt $(( 45 * 86400 )) ]; then
             git config user.name "github-actions[bot]"
