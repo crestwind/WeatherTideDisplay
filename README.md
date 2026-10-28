@@ -66,7 +66,7 @@ The first time it runs, the settings panel opens. Type your town or ZIP code, pi
 
 ### Settings
 
-- **Location:** a town, ZIP code or `lat,lon`.
+- **Location:** a town, ZIP code or `lat,lon`. You can add the state or country with or without a comma: "Cape May NJ", "Cape May, New Jersey", "Portland Maine" and "Paris France" all work.
 - **Units:** °F, mph and ft, or °C, km/h and metres.
 - **Clock:** 12-hour or 24-hour.
 - **Tide station:** leave it blank to use the nearest NOAA station, or enter a station ID.
