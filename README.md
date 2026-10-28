@@ -121,7 +121,7 @@ The background changes on its own to match the current weather, the time of day 
 
 It appears on clear, partly cloudy and windy nights.
 
-**Seagulls** fly across on clear and partly cloudy days: a single gull or a small group of up to five, every 20 seconds to a minute (the first within about 10 seconds). They flap with the odd glide, and they're white by day and dark silhouettes at sunrise and sunset.
+**Seagulls** fly across on clear and partly cloudy days: a single gull or a small group of up to five, every 20 seconds to a minute (the first within about 10 seconds). They flap with the odd glide, swoop gently up and down instead of flying straight, and tilt as they climb and dip. By day they're white with black wingtips; at sunrise and sunset they're dark silhouettes.
 
 &: the first within about half a minute of the scene starting, then every 30 seconds to 2 minutes at random.
 
