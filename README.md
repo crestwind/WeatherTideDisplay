@@ -44,7 +44,7 @@ A TV that already has the website open picks up the new version the next time th
 
 Settings (location, units and so on) are saved in the browser that shows the display. The TV's browser keeps its own settings, and uploading a new version never touches them. Clearing that browser's history or site data resets them.
 
-To set up a TV without typing in the settings panel, put the location in the address, e.g. `https://tidalweather.com/?lat=38.935&lon=-74.906&name=Cape%20May`. The display saves it the first time it opens.
+To set up a TV without typing in the settings panel, put the location in the address, e.g. `https://tidalweather.com/?lat=38.935&lon=-74.906&name=Cape%20May`. As long as the TV opens that address (bookmark it, or set it as the browser's home page), the location is always right, even if the browser's settings are cleared. To store it in the browser instead, open settings and press **Save**.
 
 ### Keeping the TV on
 
