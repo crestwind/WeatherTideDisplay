@@ -245,7 +245,7 @@
   .hist th { border-top: 0; font-size: .8rem; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
   .hist td:first-child, .hist th:first-child { text-align: left; color: var(--dim); }
   .hist td small { margin-left: .35rem; font-size: .8rem; color: var(--faint); }
-  .hist .src { margin-top: 1rem; font-size: .85rem; color: var(--faint); }
+  .more .src { margin-top: 1rem; font-size: .85rem; color: var(--faint); }
   .tidey { display: grid; grid-template-columns: 1.25fr 1fr; gap: 2.4rem; }
   .tidey h4 { font-size: 1.05rem; font-weight: 600; margin-bottom: .4rem; }
   .tidey .sum { font-size: 1rem; color: var(--dim); margin-bottom: .6rem; line-height: 1.5; }
@@ -330,9 +330,9 @@
   </section>
 
   <section class="right">
-    <div class="card"><h3>Hourly forecast</h3><div class="hours" id="hours"></div></div>
+    <div class="card"><h3>Hourly forecast <span>Open-Meteo</span></h3><div class="hours" id="hours"></div></div>
     <div class="card" id="tideCard"><h3>Tides <span id="tideSrc"></span></h3><div id="tideBody" style="display:flex;flex-direction:column;flex:1;min-height:0"></div></div>
-    <div class="card"><h3>7-day forecast</h3><div class="days" id="days"></div></div>
+    <div class="card"><h3>7-day forecast <span>Open-Meteo</span></h3><div class="days" id="days"></div></div>
   </section>
   <div class="more-hint" id="moreHint">▼ Radar &amp; history</div>
 </main>
@@ -731,7 +731,7 @@ function renderAlert() {
   let when;
   if (a.quake) when = [`${distTxt(a.km)} away`, `at ${dayTime(a.start)}`];
   else when = [isNaN(a.start) ? '' : (a.start > now ? 'Starts ' : 'Since ') + dayTime(a.start), isNaN(a.ends) ? '' : 'Until ' + dayTime(a.ends)];
-  const tags = [a.preview ? 'Preview' : '', list.length > 1 ? `${i + 1} of ${list.length} alerts` : ''].filter(Boolean);
+  const tags = [a.quake ? 'USGS' : 'weather.gov', a.preview ? 'Preview' : '', list.length > 1 ? `${i + 1} of ${list.length} alerts` : ''].filter(Boolean);
   const count = tags.length ? `<div class="cnt">${tags.join(' · ')}</div>` : '';
   box.hidden = false;
   box.className = 'notice alert ' + a.level;
@@ -749,7 +749,7 @@ function renderSoe() {
   const details = d.stateEo
     ? [esc(d.reason), esc(d.scope), d.effective ? 'effective ' + esc(d.effective) : ''].filter(Boolean).join(' · ')
     : `${esc(titleCase(d.title))} · ${DECL[d.type] || 'Emergency'} declared ${date}`;
-  const tags = [d.stateEo ? `Executive Order ${d.eo}` : '', d.preview ? 'Preview' : '', decls.length > 1 ? `+${decls.length - 1} more` : ''].filter(Boolean);
+  const tags = [d.stateEo ? `nj.gov · Executive Order ${d.eo}` : 'FEMA', d.preview ? 'Preview' : '', decls.length > 1 ? `+${decls.length - 1} more` : ''].filter(Boolean);
   el.innerHTML = `<svg viewBox="0 0 24 24"><path d="M5 21V3.5M5 4h12l-2.5 4L17 12H5" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>
     <div><div class="ev">${title}</div><div class="when">${details}</div>${tags.length ? `<div class="cnt">${tags.join(' · ')}</div>` : ''}</div>`;
 }
@@ -1911,7 +1911,7 @@ function render() {
   $('#place').textContent = S.name || 'Choose a location';
   const st = $('#status');
   if (!W) { st.textContent = S.lat == null ? 'Press S to open settings' : failed ? 'Can’t reach the weather service — retrying…' : 'Loading…'; st.className = 'status' + (failed ? ' warn' : ''); return; }
-  st.textContent = failed ? `Offline — showing data from ${fmtTime(lastOk)}` : `Updated ${fmtTime(lastOk)}`;
+  st.textContent = failed ? `Offline — showing data from ${fmtTime(lastOk)}` : `Updated ${fmtTime(lastOk)} · Open-Meteo`;
   st.className = 'status' + (failed ? ' warn' : '');
 
   const c = W.current, d = W.daily, h = W.hourly, now = Date.now(), nowS = now / 1000, day = isDayNow();
@@ -2610,7 +2610,8 @@ const TideYear = (() => {
         <h4>Highest predicted tides this year</h4><table>${lst(kings)}</table>
         <h4 style="margin-top:1rem">Lowest predicted tides this year</h4><table>${lst(minus)}</table>
         <div style="margin-top:1rem">${measured}</div></div>
-    </div>`;
+    </div>
+    <p class="src">From NOAA Tides &amp; Currents.</p>`;
   }
   return { show(on) { shown = on; if (on) load(); }, reset() { doneKey = ''; if (shown) load(); }, tidesLoaded() { if (shown) load(); } };
 })();
