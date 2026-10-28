@@ -1340,16 +1340,15 @@ const Sky = (() => {
       : sc.storm ? [[74, 88, 92], [16, 30, 34]] : sc.tone && sc.tone !== 'light' || kind === 'fog' ? [[122, 140, 152], [34, 56, 70]] : [[96, 156, 200], [14, 56, 96]];
     const top = Hd * (Hd > Wd ? .55 : .6), N = 8, dir = sc.cloudDir || 1;   // a little higher on tall screens, so the boat clears the tiles
     const layers = Array.from({ length: N }, (_, i) => {
-      // rough seas get shorter, busier waves rather than ever-bigger peaks (which looked like mountains)
-      const d = (i + .5) / N, lam = (40 + 420 * d) * sx * (rough > 2 ? 1.05 : 1 + .2 * rough);
-      return { d, y: top + (Hd * 1.02 - top) * Math.pow(d, 1.5), A: (1.2 + 15 * d) * sy * (rough > 2 ? 2 + .8 * (rough - 2) : rough), k: 2 * Math.PI / lam,
+      const d = (i + .5) / N, lam = (40 + 420 * d) * sx * (1 + .2 * rough);
+      return { d, y: top + (Hd * 1.02 - top) * Math.pow(d, 1.5), A: (1.2 + 15 * d) * sy * rough * (rough > 2 ? 1.7 : 1), k: 2 * Math.PI / lam,   // storms get much bigger swells
         w: (.6 + 1.2 * (1 - d)) * (.6 + .25 * rough) * dir, ph: [rnd(0, 6.3), rnd(0, 6.3), rnd(0, 6.3)],
         fill: `rgb(${mix(pal[0], pal[1], Math.pow(d, .9))})`, crest: `rgba(255,255,255,${(night ? .08 : .16) + .1 * d})`,
-        step: Math.max(3, lam / 28) };   // enough points that the curves stay smooth
+        step: Math.max(5, lam / 12) };
     });
     const portrait = Hd > Wd;
     const pose = sc.swirl || sc.storm || kind === 'heavy' ? 'hold' : sc.wind ? 'hat' : sc.snow ? 'mug' : 'fish';
-    return { top, layers, pal, rough, night, golden, lean: Math.min(.45, .15 + .1 * rough) * Math.sign(dir), boatLayer: 2,
+    return { top, layers, pal, rough, night, golden, sharp: 1 + rough * .35, boatLayer: 2,
       bx: Wd * (portrait ? .7 : .34), bs: Math.min(sy, Wd / 700) * (portrait ? 1 : 1.25),
       pose, coat: sc.rain ? 'rain' : sc.snow ? 'snow' : 'plain', lantern: night || kind === 'fog', snowy: !!sc.snow,
       tint: night ? 'rgba(10,18,40,.55)' : golden ? 'rgba(70,32,44,.5)' : sc.storm ? 'rgba(30,38,44,.35)' : sc.tone === 'dark' ? 'rgba(30,40,50,.2)' : null,
@@ -1357,12 +1356,9 @@ const Sky = (() => {
       sparks: Array.from({ length: 220 }, () => ({ f: Math.pow(Math.random(), 1.4), o: (Math.random() + Math.random() - 1) * .9, w: rnd(.4, 1.2), sp: rnd(1.5, 4), ph: rnd(0, 6.3) })) };
   }
   // height of a wave layer at x: three swells, the main one with sharper crests in rough seas
-  // Height of a wave layer at x. The main swell leans the way it travels (gentle back, steeper front face, like a real
-  // wave rather than a symmetrical peak), with a longer swell under it and, in rough seas, smaller chop on top.
   function waveY(L, x, t) {
-    const a = L.k * x - L.w * t + L.ph[0], s1 = Math.sin(a - sea.lean * Math.sin(a));   // squeezes the side facing the way it moves
-    const chop = sea.rough > 1.2 ? .1 * Math.sin(a * 2.3 + L.ph[1] * 2 - t * .8) : 0;   // gentle, so crests stay rounded
-    return L.y - L.A * (s1 + .4 * Math.sin(a * 1.7 + L.ph[1] - t * .3) + .5 * Math.sin(a * .55 + L.ph[2] + t * .2) + chop) / 2;
+    const a = L.k * x - L.w * t, s1 = Math.pow((1 + Math.sin(a + L.ph[0])) / 2, sea.sharp) * 2 - 1;
+    return L.y - L.A * (s1 + .45 * Math.sin(a * 1.7 + L.ph[1] - t * .3) + .6 * Math.sin(a * .55 + L.ph[2] + t * .2)) / 2;
   }
   function drawLayer(L, t) {
     g.beginPath(); g.moveTo(0, Hd);
@@ -1373,57 +1369,6 @@ const Sky = (() => {
     g.beginPath();
     for (let x = 0; x <= Wd + L.step; x += L.step) { const y = waveY(L, x, t); x ? g.lineTo(x, y) : g.moveTo(x, y); }
     g.stroke();
-    if (sea.rough >= 1.4 && L.d > .25) drawFoam(L, t);
-  }
-  // Whitecaps in rough seas: a band of foam riding each crest (following its curve, thickest at the top, tapering at
-  // the ends, with a ragged bubbly underside), plus a little spray off the tallest crests. The raggedness is tied to
-  // the wave's phase, so the foam travels with the wave instead of shimmering in place.
-  function drawFoam(L, t) {
-    const step = Math.max(2, L.step / 2), lift = L.A * .55, a = Math.min(.7, .25 + .1 * sea.rough), sy = Hd / 1080;
-    let run = [];
-    // one foam layer: top edge on the wave, ragged underside `depth` deep at the middle, tapering to the ends
-    const layer = (depth, alpha, wob) => {
-      const n = run.length;
-      g.beginPath();
-      run.forEach(([x, y], i) => i ? g.lineTo(x, y - .5) : g.moveTo(x, y - .5));
-      for (let i = n - 1; i >= 0; i--) {
-        const [x, y, ph] = run[i], u = i / (n - 1);
-        const rag = 1 - wob + wob * (.55 + .3 * Math.sin(ph * 11) + .15 * Math.sin(ph * 29 + 1.7));
-        const front = sea.lean >= 0 ? u : 1 - u;   // foam spills down the front of the wave, the way it's travelling
-        g.lineTo(x, y + L.A * depth * Math.pow(Math.sin(Math.PI * u), .8) * (.3 + 1.2 * front) * rag + sy);
-      }
-      g.closePath(); g.fillStyle = `rgba(255,255,255,${alpha})`; g.fill();
-    };
-    const cap = () => {
-      if (run.length > 3) {
-        layer(.5, a * .35, .7);    // soft see-through foam spreading down the face
-        layer(.22, a, .45);        // bright foam right on the crest
-        // lace: little bubbles scattered below the cap, moving with the wave
-        g.fillStyle = `rgba(255,255,255,${a * .55})`;
-        for (let i = 1; i < run.length - 1; i += 2) {
-          const [x, y, ph] = run[i], n = Math.sin(ph * 37.3) * .5 + .5, m = Math.sin(ph * 17.9 + 2) * .5 + .5;
-          if (n < .45) continue;
-          g.beginPath(); g.arc(x, y + L.A * (.35 + .5 * m), Math.max(.7, (.5 + 1.2 * n) * L.d * sy), 0, 7); g.fill();
-        }
-        // spray flicking up off the top of the crest
-        let top = run[0];
-        for (const p of run) if (p[1] < top[1]) top = p;
-        if (L.y - top[1] > L.A * .75) {
-          g.fillStyle = `rgba(255,255,255,${a * .8})`;
-          for (let k = 0; k < 5; k++) {
-            const s = Math.sin(top[2] * 5 + k * 2.1), r = (.6 + .5 * L.d) * sy * (1.4 - k * .15);
-            const up = (L.A * .25 + 4 * sy) * (.4 + .6 * Math.abs(Math.sin(t * 2.2 + k * 1.3 + top[2])));
-            g.beginPath(); g.arc(top[0] + s * L.A * .5, top[1] - up, Math.max(.8, r), 0, 7); g.fill();
-          }
-        }
-      }
-      run = [];
-    };
-    for (let x = -step; x <= Wd + step; x += step) {
-      const y = waveY(L, x, t);
-      if (L.y - y > lift) run.push([x, y, L.k * x - L.w * t]); else cap();
-    }
-    cap();
   }
   // a shimmering path of sun or moonlight on the water below it
   function drawGlint(t, y0, y1) {
