@@ -2112,7 +2112,8 @@ const REGION_ABBR = {
 function placeIs(x, where) {
   const w = where.toLowerCase().replace(/\./g, '').trim(), full = (REGION_ABBR[w.toUpperCase()] || '').toLowerCase();
   const region = (x.admin1 || '').toLowerCase(), country = (x.country || '').toLowerCase(), code = (x.country_code || '').toLowerCase();
-  return region === w || region === full || country === w || code === w || (w.length >= 4 && (region.startsWith(w) || country.startsWith(w)))
+  // the start of a name counts too, so the list doesn't empty while someone is still typing ("Cape May N", "Cape May New J")
+  return (full && region === full) || code === w || region.startsWith(w) || country.startsWith(w)
     || (['usa', 'us', 'united states', 'america'].includes(w) && code === 'us');
 }
 
@@ -2135,12 +2136,17 @@ async function search(q) {
       found = where ? all.filter(x => placeIs(x, where)) : all;
       if (!found.length) found = all;
     } else {
-      found = await find(q);
-      for (let k = 1; !found.length && k <= 3 && k < words.length; k++) {
-        const where = words.slice(-k).join(' ');
-        found =(await find(words.slice(0, -k).join(' '))).filter(x => placeIs(x, where));
-      }
+      // Search the whole text, and also the town with its last word or two read as a state or country (those matches
+      // come first). The place finder guesses on its own too ("Cape May N" -> "Cape May National Wildlife Refuge").
+      const tries = [];
+      for (let k = 1; k <= 2 && k < words.length; k++) tries.push([words.slice(0, -k).join(' '), words.slice(-k).join(' ')]);
+      const [whole, ...towns] = await Promise.all([find(q), ...tries.map(([name]) => find(name))]);
+      const matched = towns.flatMap((all, i) => all.filter(x => placeIs(x, tries[i][1])));
+      const exact = whole.filter(x => x.name.toLowerCase() === q.toLowerCase());   // a place with exactly this name always comes first
+      found = [...exact, ...matched, ...whole];
+      if (!found.length && towns.length) found = towns[0];   // nothing matched: show the town anyway rather than "not found"
     }
+    found = found.filter((x, i) => found.findIndex(y => y.id === x.id) === i);   // the same place can come up twice
     if (seq !== searchSeq) return [];
     const res = found.slice(0, 8).map(x => ({
       name: [x.name, x.admin1 !== x.name ? x.admin1 : '', x.country_code === 'US' ? '' : x.country].filter(Boolean).join(', '),
