@@ -102,6 +102,11 @@ Built the display, the animated backgrounds, alerts (NWS, USGS, FEMA, NJ), the a
 
 ## Ideas not done yet
 
+- **Planned with the user (2026-10-28), for when they're free:**
+  - **Feedback form in settings (option 2):** a message box (message, optional reply email) that posts to a Cloudflare Worker, which forwards it to the user's Gmail through Cloudflare Email Routing's send-email binding. Nothing stored; spam check and length limit. Needs: Email Routing turned on for tidalweather.com (feedback@tidalweather.com forwarding to Gmail, with the Gmail verified) and a Cloudflare API token for Workers, which the user will create and paste. Add the Worker's URL to the page's `connect-src`.
+  - **Own visitor counter (new vs returning)** on the same Worker with KV: the page keeps only a "first seen" date in localStorage and pings new/returning at most once per device per day; the Worker stores only daily totals. Private stats page behind a secret key.
+  - **Cloudflare Web Analytics:** waiting for the user's JS-snippet token. Add the snippet in the workflow for the main site only, and allow `static.cloudflareinsights.com` (script) and `cloudflareinsights.com` (connect) in the CSP.
+  - **Offered, not decided:** an Add-to-Home-Screen app icon (web app manifest, apple-touch-icon, standalone), and a Scriptable widget for iPhone/iPad (temperature, conditions, high/low, rain chance, next tides).
 - More ocean touches: a jumping fish or dolphins on nice days, a lighthouse beam at night.
 - A real live-radar frame (for example RainViewer) before the forecast frames, if a free source with no key is available.
 - State emergency readers for states other than NJ. Each state publishes differently.
