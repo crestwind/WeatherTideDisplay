@@ -135,6 +135,7 @@
   .tide-sum { font-size: 1.25rem; }
   .tide-sum b { font-weight: 600; }
   .tide-sum .dim { color: var(--dim); }
+  #tideCard { overflow: hidden; }   /* the curve runs an hour past each edge; keep it inside the box */
   .chart { flex: 1; min-height: 8rem; position: relative; margin: .4rem 0; }
   .chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
   .tide-marks { position: relative; height: 3.8rem; }
@@ -187,6 +188,36 @@
     padding: .6rem 1.2rem; border-radius: .8rem; font-size: 1.05rem; opacity: 0; transition: opacity .3s; z-index: 20; pointer-events: none;
   }
   #toast.on { opacity: 1; }
+
+  /* ---------- tall screens (phones held upright, portrait mirrors): one column ---------- */
+  @media (max-aspect-ratio: 1/1) {
+    html { font-size: min(3.6vw, 2.2vh); }
+    body { height: auto; min-height: 100vh; overflow-x: hidden; overflow-y: auto; }
+    #app { position: relative; inset: auto; min-height: 100vh; display: flex; flex-direction: column; gap: 1.1rem; padding: 1.6rem 1.2rem 5rem; }
+    .top { flex-direction: column; gap: 1rem; }
+    .notice { flex: none; }
+    .spacer { display: none; }
+    .place { margin-top: .4rem; }
+    .stats { margin-top: 1.2rem; }
+    .right { display: flex; flex-direction: column; gap: 1.1rem; }
+    .hours { grid-template-columns: repeat(12, minmax(4.4rem, 1fr)); overflow-x: auto; scrollbar-width: none; }   /* swipe sideways for later hours */
+    .hours::-webkit-scrollbar { display: none; }
+    .chart { flex: none; height: 10rem; }
+    .day { grid-template-columns: 4rem 2.2rem 3.8rem 2.8rem 1fr 2.8rem; gap: .5rem; }
+  }
+  /* narrow phones: tiles two across */
+  @media (max-aspect-ratio: 1/1) and (max-width: 600px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ---------- smart mirror mode: black background (the mirror shows through black), no animation, no tinted boxes ---------- */
+  .mirror body, .mirror { background: #000; }
+  .mirror .bg, .mirror #sky, .mirror #shade, .mirror #glass { display: none; }
+  .mirror #app { text-shadow: none; }
+  .mirror .card, .mirror .tile { background: transparent; border-color: rgba(255,255,255,.18); }
+
+  /* a portrait mirror can't scroll: everything shows on one screen (fitMirror shrinks the text to fit) and the hours don't need swiping */
+  @media (max-aspect-ratio: 1/1) { .mirror body { overflow-y: hidden; } .mirror #app { padding-bottom: 1.6rem; min-height: 0; } .mirror .hours { grid-template-columns: repeat(12, 1fr); overflow: visible; } }
 </style>
 </head>
 <body>
@@ -250,6 +281,9 @@
         <select id="motionSel"><option value="full">Full (30 fps)</option><option value="light">Light (15 fps, fewer particles)</option><option value="off">Off (still image)</option></select>
       </label>
     </div>
+    <label>Display style
+      <select id="mirrorSel"><option value="off">Normal (animated sky)</option><option value="on">Smart mirror (black background, no animation)</option></select>
+    </label>
     <div class="row">
       <label>Background scene
         <select id="sceneSel">
@@ -301,7 +335,7 @@ const $ = s => document.querySelector(s);
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 /* ======================= settings ======================= */
-const DEFAULTS = { name: '', lat: null, lon: null, units: 'imperial', clock: '12', tideStation: '', motion: 'full', scene: 'auto', tod: 'auto', alertPreview: '', soePreview: '' };
+const DEFAULTS = { name: '', lat: null, lon: null, units: 'imperial', clock: '12', tideStation: '', motion: 'full', scene: 'auto', tod: 'auto', alertPreview: '', soePreview: '', mirror: 'off' };
 let S = loadSettings();
 function loadSettings() {
   let s = { ...DEFAULTS };
@@ -309,13 +343,27 @@ function loadSettings() {
   // URL parameters win, e.g. index.html?lat=38.93&lon=-74.91&name=Cape%20May
   const q = new URLSearchParams(location.search);
   if (q.has('lat') && q.has('lon')) { s.lat = +q.get('lat'); s.lon = +q.get('lon'); s.name = q.get('name') || s.name || `${s.lat}, ${s.lon}`; }
-  for (const k of ['units', 'scene', 'tod', 'motion']) if (q.has(k)) s[k] = q.get(k);
+  for (const k of ['units', 'scene', 'tod', 'motion', 'mirror']) if (q.has(k)) s[k] = q.get(k);
   // ?alert=demo or ?alert=<alert name> just pre-fills the test options; settings take over from there
   if (q.has('alert')) { s.alertPreview = q.get('alert'); if (s.alertPreview === 'demo') s.soePreview = 'on'; }
   if (q.has('soe')) s.soePreview = q.get('soe');
   return s;
 }
 function saveSettings() { try { localStorage.setItem('wt-settings', JSON.stringify(S)); } catch (e) {} }
+// Smart mirror mode is a class on <html>, so it can also change the text size (rem).
+function applyMirror() { document.documentElement.classList.toggle('mirror', S.mirror === 'on'); }
+// On a tall mirror (which can't scroll), shrink the text until everything fits on the screen, then redraw the tide chart at the new size.
+function fitMirror() {
+  const html = document.documentElement;
+  if (!html.classList.contains('mirror') || !matchMedia('(max-aspect-ratio: 1/1)').matches) { if (html.style.fontSize) { html.style.fontSize = ''; renderTide(); } return; }
+  const was = html.style.fontSize; html.style.fontSize = '';
+  const base = parseFloat(getComputedStyle(html).fontSize), app = $('#app'), h = app.scrollHeight;
+  let fit = h > innerHeight ? base * innerHeight / h : 0;
+  if (fit) { html.style.fontSize = fit + 'px'; fit *= innerHeight / app.scrollHeight * .99; }   // a second pass, since text wraps differently once smaller
+  fit = fit ? fit + 'px' : '';
+  html.style.fontSize = fit;
+  if (fit || was) renderTide();
+}
 
 /* ======================= data ======================= */
 let W = null;    // Open-Meteo forecast
@@ -1382,7 +1430,7 @@ const Sky = (() => {
   }
   function start() {
     cancelAnimationFrame(raf);
-    if (S.motion === 'off') { draw(performance.now()); return; }
+    if (S.motion === 'off' || S.mirror === 'on') { draw(performance.now()); return; }   // mirror mode hides the sky, so don't animate it
     last = performance.now(); raf = requestAnimationFrame(loop);
   }
 
@@ -1398,7 +1446,7 @@ const Sky = (() => {
 
   function set(kind, tod) {
     setBg(kind, tod);
-    const s = [kind, tod, Wd, Hd, S.motion].join('|');
+    const s = [kind, tod, Wd, Hd, S.motion, S.mirror].join('|');
     if (s === sig) return;
     sig = s; mode = { kind, tod }; sc = SCENES[kind] || SCENES.clear;
     build(); start();
@@ -1526,6 +1574,7 @@ function render() {
   $('#stats').innerHTML = tiles.map(([k, v, s]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div>${s ? `<div class="s">${s}</div>` : ''}</div>`).join('');
 
   renderTide();
+  fitMirror();
 }
 
 function smoothPath(p) {
@@ -1540,7 +1589,8 @@ function smoothPath(p) {
 function renderTide() {
   const body = $('#tideBody');
   $('#tideSrc').textContent = T ? T.source : '';
-  const now = Date.now(), t0 = now - 6 * 3600e3, t1 = now + 24 * 3600e3;
+  const tall = matchMedia('(max-aspect-ratio: 1/1)').matches;   // tall screens show a shorter span so the labels have room
+  const now = Date.now(), t0 = now - (tall ? 3 : 6) * 3600e3, t1 = now + (tall ? 15 : 24) * 3600e3;
   const pts = T ? T.pts.filter(p => p.t >= t0 - 3600e3 && p.t <= t1 + 3600e3) : [];
   if (pts.length < 4) { body.innerHTML = `<div class="empty">${S.lat == null ? '' : tideMsg}</div>`; return; }
 
@@ -1607,7 +1657,7 @@ function openSettings(msg) {
   pick = null;
   $('#locInput').value = S.name;
   $('#unitsSel').value = S.units; $('#clockSel').value = S.clock; $('#stationInput').value = S.tideStation;
-  $('#motionSel').value = S.motion; $('#sceneSel').value = S.scene; $('#todSel').value = S.tod;
+  $('#motionSel').value = S.motion; $('#sceneSel').value = S.scene; $('#todSel').value = S.tod; $('#mirrorSel').value = S.mirror;
   $('#alertSel').value = S.alertPreview; $('#soeSel').value = S.soePreview;
   box.innerHTML = msg ? `<div class="msg">${msg}</div>` : '';
   renderLog();
@@ -1692,7 +1742,7 @@ $('#setForm').addEventListener('submit', e => {
   if (pick) { S.name = pick.name; S.lat = pick.lat; S.lon = pick.lon; }
   if (S.lat == null) { toast('Search for a location and pick one first'); return; }
   S.units = $('#unitsSel').value; S.clock = $('#clockSel').value; S.tideStation = $('#stationInput').value.trim();
-  S.motion = $('#motionSel').value; S.scene = $('#sceneSel').value; S.tod = $('#todSel').value;
+  S.motion = $('#motionSel').value; S.scene = $('#sceneSel').value; S.tod = $('#todSel').value; S.mirror = $('#mirrorSel').value; applyMirror();
   S.alertPreview = $('#alertSel').value; S.soePreview = $('#soeSel').value;
   saveSettings(); closeSettings();
   // Settings are now the source of truth: drop preview options from the address so a reload can't bring them back.
@@ -1732,6 +1782,7 @@ function wake() { document.body.classList.remove('idle'); clearTimeout(idleT); i
 let resizeT = 0;
 addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { Sky.resize(); render(); }, 200); });
 
+applyMirror();
 Sky.resize();
 applyScene();
 tick(); render(); wake();

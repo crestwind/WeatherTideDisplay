@@ -20,6 +20,9 @@ Notes for picking this project back up later. `README.md` is the user manual; th
 - **Test copy:** `preview.bat` opens `index.html` in Chrome (or Edge) with its own profile in `%LOCALAPPDATA%\TidalWeather-preview`, after running `nj-emergency.sh` with Git for Windows' `sh.exe` so the NJ data is fresh. `nj-emergency.js` and `version.js` are git-ignored.
 - **Settings** live in `localStorage`, per browser. URL parameters (`lat`, `lon`, `name`, …) pre-fill settings, which is handy for setting up the TV.
 - **Branding:** the user's logo (`Downloads/Gemini_Generated_Image_4bj1jf4bj1jf4bj1.jfif`: a wave with a compass rose over the words TIDAL WEATHER) sits above the clock as `logo.png` (`.logo`, 14.5rem wide, about the most that fits; 17rem pushed the tiles off a 1080p screen). It was cut out of its white background, with the wave recoloured ocean blue (#4aa8f0) and the words white so it shows on the dark sky. The app icon (`icon.png` 256 px, `icon.ico` with 16–256 px PNG frames) was made from the user's Gemini image `Downloads\Gemini_Generated_Image_etvqd3etvqd3etvq.jfif`: cropped and placed on a white rounded tile.
+- **Tall screens** (`@media (max-aspect-ratio: 1/1)`: upright phones, tablets, portrait mirrors) get a one-column, scrolling layout. rem becomes `min(3.6vw, 2.2vh)`, the hours scroll sideways, the tiles go two across under 600px wide, and `renderTide` shows 3h back to 15h ahead instead of 6h back to 24h ahead.
+- **Smart mirror mode** (`S.mirror`, `?mirror=on`, the "Display style" setting) puts a `mirror` class on `<html>`. It hides the sky, shade and glass canvases, stops the Sky animation, and makes the cards transparent on black. On a tall mirror, which can't scroll, `fitMirror()` (run at the end of `render()`) shrinks the root font size in two passes until `#app` fits the screen, then redraws the tide chart.
+- **Notices:** the weather alert and the state of emergency are two same-size boxes (`.notice`) in `.notices` beside the logo and clock, each half the column height, so they never push the layout down.
 - **Two canvases:**
   - `#sky`, behind the UI: the background scenes.
   - `#glass`, above the UI with `pointer-events: none`: rain and snow drops on the screen, and stuck leaves.
@@ -46,6 +49,7 @@ Notes for picking this project back up later. `README.md` is the user manual; th
 ## Traps we hit (read before editing)
 
 1. **Line endings.** `.gitattributes` keeps `.sh` as LF (CRLF breaks it on GitHub's Linux runner) and `.bat` as CRLF. Git Bash `sed -i` silently turns CRLF files into LF, so after editing `preview.bat` with sed, restore CRLF with PowerShell: `[IO.File]::WriteAllText($f, ([IO.File]::ReadAllText($f) -replace "`r?`n","`r`n"), (New-Object Text.UTF8Encoding($false)))`.
+2. **Headless Chrome window width.** Headless Chrome won't make a window narrower than about 485px, so a 390px "phone" screenshot is really a cropped 485px layout. To test phone widths, load the page in iframes of the exact size on a scratch HTML page and screenshot that.
 2. **Headless Chrome timing.** In `--headless --virtual-time-budget` screenshots, `requestAnimationFrame` timestamps don't line up with `performance.now()`, so anything scheduled that way (lightning, leaf slaps, shooting stars) usually doesn't show up. To check one visually, make a scratch copy with sed that forces it on (e.g. `nextSlap = 1e12; stuck = [newStuck()]`).
 3. **NWS and FEMA date quirks.** Open-Meteo daily timestamps are local midnight with a fixed UTC offset, so across a daylight-saving change the weekday shifted. The code adds 12 hours before formatting. FEMA's `declarationDate` is midnight UTC, so it's formatted with `timeZone: 'UTC'`.
 4. **GitHub sign-in.** `gh auth login` typed by the user with `!` didn't save a login. Running `echo "" | gh auth login --web …` in the background and giving the user the one-time code worked. Pushing a workflow file needs the `workflow` scope (`gh auth refresh -s workflow`).
@@ -77,6 +81,7 @@ Built the display, the animated backgrounds, alerts (NWS, USGS, FEMA, NJ), the a
 - Added the user's Tidal Weather logo above the clock, the page title, a browser-tab icon, and the user's wave picture as the app icon.
 - Removed the flash drive, Seneca and Windows-launcher files; added `preview.bat` and the desktop shortcut **Tidal Weather (test copy)**.
 - Rewrote the README for the website.
+- Added today's rain/snow chance next to the high and low, shrank the clock and temperature, moved the alert and state-of-emergency notices to two same-size boxes at the top, and added the tall-screen layout and smart mirror mode.
 
 **Where we left off:** not yet published. Still to do, after the user finishes their edits and explicitly OKs it:
 1. Create the public repo, push, and set Pages to build from GitHub Actions (`gh api -X POST repos/crestwind/WeatherTideDisplay/pages -f build_type=workflow`).
