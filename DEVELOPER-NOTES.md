@@ -87,9 +87,13 @@ Built the display, the animated backgrounds, alerts (NWS, USGS, FEMA, NJ), the a
 - **Security check:** no secrets or personal email anywhere in the history; a Content-Security-Policy meta tag limits the page to its own files and the seven API hosts (tested: everything still loads); `<meta name="referrer" content="no-referrer">`; the picked place name in settings is now escaped; Actions limited to GitHub-owned actions; workflow token defaults to read; secret scanning and push protection are on. Personal details were removed from these notes (they remain in the earlier commits).
 - **The user does not want the work location in the TV link.** The TV just opens `tidalweather.com` and the location is set once in settings.
 
-**Where we left off:** waiting for GitHub to issue the HTTPS certificate, then turn on Enforce HTTPS (`gh api -X PUT repos/crestwind/WeatherTideDisplay/pages -F https_enforced=true`). Recommended to the user: two-factor sign-in on GitHub and Cloudflare, and verifying tidalweather.com in GitHub's account settings (Settings → Pages → Add a domain, then a TXT record in Cloudflare) to protect against domain takeover.
+**Where we left off:** live at https://tidalweather.com with Enforce HTTPS on. The certificate stalled for 30+ minutes although the Pages health check said "eligible"; removing and re-adding the custom domain (`-F cname=null`, then `-f cname=tidalweather.com`) got it issued within seconds. The user turned on two-factor sign-in for GitHub and Cloudflare. The domain verification in GitHub account settings was started on 2026-10-28; GitHub can take up to 24 hours, so the user clicks **Verify** again the next day.
+
+**Next, in the user's order:** (1) a weather radar, (2) weather history, then (3) the "ocean" display style below.
 
 ## Ideas not done yet
 
+- **Third display style, "ocean" (requested 2026-10-28, after radar and history):** the background is the sea with a boat floating on it, animated to match the weather. A fisherman fishes in nice weather, holds on tight in wind, and so on, and the waves change with the weather too (calm, choppy, storm swell). It would sit alongside Normal and Smart mirror in the Display style setting.
+- **Weather radar** and **weather history**: the user's next requests, not designed yet.
 - State emergency readers for states other than NJ. Each state publishes differently.
 
