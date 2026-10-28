@@ -49,28 +49,24 @@
   .date { font-size: 1.45rem; color: var(--dim); margin-top: .5rem; }
   .spacer { flex: 1; }
 
-  /* weather alert notice beside the clock */
-  .top { display: flex; align-items: center; gap: 1.6rem; }
-  .alert {
-    flex: 1; min-width: 0; display: flex; align-items: center; gap: 1rem; padding: .9rem 1.2rem;
+  /* Notices beside the logo and clock: the weather alert on top, the state of emergency under it.
+     Both are half the column's height, so they never push the rest of the screen down. */
+  .top { display: flex; align-items: stretch; gap: 1.6rem; }
+  .notices { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1rem; }
+  .notice {
+    flex: 0 0 calc(50% - .5rem); min-height: 0; overflow: hidden; display: flex; align-items: center; gap: 1rem; padding: .75rem 1.1rem;
     border-radius: 1.2rem; border: 2px solid; text-shadow: 0 1px 4px rgba(0,0,0,.3);
   }
-  .alert[hidden] { display: none; }
+  .notice[hidden] { display: none; }
   .alert.warning { background: rgba(196,28,40,.88); border-color: #ff7070; animation: alertGlow 2.4s ease-in-out infinite; }
   .alert.watch { background: rgba(206,104,16,.88); border-color: #ffb057; }
   .alert.advisory { background: rgba(176,136,10,.88); border-color: #ffd95a; }
-  .alert svg { width: 3.2rem; height: 3.2rem; flex: none; }
-  .alert .ev { font-size: 1.75rem; font-weight: 700; line-height: 1.1; }
-  .alert .when { font-size: 1.05rem; margin-top: .3rem; opacity: .92; }
-  .alert .cnt { font-size: .85rem; margin-top: .2rem; opacity: .75; text-transform: uppercase; letter-spacing: .06em; }
+  .soe { background: rgba(120,20,40,.88); border-color: #ff8a9a; }
+  .notice svg { width: 2.8rem; height: 2.8rem; flex: none; }
+  .notice .ev { font-size: 1.38rem; font-weight: 700; line-height: 1.1; }
+  .notice .when { font-size: 1rem; line-height: 1.25; margin-top: .3rem; opacity: .92; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .notice .cnt { font-size: .8rem; margin-top: .2rem; opacity: .75; text-transform: uppercase; letter-spacing: .06em; }
   @keyframes alertGlow { 50% { box-shadow: 0 0 2.4rem rgba(255,70,70,.6); } }
-  .soe {
-    display: flex; align-items: center; gap: .6rem; margin-top: 1rem; padding: .55rem 1rem; font-size: 1.15rem;
-    background: rgba(120,20,40,.88); border: 1px solid #ff8a9a; border-radius: .8rem; text-shadow: none;
-  }
-  .soe[hidden] { display: none; }
-  .soe svg { width: 1.4rem; height: 1.4rem; flex: none; }
-  .soe b { text-transform: uppercase; letter-spacing: .06em; }
 
   .logbox { margin: .2rem 0 1rem; border: 1px solid rgba(255,255,255,.22); border-radius: .6rem; padding: .6rem .8rem; }
   .logbox summary { cursor: pointer; font-size: 1rem; color: var(--dim); }
@@ -203,9 +199,11 @@
   <section class="left">
     <div class="top">
       <div><img class="logo" src="logo.png" alt="Tidal Weather"><div class="clock" id="clock">--:--</div><div class="date" id="date"></div></div>
-      <div class="alert" id="alert" hidden></div>
+      <div class="notices">
+        <div class="notice alert" id="alert" hidden></div>
+        <div class="notice soe" id="soe" hidden></div>
+      </div>
     </div>
-    <div class="soe" id="soe" hidden></div>
     <div class="spacer"></div>
     <div class="place" id="place">Weather &amp; Tides</div>
     <div class="status" id="status">Loading…</div>
@@ -314,6 +312,7 @@ function loadSettings() {
   for (const k of ['units', 'scene', 'tod', 'motion']) if (q.has(k)) s[k] = q.get(k);
   // ?alert=demo or ?alert=<alert name> just pre-fills the test options; settings take over from there
   if (q.has('alert')) { s.alertPreview = q.get('alert'); if (s.alertPreview === 'demo') s.soePreview = 'on'; }
+  if (q.has('soe')) s.soePreview = q.get('soe');
   return s;
 }
 function saveSettings() { try { localStorage.setItem('wt-settings', JSON.stringify(S)); } catch (e) {} }
@@ -569,22 +568,24 @@ function renderAlert() {
   const tags = [a.preview ? 'Preview' : '', list.length > 1 ? `${i + 1} of ${list.length} alerts` : ''].filter(Boolean);
   const count = tags.length ? `<div class="cnt">${tags.join(' · ')}</div>` : '';
   box.hidden = false;
-  box.className = 'alert ' + a.level;
+  box.className = 'notice alert ' + a.level;
   box.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 2.5 1.5 21h21z" fill="#fff"/><path d="M12 9v5.5" stroke="${ALERT_INK[a.level]}" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.4" fill="${ALERT_INK[a.level]}"/></svg>
     <div><div class="ev">${esc(a.event)}</div><div class="when">${when.filter(Boolean).join(' · ')}</div>${count}</div>`;
 }
 
-// State of emergency banner under the date and time.
+// State of emergency notice, the same size as the weather alert and right under it.
 function renderSoe() {
   const el = $('#soe');
   if (!decls.length) { el.hidden = true; return; }
   const d = decls[0], date = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(d.date);
   el.hidden = false;
-  const body = d.stateEo
-    ? `<b>${d.state} State of Emergency</b> · ${esc([d.reason, d.scope].filter(Boolean).join(' · '))} · Executive Order ${d.eo}${d.effective ? ' · effective ' + esc(d.effective) : ''}`
-    : `<b>State of Emergency</b> · ${esc(titleCase(d.title))} · ${DECL[d.type] || 'Emergency'} declared ${date}`;
+  const title = d.stateEo ? `${d.state} State of Emergency` : 'State of Emergency';
+  const details = d.stateEo
+    ? [esc(d.reason), esc(d.scope), d.effective ? 'effective ' + esc(d.effective) : ''].filter(Boolean).join(' · ')
+    : `${esc(titleCase(d.title))} · ${DECL[d.type] || 'Emergency'} declared ${date}`;
+  const tags = [d.stateEo ? `Executive Order ${d.eo}` : '', d.preview ? 'Preview' : '', decls.length > 1 ? `+${decls.length - 1} more` : ''].filter(Boolean);
   el.innerHTML = `<svg viewBox="0 0 24 24"><path d="M5 21V3.5M5 4h12l-2.5 4L17 12H5" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>
-    <span>${body}${decls.length > 1 ? ` · +${decls.length - 1} more` : ''}${d.preview ? ' · <em>Preview</em>' : ''}</span>`;
+    <div><div class="ev">${title}</div><div class="when">${details}</div>${tags.length ? `<div class="cnt">${tags.join(' · ')}</div>` : ''}</div>`;
 }
 
 // Alert history: every notice shown is kept for 30 days after it was last active, viewable in settings.

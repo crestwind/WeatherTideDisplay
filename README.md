@@ -78,7 +78,7 @@ The first time it runs, the settings panel opens. Type your town or ZIP code, pi
 ## What's on screen
 
 - **Left side:**
-  - the clock and date, with any alert notice beside them and any state of emergency banner below
+  - the logo, clock and date, with two notice boxes beside them: the weather alert on top and the state of emergency right under it (they never push the rest of the screen down)
   - the location and current temperature
   - the conditions (with "· Windy" added in strong wind), today's high and low, and today's chance of rain (blue, with a raindrop; white with a snowflake on a snowy day)
   - expected rain or snow for today
@@ -164,7 +164,7 @@ It's yellow under magnitude 5, orange from 5 to 6, and red at 6 or more. These a
 
 ### State of emergency banner
 
-The banner sits under the date and time.
+The state of emergency box sits beside the clock, right under the weather alert box and the same size. If there's no weather alert, it moves up into the top spot.
 
 - **New Jersey state declarations:** emergencies declared by the governor's Executive Orders on nj.gov.
   - **How they're read:** a web page isn't allowed to read nj.gov directly, so `nj-emergency.sh` reads it on GitHub and publishes the result with the website.
@@ -220,7 +220,7 @@ If the internet drops, the display keeps showing the last data it got and says i
 - **The NJ banner never appears:** that's normal when there's no active NJ weather or safety emergency. To check the NJ check is working, open `https://tidalweather.com/nj-emergency.js`. Its `"checked"` time (in UTC) should be within the last hour.
 - **Previewing from the address bar:** you can add test options to the end of the page address:
   - `?scene=hurricane&tod=night` previews a background
-  - `?alert=demo` turns on the alert tests
+  - `?alert=demo` turns on the alert tests, and `?soe=nj` (or `?soe=on` for FEMA) shows a test state of emergency
   - `?lat=38.935&lon=-74.906&name=Cape%20May` sets a location
 
   Saving settings removes these again.
