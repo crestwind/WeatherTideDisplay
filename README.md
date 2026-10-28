@@ -101,7 +101,7 @@ On a wide screen (TV, PC, laptop, phone turned sideways), the display is two col
 
 ## Below the main screen: forecast map and weather history
 
-Scroll down (mouse wheel, or swipe on a phone) to see two more sections. On a PC, a small **▼ Radar & history** button at the bottom of the screen jumps there when you move the mouse. The TV never needs to scroll: these sections only download anything when someone scrolls to them. They're hidden in smart mirror mode, since a mirror can't scroll.
+Scroll down (mouse wheel, or swipe on a phone) to see three more sections. On a PC, a small **▼ Radar & history** button at the bottom of the screen jumps there when you move the mouse. The TV never needs to scroll: these sections only download anything when someone scrolls to them. They're hidden in smart mirror mode, since a mirror can't scroll.
 
 - **Rain & snow forecast, next 24 hours:** a dark map of the area around your location (the white dot), with forecast rain (green → yellow → orange → red → purple as it gets heavier) and snow (blue → white). It starts paused on the current time. **Click or tap the map** (or the play button) to play through the next 24 hours in 15-minute steps, and again to stop. The slider jumps to a particular time. The map is fixed: no zooming or dragging. This is a **forecast model**, not live radar, so it shows where rain and snow are *expected*.
 - **Weather history** for your location, back to 1940:
@@ -110,6 +110,9 @@ Scroll down (mouse wheel, or swipe on a phone) to see two more sections. On a PC
   - **All-time records:** hottest and coldest days, wettest and snowiest days, strongest gust, wettest and driest years, warmest and coolest years.
 
   The history comes from a weather-model reconstruction (ERA5) about 25 km across, so it can differ a little from official weather-station records, and it runs a few days behind. It's downloaded at most once a day per device and saved. The free service limits how much history can be downloaded per hour; if it's busy, the section says so and tries again in 15 minutes.
+- **Tides this month and this year** (coastal locations with a NOAA tide station):
+  - **This month:** every day's high and low tides with times and heights (today highlighted, past days dimmed), the month's highest and lowest tide, and the full and new moons (marked ● and ○), when tides run strongest.
+  - **This year:** a chart of each month's highest and lowest tide, the five highest and three lowest predicted tides of the year, and the highest and lowest water actually measured so far this year at the nearest NOAA gauge. NOAA publishes checked measurements about a month late, so that part runs a few weeks behind.
 
 ## Backgrounds
 
@@ -138,7 +141,7 @@ It appears on clear, partly cloudy and windy nights.
 
 **Seagulls** fly across on clear and partly cloudy days: a single gull or a small group of up to five, every 20 seconds to a minute (the first within about 10 seconds). They flap with the odd glide, swoop gently up and down instead of flying straight, and tilt as they climb and dip. By day they're white with black wingtips; at sunrise and sunset they're dark silhouettes.
 
-&: the first within about half a minute of the scene starting, then every 30 seconds to 2 minutes at random.
+**Shooting stars** appear on clear nights only: the first within about half a minute of the scene starting, then every 30 seconds to 2 minutes at random.
 
 The **high wind** scene comes on with sustained winds of 25 mph or more, gusts of 40 mph or more, or a High Wind Warning. Rain, snow, thunderstorm and fog scenes take priority over it.
 
@@ -218,7 +221,7 @@ All of these are free and need no API keys.
 - **Tides:** NOAA tide predictions from the nearest station within about 37 miles. Elsewhere the display uses Open-Meteo's ocean model, which is approximate.
 - **Forecast map:** Open-Meteo's 15-minute forecast for a grid of points, on Esri's dark grey map (© Esri, HERE, Garmin, © OpenStreetMap contributors).
 - **Weather history:** Open-Meteo's historical weather archive (ERA5, 1940 to a few days ago).
-& Geological Survey and FEMA (OpenFEMA).
+- **Alerts and earthquakes:** the National Weather Service, the US Geological Survey and FEMA (OpenFEMA).
 - **New Jersey emergencies:** the governor's Executive Orders list on nj.gov.
 
 If the internet drops, the display keeps showing the last data it got and says it's offline.

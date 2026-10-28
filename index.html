@@ -225,6 +225,20 @@
   .hist td:first-child, .hist th:first-child { text-align: left; color: var(--dim); }
   .hist td small { margin-left: .35rem; font-size: .8rem; color: var(--faint); }
   .hist .src { margin-top: 1rem; font-size: .85rem; color: var(--faint); }
+  .tidey { display: grid; grid-template-columns: 1.25fr 1fr; gap: 2.4rem; }
+  .tidey h4 { font-size: 1.05rem; font-weight: 600; margin-bottom: .4rem; }
+  .tidey .sum { font-size: 1rem; color: var(--dim); margin-bottom: .6rem; line-height: 1.5; }
+  .tidey .sum b { color: var(--fg); font-weight: 600; }
+  .tidey table { width: 100%; border-collapse: collapse; font-size: 1rem; }
+  .tidey td, .tidey th { padding: .3rem .4rem; border-top: 1px solid rgba(255,255,255,.07); text-align: left; white-space: nowrap; }
+  .tidey th { border-top: 0; font-size: .8rem; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
+  .tidey td small { color: var(--faint); font-size: .8rem; margin-left: .25rem; }
+  .tidey td .sep { color: var(--faint); margin: 0 .45rem; }
+  .tidey tr.past { opacity: .45; }
+  .tidey tr.today td { background: rgba(143,211,255,.12); }
+  .tidey .top { color: var(--water); font-weight: 600; }
+  .tidey .moon { color: #ffe9a8; margin-left: .3rem; }
+  .tidey svg { width: 100%; height: auto; display: block; margin: .2rem 0 1rem; }
   .mirror .more, .mirror .more-hint { display: none; }   /* a mirror can't scroll */
 
   /* ---------- tall screens (phones held upright, portrait mirrors): one column ---------- */
@@ -248,6 +262,9 @@
     .radar-bar { flex-wrap: wrap; }
     .hist { grid-template-columns: 1fr; gap: 1.4rem; }
     .hist td:first-child { white-space: normal; }
+    .tidey { grid-template-columns: 1fr; gap: 1.4rem; }
+    .tidey td .sep { display: block; height: 0; overflow: hidden; margin: 0; }
+    .tidey td { white-space: normal; vertical-align: top; }
     .legend { width: 100%; justify-content: flex-end; }
     .hist table { font-size: .98rem; }
     .hist td small { display: block; margin-left: 0; }
@@ -320,6 +337,10 @@
   <div class="card">
     <h3>Weather history <span id="histWhere"></span></h3>
     <div id="hist"><div class="empty">Loading history…</div></div>
+  </div>
+  <div class="card">
+    <h3>Tides this month and this year <span id="tideYearSrc"></span></h3>
+    <div id="tideYear"><div class="empty">Loading tides…</div></div>
   </div>
 </div>
 
@@ -529,7 +550,7 @@ async function loadNoaa(st) {
   }
   pts.push(ext[ext.length - 1]);
   const dist = st.km == null ? '' : ` (${Math.round(imp() ? st.km / 1.609 : st.km)} ${imp() ? 'mi' : 'km'})`;
-  return { source: 'NOAA · ' + st.name + dist, ext, pts };
+  return { source: 'NOAA · ' + st.name + dist, ext, pts, station: st };
 }
 
 function tideFromMarine(m) {
@@ -741,6 +762,7 @@ async function refreshSea() {
   if (S.lat == null) return;
   try { M = await loadMarine(); } catch (e) { M = null; }
   try { T = await loadTides(); } catch (e) { console.warn(e); T = null; tideMsg = 'Tide data unavailable right now.'; }
+  TideYear.tidesLoaded();   // the monthly and yearly tides need to know the station
   render();
 }
 
@@ -2088,13 +2110,13 @@ $('#setForm').addEventListener('submit', e => {
   const moved = prev.lat !== S.lat || prev.lon !== S.lon, units = prev.units !== S.units;
   if (moved) {
     W = M = T = null; liveAlerts = []; liveQuakes = []; liveDecls = []; county = null; tideMsg = 'Loading tides…';
-    Radar.reset(); History.reset();
+    Radar.reset(); History.reset(); TideYear.reset();
     refreshAlerts(); refreshDeclarations();
   } else {
     if (prev.alertPreview !== S.alertPreview) refreshAlerts(false);
     if (prev.soePreview !== S.soePreview) refreshDeclarations(false);
   }
-  if (units && !moved) History.reset();
+  if (units && !moved) { History.reset(); TideYear.reset(); }
   if (moved || units) refreshWeather();
   if (moved || units || prev.tideStation !== S.tideStation) refreshSea();
   tick(); render(); applyScene();
@@ -2361,10 +2383,133 @@ const History = (() => {
   return { show(on) { shown = on; if (on) load(); }, reset() { doneKey = ''; if (shown) load(); } };
 })();
 
+const localDayStr = (ms = Date.now()) => new Date(ms).toLocaleDateString('en-CA');   // YYYY-MM-DD on this device
+
+// Tides this month and this year, from NOAA: every predicted high and low for the year (one ~70 KB request),
+// and the highest and lowest water actually measured this year at the nearest NOAA water-level gauge (NOAA
+// publishes these after checking them, about a month behind). Needs a NOAA tide station; cached for a day.
+const TideYear = (() => {
+  let shown = false, busy = false, doneKey = '';
+  const box = $('#tideYear'), KEY = 'wt-tideyear', GKEY = 'wt-noaa-gauges';
+  // NOAA times are in the station's local time; they're handled as if UTC so they format exactly as given.
+  const P = s => Date.parse(s.replace(' ', 'T') + ':00Z');
+  const f = (ms, o) => new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', ...o }).format(ms);
+  const tm = ms => f(ms, { hour: 'numeric', minute: '2-digit', hour12: S.clock === '12' });
+  const md = ms => f(ms, { month: 'short', day: 'numeric' }), ymd = ms => new Date(ms).toISOString().slice(0, 10);
+  const ht = v => (imp() ? v.toFixed(1) + ' ft' : v.toFixed(2) + ' m');
+  const moonAge = ms => ((ms - 947182440000) / 864e5 / 29.530588853 % 1 + 1) % 1;   // 0 = new moon, .5 = full
+
+  async function gauges() {   // NOAA's tide stations that measure water levels (cached for a month)
+    try { const c = JSON.parse(localStorage.getItem(GKEY) || 'null'); if (c && Date.now() - c.t < 30 * 864e5) return c.s; } catch (e) {}
+    const j = await getJSON('https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations.json?type=waterlevels');
+    const s = j.stations.filter(x => x.tidal).map(x => [x.id, x.name + (x.state ? ', ' + x.state : ''), +x.lat, +x.lng]);
+    try { localStorage.setItem(GKEY, JSON.stringify({ t: Date.now(), s })); } catch (e) {}
+    return s;
+  }
+  const noaa = (o) => getJSON('https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?' + qs({
+    datum: 'MLLW', units: imp() ? 'english' : 'metric', time_zone: 'lst_ldt', format: 'json', application: 'tidal_weather', ...o }));
+
+  async function load() {
+    if (busy || !shown || S.lat == null) return;
+    const st = T && T.station;
+    if (!st) { box.innerHTML = `<div class="empty">${T ? 'Monthly and yearly tides need a NOAA tide station within about 37 miles.' : 'Loading tides…'}</div>`; return; }
+    const y = new Date().getFullYear(), key = [st.id, y, S.units, localDayStr()].join();
+    if (key === doneKey) return;
+    $('#tideYearSrc').textContent = 'NOAA · ' + st.name;
+    let data = null;
+    try { const c = JSON.parse(localStorage.getItem(KEY) || 'null'); if (c && c.key === key) data = c.data; } catch (e) {}
+    if (!data) {
+      busy = true; box.innerHTML = '<div class="empty">Loading this year\'s tides…</div>';
+      try {
+        const pj = await noaa({ product: 'predictions', interval: 'hilo', station: st.id, begin_date: y + '0101', end_date: y + '1231' });
+        if (!pj.predictions) throw new Error((pj.error && pj.error.message) || 'no predictions');
+        data = { pred: pj.predictions.map(p => [P(p.t), +p.v, p.type]), meas: null };
+        try {   // the nearest gauge that measures water levels, within ~37 miles
+          let best = null, bd = 60;
+          for (const g of await gauges()) { const d = distKm(S.lat, S.lon, g[2], g[3]); if (d < bd) { bd = d; best = g; } }
+          if (best) {
+            const oj = await noaa({ product: 'high_low', station: best[0], begin_date: y + '0101', end_date: localDayStr().replace(/-/g, '') });
+            if (oj.data && oj.data.length) data.meas = { name: best[1], pts: oj.data.map(d => [P(d.t), +d.v, d.ty.trim()]) };
+          }
+        } catch (e) { console.warn('measured tides unavailable', e); }
+        try { localStorage.setItem(KEY, JSON.stringify({ key, data })); } catch (e) {}
+      } catch (e) {
+        console.warn(e); busy = false;
+        box.innerHTML = '<div class="empty">This year\'s tides are unavailable right now.</div>';
+        setTimeout(() => { if (shown) load(); }, 10 * 60e3);
+        return;
+      }
+      busy = false;
+    }
+    render(data); doneKey = key;
+  }
+
+  function render({ pred, meas }) {
+    const today = localDayStr(), month = today.slice(0, 7), y = +today.slice(0, 4);
+    const highs = pred.filter(p => p[2] === 'H'), lows = pred.filter(p => p[2] === 'L');
+    // ---- this month: every day's highs and lows, with the month's extremes and the full and new moons marked
+    const inMonth = pred.filter(p => ymd(p[0]).startsWith(month));
+    const mHi = inMonth.filter(p => p[2] === 'H').reduce((m, p) => !m || p[1] > m[1] ? p : m, null);
+    const mLo = inMonth.filter(p => p[2] === 'L').reduce((m, p) => !m || p[1] < m[1] ? p : m, null);
+    const days = {};
+    for (const p of inMonth) { const d = ymd(p[0]); (days[d] = days[d] || { H: [], L: [] })[p[2]].push(p); }
+    const moons = { new: [], full: [] };
+    const cell = (list, top) => list.map(p => `<span class="${p === top ? 'top' : ''}">${tm(p[0])}<small>${ht(p[1])}</small></span>`).join('<span class="sep">·</span>');
+    const rows = Object.keys(days).sort().map(d => {
+      const t0 = Date.parse(d + 'T00:00:00Z'), a = moonAge(t0), b = moonAge(t0 + 864e5);
+      const moon = b < a ? 'new' : a < .5 && b >= .5 ? 'full' : '';
+      if (moon) moons[moon].push(t0);
+      const cls = d < today ? 'past' : d === today ? 'today' : '';
+      return `<tr class="${cls}"><td>${f(t0, { weekday: 'short' })} ${f(t0, { day: 'numeric' })}${moon ? `<span class="moon" title="${moon} moon">${moon === 'full' ? '●' : '○'}</span>` : ''}</td>
+        <td>${cell(days[d].H, mHi)}</td><td>${cell(days[d].L, mLo)}</td></tr>`;
+    }).join('');
+    const moonTxt = [...moons.full.map(t => `full moon ${md(t)}`), ...moons.new.map(t => `new moon ${md(t)}`)].join(' · ');
+    // ---- this year: each month's highest high and lowest low as a range bar, plus the biggest tides
+    const byMonth = Array.from({ length: 12 }, (_, m) => {
+      const ps = pred.filter(p => new Date(p[0]).getUTCMonth() === m);
+      return { hi: Math.max(...ps.filter(p => p[2] === 'H').map(p => p[1])), lo: Math.min(...ps.filter(p => p[2] === 'L').map(p => p[1])) };
+    });
+    const top = Math.max(...byMonth.map(m => m.hi)), bot = Math.min(...byMonth.map(m => m.lo)), span = (top - bot) || 1;
+    const W = 600, H = 240, pad = 26, padB = 46, Yv = v => pad + (1 - (v - bot) / span) * (H - pad - padB), cm = +today.slice(5, 7) - 1;   // room underneath for the lows and month letters
+    const bars = byMonth.map((m, i) => {
+      const x = 22 + i * (W - 30) / 12, w = (W - 30) / 12 - 10, col = i === cm ? '#8fd3ff' : 'rgba(143,211,255,.45)';
+      return `<rect x="${x}" y="${Yv(m.hi)}" width="${w}" height="${Yv(m.lo) - Yv(m.hi)}" rx="4" fill="${col}"/>
+        <text x="${x + w / 2}" y="${Yv(m.hi) - 6}" text-anchor="middle" font-size="11" fill="rgba(255,255,255,.75)">${m.hi.toFixed(1)}</text>
+        <text x="${x + w / 2}" y="${Yv(m.lo) + 14}" text-anchor="middle" font-size="11" fill="rgba(255,255,255,.5)">${m.lo.toFixed(1)}</text>
+        <text x="${x + w / 2}" y="${H - 2}" text-anchor="middle" font-size="12" fill="${i === cm ? '#fff' : 'rgba(255,255,255,.6)'}">${f(Date.UTC(y, i, 1), { month: 'narrow' })}</text>`;
+    }).join('');
+    const zero = bot < 0 && top > 0 ? `<line x1="16" x2="${W}" y1="${Yv(0)}" y2="${Yv(0)}" stroke="rgba(255,255,255,.2)" stroke-dasharray="3 4"/>` : '';
+    const oneADay = list => { const seen = new Set(); return list.filter(p => { const d = ymd(p[0]); if (seen.has(d)) return false; seen.add(d); return true; }); };
+    const kings = oneADay([...highs].sort((a, b) => b[1] - a[1])).slice(0, 5), minus = oneADay([...lows].sort((a, b) => a[1] - b[1])).slice(0, 3);
+    const lst = list => list.map(p => `<tr class="${ymd(p[0]) < today ? 'past' : ''}"><td>${md(p[0])}</td><td>${tm(p[0])}</td><td>${ht(p[1])}</td></tr>`).join('');
+    let measured = '';
+    if (meas) {
+      const mh = meas.pts.filter(p => p[2].startsWith('H')).reduce((m, p) => !m || p[1] > m[1] ? p : m, null);
+      const ml = meas.pts.filter(p => p[2].startsWith('L')).reduce((m, p) => !m || p[1] < m[1] ? p : m, null);
+      const last = meas.pts[meas.pts.length - 1][0];
+      measured = `<h4>Measured so far this year</h4>
+        <div class="sum">Highest <b>${ht(mh[1])}</b> on ${md(mh[0])} · lowest <b>${ht(ml[1])}</b> on ${md(ml[0])}<br>
+        At the ${esc(meas.name)} gauge, through ${md(last)}.</div>`;
+    }
+    box.innerHTML = `<div class="tidey">
+      <div><h4>${f(Date.parse(month + '-01T00:00:00Z'), { month: 'long', year: 'numeric' })}</h4>
+        <div class="sum">Highest <b>${ht(mHi[1])}</b> on ${md(mHi[0])} at ${tm(mHi[0])} · lowest <b>${ht(mLo[1])}</b> on ${md(mLo[0])} at ${tm(mLo[0])}${moonTxt ? `<br>Tides run strongest around the ${moonTxt}` : ''}</div>
+        <table><tr><th>Day</th><th>High tides</th><th>Low tides</th></tr>${rows}</table></div>
+      <div><h4>${y} at a glance <span style="font-weight:400;color:var(--faint)">(each month's highest and lowest tide, ${imp() ? 'ft' : 'm'})</span></h4>
+        <svg viewBox="0 0 ${W} ${H}">${zero}${bars}</svg>
+        <h4>Highest predicted tides this year</h4><table>${lst(kings)}</table>
+        <h4 style="margin-top:1rem">Lowest predicted tides this year</h4><table>${lst(minus)}</table>
+        <div style="margin-top:1rem">${measured}</div></div>
+    </div>`;
+  }
+  return { show(on) { shown = on; if (on) load(); }, reset() { doneKey = ''; if (shown) load(); }, tidesLoaded() { if (shown) load(); } };
+})();
+
 // Load the radar and history when they scroll into view (a little before, so they're ready).
 new IntersectionObserver(es => es.forEach(e => Radar.show(e.isIntersecting)),
   { rootMargin: '200px' }).observe($('#radar'));
 new IntersectionObserver(es => es.forEach(e => History.show(e.isIntersecting)), { rootMargin: '200px' }).observe($('#hist'));
+new IntersectionObserver(es => es.forEach(e => TideYear.show(e.isIntersecting)), { rootMargin: '200px' }).observe($('#tideYear'));
 $('#moreHint').onclick = () => $('#more').scrollIntoView({ behavior: 'smooth' });
 
 /* ======================= start ======================= */
