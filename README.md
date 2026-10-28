@@ -80,7 +80,7 @@ The first time it runs, the settings panel opens. Type your town or ZIP code, pi
 - **Left side:**
   - the clock and date, with any alert notice beside them and any state of emergency banner below
   - the location and current temperature
-  - the conditions (with "· Windy" added in strong wind) and today's high and low
+  - the conditions (with "· Windy" added in strong wind), today's high and low, and today's chance of rain (blue, with a raindrop)
   - expected rain or snow for today
   - eight tiles: feels like, humidity, wind (direction, speed and gusts), UV index, sunrise, sunset, and either water temperature and wave height on the coast or air pressure and rain chance inland
 - **Hourly forecast:** the next 12 hours, with temperature, rain chance and expected rain or snow amounts.

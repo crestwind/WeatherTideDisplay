@@ -87,6 +87,8 @@
   .cond { font-size: 2rem; font-weight: 500; display: flex; align-items: center; gap: .5rem; }
   .cond .ic { width: 3rem; height: 3rem; margin: 0; }
   .hl { font-size: 1.45rem; color: var(--dim); margin-top: .35rem; }
+  .hl .pop { color: var(--water); font-weight: 600; margin-left: 1.1rem; white-space: nowrap; }
+  .hl .pop svg { width: .8em; height: 1.05em; fill: currentColor; vertical-align: -.12em; margin-right: .3rem; }
 
   .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; margin-top: 1.8rem; }
   .tile { background: var(--card); border: 1px solid var(--line); border-radius: 1rem; padding: .7rem .9rem; min-width: 0; }
@@ -1470,7 +1472,9 @@ function render() {
   $('#cond').innerHTML = icon(c.weather_code, day) + `<span>${condText(c.weather_code, day)}${windyNow() ? ' · Windy' : ''}</span>`;
   const todayRain = fmtAmt(add(d.rain_sum[0], d.showers_sum[0])), todaySnow = fmtSnow(d.snowfall_sum[0]);
   const todayAmt = [todayRain && `${todayRain} rain`, todaySnow && `${todaySnow} snow`].filter(Boolean).join(' · ');
-  $('#hl').textContent = `H: ${r0(d.temperature_2m_max[0])}°   L: ${r0(d.temperature_2m_min[0])}°` + (todayAmt ? `   ·   ${todayAmt} today` : '');
+  // today's chance of rain, with a raindrop, after the high and low
+  const pop = `<span class="pop"><svg viewBox="0 0 12 16" aria-hidden="true"><path d="M6 1C6 1 1 7.5 1 10.5a5 5 0 0 0 10 0C11 7.5 6 1 6 1z"/></svg>${r0(d.precipitation_probability_max[0] ?? 0)}%</span>`;
+  $('#hl').innerHTML = `H: ${r0(d.temperature_2m_max[0])}°   L: ${r0(d.temperature_2m_min[0])}°${pop}` + (todayAmt ? `   ·   ${todayAmt} today` : '');
 
   // hourly
   let i0 = h.time.findIndex(t => t + 3600 > nowS);
