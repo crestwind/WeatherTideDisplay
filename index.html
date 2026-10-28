@@ -1375,6 +1375,8 @@ const Sky = (() => {
       pose, coat: sc.rain ? 'rain' : sc.snow ? 'snow' : 'plain', lantern: night || kind === 'fog', snowy: !!sc.snow,
       tint: night ? 'rgba(10,18,40,.55)' : golden ? 'rgba(70,32,44,.5)' : sc.storm ? 'rgba(30,38,44,.35)' : sc.tone === 'dark' ? 'rgba(30,40,50,.2)' : null,
       fishing: { st: 'wait', t: 0, dur: rnd(4, 10) }, off: document.createElement('canvas'), jumps: [], nextJump: rnd(2, 6),
+      dolphins: [], nextPod: rnd(6, 15), dolphinsOk: pose === 'fish' && !sc.rain,   // dolphins on nice days only
+      lhK: Math.min(sy, Wd / 700) * (portrait ? .8 : 1.15), lhX: Wd * (portrait ? .9 : .43),   // the lighthouse, right of the boat
       sparks: Array.from({ length: 220 }, () => ({ f: Math.pow(Math.random(), 1.4), o: (Math.random() + Math.random() - 1) * .9, w: rnd(.4, 1.2), sp: rnd(1.5, 4), ph: rnd(0, 6.3) })) };
   }
   // height of a wave layer at x: three swells, the main one with sharper crests in rough seas
@@ -1609,16 +1611,134 @@ const Sky = (() => {
     const base = g.createLinearGradient(0, sea.top, 0, Hd);
     base.addColorStop(0, `rgb(${sea.pal[0]})`); base.addColorStop(1, `rgb(${sea.pal[1]})`);
     g.fillStyle = base; g.fillRect(0, sea.top - 2, Wd, Hd - sea.top + 2);
-    for (let i = 0; i <= b; i++) drawLayer(L[i], t);
+    drawLighthouse(t);   // on the horizon, behind every wave
+    for (let i = 0; i <= b; i++) { drawLayer(L[i], t); drawDolphins(t, i); }
     // the boat rides layer b, rising, falling and tilting with the wave under it
     const bl = L[b], y = waveY(bl, sea.bx, t), slope = (waveY(bl, sea.bx + 30, t) - waveY(bl, sea.bx - 30, t)) / 60;
     const roll = Math.atan(slope) * .9 + Math.sin(t * 1.3) * .015 * sea.rough + (sea.rough > 2 ? Math.sin(t * 1.9) * .05 * (sea.rough - 2) : 0);   // extra rocking in storms
     drawGlint(t, 0, y);
     const img = drawBoatSprite(t);
     g.save(); g.translate(sea.bx, y + 4 * sea.bs); g.rotate(roll); g.drawImage(img, -280 * sea.bs, -250 * sea.bs); g.restore();
-    for (let i = b + 1; i < L.length; i++) drawLayer(L[i], t);
+    for (let i = b + 1; i < L.length; i++) { drawLayer(L[i], t); drawDolphins(t, i); }
     if (sea.pose === 'fish') drawJumps(t);   // leaping fish, only where he's fishing
     drawGlint(t, y, Hd);
+  }
+
+  // A lighthouse like Barnegat Light: a tapered tower, white below and red above, with a black gallery, lantern room
+  // and dome, on a little rocky jetty at the horizon. Drawn in its own units (1 = 1 px at 1080p, base at 0,0) into a
+  // cached sprite tinted like the boat; the lit lantern and, at night and in fog, its turning beam are drawn live.
+  function lighthouseSprite() {
+    const W = 90, H = 150, k = sea.lhK, [c, x] = mk(Math.ceil(W * k), Math.ceil(H * k));
+    x.scale(k, k); x.translate(W / 2, H - 6);
+    x.fillStyle = '#5b5f5a'; x.beginPath(); x.ellipse(0, 1, 40, 7, 0, Math.PI, 0); x.fill();                  // jetty rocks
+    x.fillStyle = '#474b47'; for (const [rx, rw] of [[-30, 9], [-12, 12], [8, 10], [24, 8]]) { x.beginPath(); x.ellipse(rx, 0, rw, 4.5, 0, Math.PI, 0); x.fill(); }
+    const tower = (y0, y1, col) => {   // a slice of the tapered tower between heights y0 and y1
+      const w = y => 13 - 5 * (-y / 104);
+      x.fillStyle = col; x.beginPath(); x.moveTo(-w(y0), y0); x.lineTo(w(y0), y0); x.lineTo(w(y1), y1); x.lineTo(-w(y1), y1); x.closePath(); x.fill();
+    };
+    tower(-2, -52, '#f2efe8'); tower(-52, -104, '#c0392b');
+    x.fillStyle = 'rgba(0,0,0,.12)'; x.beginPath(); x.moveTo(3, -2); x.lineTo(13, -2); x.lineTo(8, -104); x.lineTo(1.5, -104); x.fill();   // shaded side
+    x.fillStyle = '#2b2b2b'; for (const wy of [-24, -46, -70, -90]) x.fillRect(-1.6, wy, 3.2, 5);             // little windows
+    x.fillRect(-14, -108, 28, 4);                                                                             // gallery
+    x.strokeStyle = '#2b2b2b'; x.lineWidth = 1; x.beginPath(); x.moveTo(-13, -113); x.lineTo(13, -113);
+    for (let px = -13; px <= 13; px += 4.33) { x.moveTo(px, -108); x.lineTo(px, -113); } x.stroke();           // railing
+    x.fillStyle = '#2b2b2b'; x.fillRect(-8, -126, 16, 18);                                                    // lantern room
+    x.fillStyle = '#9fc4dc'; x.fillRect(-6, -124, 12, 14);                                                    // its glass
+    x.fillStyle = '#2b2b2b'; x.fillRect(-.6, -124, 1.2, 14);
+    x.beginPath(); x.arc(0, -126, 8.5, Math.PI, 0); x.fill();                                                 // dome
+    x.beginPath(); x.arc(0, -135.5, 1.8, 0, 7); x.fill();                                                     // vent ball
+    if (sea.tint) { x.globalCompositeOperation = 'source-atop'; x.fillStyle = sea.tint; x.fillRect(-W, -H, W * 2, H * 2); }
+    return c;
+  }
+  function drawLighthouse(t) {
+    const k = sea.lhK, bx = sea.lhX, by = sea.top + 2 * Hd / 1080;
+    g.drawImage(sea.lhImg, bx - 45 * k, by - 144 * k);
+    if (!sea.lantern && !sea.golden) return;
+    const lx = bx, ly = by - 117 * k, a = t * .9;   // the light turns about once every 7 seconds
+    if (sea.lantern) {   // two beams on opposite sides, seen side-on, sweeping across the sky
+      for (const s of [1, -1]) {
+        const reach = Math.cos(a) * s, len = Wd * .55 * Math.abs(reach), spread = 9 * k + 26 * k * (1 - Math.abs(reach));
+        if (len < 4) continue;
+        const gr = g.createLinearGradient(lx, ly, lx + Math.sign(reach) * len, ly);
+        gr.addColorStop(0, `rgba(255,236,170,${.32 * Math.abs(reach) + .05})`); gr.addColorStop(1, 'rgba(255,236,170,0)');
+        g.fillStyle = gr; g.beginPath(); g.moveTo(lx, ly - 2.5 * k); g.lineTo(lx + Math.sign(reach) * len, ly - spread);
+        g.lineTo(lx + Math.sign(reach) * len, ly + spread * .6); g.lineTo(lx, ly + 2.5 * k); g.closePath(); g.fill();
+      }
+    }
+    const flash = sea.lantern ? Math.pow(Math.max(0, Math.sin(a)), 10) : 0;   // a bright flash as the beam faces you
+    const r = (7 + 30 * flash) * k, glow = g.createRadialGradient(lx, ly, 0, lx, ly, r);
+    glow.addColorStop(0, `rgba(255,240,190,${.95})`); glow.addColorStop(.35, `rgba(255,222,140,${.55 + .4 * flash})`); glow.addColorStop(1, 'rgba(255,214,120,0)');
+    g.fillStyle = glow; g.beginPath(); g.arc(lx, ly, r, 0, 7); g.fill();
+  }
+
+  // Dolphins: on nice days a small pod now and then swims across the open sea, each arcing out of the water and back a
+  // few times. A dolphin is drawn just after its own wave layer, clipped above that wave, so it really surfaces:
+  // nearer waves (and the boat, when it's farther out) are drawn over it.
+  function podTick(dt) {
+    for (const d of sea.dolphins) d.t += dt;
+    sea.dolphins = sea.dolphins.filter(d => d.t - d.delay < d.n * (d.arc + d.gap) + .8);
+    if (sea.dolphins.length || (sea.nextPod -= dt) > 0) return;
+    sea.nextPod = rnd(25, 60);
+    const sx = Wd / 1920, sy = Hd / 1080, wide = Wd > Hd, lo = (wide ? .03 : .05) * Wd, hi = (wide ? .46 : .95) * Wd;
+    const li = Math.random() < .5 ? 1 : 3, L = sea.layers[li], k = (.55 + 1.1 * L.d) * sea.bs, n = Math.random() < .5 ? 3 : 4;
+    const span = Math.min((95 + 110 * L.d) * sx * sea.bs, (hi - lo) * .9 / n), dir = Math.random() < .5 ? 1 : -1;
+    const x0 = dir > 0 ? lo + rnd(0, Math.max(0, hi - lo - span * n)) : hi - rnd(0, Math.max(0, hi - lo - span * n));
+    const count = Math.random() < .4 ? 3 : 2;
+    for (let j = 0; j < count; j++)
+      sea.dolphins.push({ li, x0: x0 - dir * j * rnd(16, 28) * k, dir, span, n, k, h: (14 + 30 * L.d) * sy * rnd(.9, 1.15), arc: rnd(1, 1.2), gap: rnd(.35, .55), delay: j * rnd(.3, .55), t: 0 });
+  }
+  function drawDolphinShape(c, k, mono) {   // snout at (0,0), body along -x
+    c.save(); c.scale(k, k);
+    // long and sleek, with a short beak in front of a rounded forehead, a small swept-back fin and a pale belly
+    const back = mono || '#5f7a92', belly = mono || '#cdd8e0';
+    c.fillStyle = back;
+    c.beginPath(); c.moveTo(-35, 0); c.lineTo(-42, -5); c.quadraticCurveTo(-39, 0, -42, 5); c.closePath(); c.fill();   // tail flukes
+    c.beginPath(); c.moveTo(-17, -5); c.quadraticCurveTo(-20, -9.6, -25, -10.4); c.quadraticCurveTo(-23, -7.4, -24, -4.4); c.fill();   // dorsal fin
+    const body = new Path2D();
+    body.moveTo(0, .2); body.quadraticCurveTo(-1, -1.1, -5, -1.4);                // beak
+    body.quadraticCurveTo(-6.5, -4.6, -12, -5.1);                                 // rounded forehead
+    body.quadraticCurveTo(-23, -5.6, -33, -1.4); body.lineTo(-36, -.5);           // back, narrowing to the tail
+    body.lineTo(-36, .8); body.quadraticCurveTo(-24, 4.2, -12, 3.7);              // underside
+    body.quadraticCurveTo(-6, 3.2, -5, 1.3); body.quadraticCurveTo(-2, 1.2, 0, .2); body.closePath();
+    c.fill(body);
+    if (!mono) {
+      c.save(); c.clip(body); c.fillStyle = belly; c.beginPath(); c.ellipse(-20, 3.6, 11, 2.2, 0, 0, 7); c.fill(); c.restore();
+      c.strokeStyle = 'rgba(30,40,52,.5)'; c.lineWidth = .4; c.beginPath(); c.moveTo(-.4, .5); c.lineTo(-5.5, 1); c.stroke();   // mouth line
+      c.fillStyle = '#1d2630'; c.beginPath(); c.arc(-8, -1.6, .7, 0, 7); c.fill();                                               // eye
+    }
+    c.fillStyle = back; c.beginPath(); c.moveTo(-11, 2.6); c.lineTo(-16, 6.6); c.lineTo(-15.4, 3.2); c.fill();               // flipper
+    c.restore();
+  }
+  function drawDolphins(t, layer) {
+    if (!sea.dolphins.length) return;
+    const mono = sea.night ? 'rgb(14,22,38)' : sea.golden ? 'rgb(54,32,44)' : null;
+    for (const d of sea.dolphins) {
+      if (d.li !== layer) continue;
+      const L = sea.layers[d.li], tau = d.t - d.delay;
+      if (tau < 0) continue;
+      const cyc = d.arc + d.gap, i = Math.floor(tau / cyc), p = (tau - i * cyc) / d.arc;
+      // little splash rings where each arc breaks the surface and where it goes back in
+      const rings = [];
+      for (let j = Math.max(0, i - 1); j <= Math.min(i, d.n - 1); j++)
+        rings.push([tau - j * cyc, d.x0 + d.dir * d.span * j], [tau - j * cyc - d.arc, d.x0 + d.dir * d.span * (j + 1)]);
+      for (const [a, xe] of rings) {
+        if (a < 0 || a > .6) continue;
+        const ye = waveY(L, xe, t), r = (4 + 26 * a) * d.k, f = 1 - a / .6;
+        g.strokeStyle = `rgba(255,255,255,${.5 * f})`; g.lineWidth = Math.max(1, 1.2 * d.k);
+        g.beginPath(); g.ellipse(xe, ye, r, r * .28, 0, 0, 7); g.stroke();
+      }
+      if (i >= d.n || p > 1) continue;
+      const x = d.x0 + d.dir * d.span * (i + p), rise = d.h * 1.3;
+      const y = waveY(L, x, t) + d.h * .3 - rise * 4 * p * (1 - p), ang = Math.atan2(-rise * 4 * (1 - 2 * p), d.dir * d.span);
+      g.save();
+      g.beginPath(); g.moveTo(x - 60 * d.k, 0);   // clip to the air above this wave, so the underwater part is hidden
+      for (let cx = x - 60 * d.k; cx <= x + 60 * d.k; cx += 4) g.lineTo(cx, waveY(L, cx, t));
+      g.lineTo(x + 60 * d.k, 0); g.closePath(); g.clip();
+      g.translate(x, y); g.rotate(ang); if (d.dir < 0) g.scale(1, -1);
+      g.translate(20 * d.k, 0);   // centre the body on the arc
+      drawDolphinShape(g, d.k, mono);
+      g.restore();
+    }
   }
 
   function moonSprite() {
@@ -1696,6 +1816,7 @@ const Sky = (() => {
     flares = orb && orb.rays && kind === 'clear' ? makeFlares(tod === 'golden') : [];
     flashes = []; bolt = null; nextBolt = performance.now() + 3000;
     sea = buildSea();
+    if (sea) sea.lhImg = lighthouseSprite();
   }
 
   // Lightning: a jagged main channel from the clouds to the ground with forking branches,
@@ -1776,6 +1897,7 @@ const Sky = (() => {
     }
     if (birds) updateBirds(dt, t);
     if (sea && sea.pose === 'fish') { fishingTick(dt); jumpTick(dt); }
+    if (sea && sea.dolphinsOk) podTick(dt);
     updateGlass(dt, t);
     for (const c of clouds) {
       c.x += c.v * gust * dt;

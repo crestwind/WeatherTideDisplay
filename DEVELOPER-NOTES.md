@@ -106,7 +106,7 @@ Built the display, the animated backgrounds, alerts (NWS, USGS, FEMA, NJ), the a
 - **Still to do with the user:**
   - **Cloudflare Web Analytics:** waiting for the user's JS-snippet token. Add the snippet in the workflow for the main site only, and allow `static.cloudflareinsights.com` (script) and `cloudflareinsights.com` (connect) in the CSP.
   - **Offered, not decided:** an Add-to-Home-Screen app icon (web app manifest, apple-touch-icon, standalone), and a Scriptable widget for iPhone/iPad (temperature, conditions, high/low, rain chance, next tides).
-- More ocean touches: a jumping fish or dolphins on nice days, a lighthouse beam at night.
+- Ocean: the lighthouse (`lighthouseSprite`, cached and tinted like the boat; `drawLighthouse` adds the lantern glow at sunset and the turning beam plus flash at night and in fog) and dolphins (`podTick`, `drawDolphins`, drawn right after their own wave layer and clipped above it, so they surface properly and pass behind the boat from layer 1) were added on 2026-10-28.
 - A real live-radar frame (for example RainViewer) before the forecast frames, if a free source with no key is available.
 - State emergency readers for states other than NJ. Each state publishes differently.
 
