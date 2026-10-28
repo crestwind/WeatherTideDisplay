@@ -96,6 +96,18 @@ On a wide screen (TV, PC, laptop, phone turned sideways), the display is two col
   - each day's chance of rain and expected rain amount (blue) and snowfall (white with a snowflake)
   - a temperature range bar: the grey track spans the week's coldest low to warmest high, the coloured part is that day's low-to-high range, and the white dot on Today is the temperature right now
 
+## Below the main screen: forecast map and weather history
+
+Scroll down (mouse wheel, or swipe on a phone) to see two more sections. On a PC, a small **▼ Radar & history** button at the bottom of the screen jumps there when you move the mouse. The TV never needs to scroll: these sections only download anything when someone scrolls to them. They're hidden in smart mirror mode, since a mirror can't scroll.
+
+- **Rain & snow forecast, next 24 hours:** a dark map of the area around your location (the white dot), with forecast rain (green → yellow → orange → red → purple as it gets heavier) and snow (blue → white). It steps through the next 24 hours in 15-minute steps and loops. Use the **pause** button and the slider to look at a particular time. The map is fixed: no zooming or dragging. This is a **forecast model**, not live radar, so it shows where rain and snow are *expected*.
+- **Weather history** for your location, back to 1940:
+  - **This year so far vs last year:** average high and low, warmest and coldest day, precipitation, snowfall, wet days and strongest gust, from Jan 1 to the latest day with data, next to the same dates last year and the 1991–2020 normal.
+  - **On this date:** the record high and low for today's date (with the year), the normal high and low, the most precipitation on this date, and last year's high and low.
+  - **All-time records:** hottest and coldest days, wettest and snowiest days, strongest gust, wettest and driest years, warmest and coolest years.
+
+  The history comes from a weather-model reconstruction (ERA5) about 25 km across, so it can differ a little from official weather-station records, and it runs a few days behind. It's downloaded at most once a day per device and saved. The free service limits how much history can be downloaded per hour; if it's busy, the section says so and tries again in 15 minutes.
+
 ## Backgrounds
 
 The background changes on its own to match the current weather, the time of day and any active alerts. It fades smoothly from one scene to the next.
@@ -201,7 +213,9 @@ All of these are free and need no API keys.
 
 - **Weather:** [Open-Meteo](https://open-meteo.com) for forecasts and Open-Meteo Marine for waves, water temperature and model tides.
 - **Tides:** NOAA tide predictions from the nearest station within about 37 miles. Elsewhere the display uses Open-Meteo's ocean model, which is approximate.
-- **Alerts and earthquakes:** the National Weather Service, the US Geological Survey and FEMA (OpenFEMA).
+- **Forecast map:** Open-Meteo's 15-minute forecast for a grid of points, on Esri's dark grey map (© Esri, HERE, Garmin, © OpenStreetMap contributors).
+- **Weather history:** Open-Meteo's historical weather archive (ERA5, 1940 to a few days ago).
+& Geological Survey and FEMA (OpenFEMA).
 - **New Jersey emergencies:** the governor's Executive Orders list on nj.gov.
 
 If the internet drops, the display keeps showing the last data it got and says it's offline.

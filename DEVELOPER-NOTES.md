@@ -23,6 +23,9 @@ Notes for picking this project back up later. `README.md` is the user manual; th
 - **Tall screens** (`@media (max-aspect-ratio: 1/1)`: upright phones, tablets, portrait mirrors) get a one-column, scrolling layout. rem becomes `min(3.6vw, 2.2vh)`, the hours scroll sideways, the tiles go two across under 600px wide, and `renderTide` shows 3h back to 15h ahead instead of 6h back to 24h ahead.
 - **Smart mirror mode** (`S.mirror`, `?mirror=on`, the "Display style" setting) puts a `mirror` class on `<html>`. It hides the sky, shade and glass canvases, stops the Sky animation, and makes the cards transparent on black. On a tall mirror, which can't scroll, `fitMirror()` (run at the end of `render()`) shrinks the root font size in two passes until `#app` fits the screen, then redraws the tide chart.
 - **Notices:** the weather alert and the state of emergency are two same-size boxes (`.notice`) in `.notices` beside the logo and clock, each half the column height, so they never push the layout down.
+- **Below the first screen** (`#more`, outside `#app`, which is now `position: relative; height: 100vh`; the body scrolls with the scrollbar hidden): `Radar` and `History`, each loaded only when an `IntersectionObserver` sees it (200px early), so a TV never fetches them. Hidden in mirror mode.
+  - **`Radar`:** a fixed Web Mercator view (`MERC`) about 640 km wide (320 on phones) centred on the location; Esri `Canvas/World_Dark_Gray_Base` and `_Reference` tiles (no key; CARTO now needs one, and OpenStreetMap's servers have strict rules). A grid of 20×~9 points (11×n on phones) is fetched from Open-Meteo `minutely_15=precipitation,snowfall` in batches of 100 locations, drawn as a tiny image and smoothed up to the map size, and animated over 96 frames (330 ms each). Reloaded when shown and over an hour old, or the location or box size changed.
+  - **`History`:** one Open-Meteo archive request from 1940-01-01 to yesterday (5 daily variables, ~1.4 MB, ~10 s). Only the summary (plus the few days it refers to) is cached in `localStorage` (`wt-history`), keyed by location, units and date. **Rate limit:** this request is heavy for the free tier; two or three in an hour from one IP gets HTTP 429, and the section then says so and retries after 15 minutes. While testing, save one response and serve it locally instead of hitting the API repeatedly.
 - **Two canvases:**
   - `#sky`, behind the UI: the background scenes.
   - `#glass`, above the UI with `pointer-events: none`: rain and snow drops on the screen, and stuck leaves.
@@ -89,11 +92,11 @@ Built the display, the animated backgrounds, alerts (NWS, USGS, FEMA, NJ), the a
 
 **Where we left off:** live at https://tidalweather.com with Enforce HTTPS on. The certificate stalled for 30+ minutes although the Pages health check said "eligible"; removing and re-adding the custom domain (`-F cname=null`, then `-f cname=tidalweather.com`) got it issued within seconds. The user turned on two-factor sign-in for GitHub and Cloudflare. The domain verification in GitHub account settings was started on 2026-10-28; GitHub can take up to 24 hours, so the user clicks **Verify** again the next day.
 
-**Next, in the user's order:** (1) a weather radar, (2) weather history, then (3) the "ocean" display style below.
+**Next:** the "ocean" display style below (radar and history were added on 2026-10-28).
 
 ## Ideas not done yet
 
 - **Third display style, "ocean" (requested 2026-10-28, after radar and history):** the background is the sea with a boat floating on it, animated to match the weather. A fisherman fishes in nice weather, holds on tight in wind, and so on, and the waves change with the weather too (calm, choppy, storm swell). It would sit alongside Normal and Smart mirror in the Display style setting.
-- **Weather radar** and **weather history**: the user's next requests, not designed yet.
+- A real live-radar frame (for example RainViewer) before the forecast frames, if a free source with no key is available.
 - State emergency readers for states other than NJ. Each state publishes differently.
 
