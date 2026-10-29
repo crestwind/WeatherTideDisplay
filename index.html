@@ -3001,7 +3001,11 @@ function tick() {
 function render() {
   $('#place').textContent = S.name || 'Choose a location';
   const st = $('#status');
-  if (!W) { st.textContent = S.lat == null ? 'Press S to open settings' : failed ? 'Can’t reach the weather service — retrying…' : 'Loading…'; st.className = 'status' + (failed ? ' warn' : ''); return; }
+  if (!W) {   // no weather yet; the tides come from NOAA, so they still show if the weather service is down
+    st.textContent = S.lat == null ? 'Press S to open settings' : failed ? 'Can’t reach the weather service — retrying…' : 'Loading…'; st.className = 'status' + (failed ? ' warn' : '');
+    if (S.lat != null) renderTide();
+    return;
+  }
   st.textContent = failed ? `Offline — showing data from ${fmtTime(lastOk)}` : `Updated ${fmtTime(lastOk)} · Open-Meteo`;
   st.className = 'status' + (failed ? ' warn' : '');
 
