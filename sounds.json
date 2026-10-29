@@ -1,10 +1,12 @@
 {
   "sounds": [
     { "id": "rain", "name": "Rain", "icon": "🌧️", "file": "sounds/rain.mp3" },
-    { "id": "fireplace", "name": "Fireplace", "icon": "🔥", "file": "sounds/fireplace.mp3" },
-    { "id": "ocean", "name": "Ocean waves", "icon": "🌊", "file": "sounds/ocean.mp3" },
     { "id": "thunder", "name": "Thunderstorm", "icon": "⛈️", "file": "sounds/thunderstorm.mp3" },
+    { "id": "ocean", "name": "Ocean waves", "icon": "🌊", "file": "sounds/ocean.mp3" },
     { "id": "wind", "name": "Wind", "icon": "🌬️", "file": "sounds/wind.mp3" },
-    { "id": "night", "name": "Forest night", "icon": "🦗", "file": "sounds/forest-night.mp3" }
+    { "id": "fireplace", "name": "Fireplace", "icon": "🔥", "file": "sounds/fireplace.mp3" },
+    { "id": "birds", "name": "Forest birds", "icon": "🐦", "file": "sounds/forest-birds.mp3" },
+    { "id": "night", "name": "Forest night", "icon": "🦗", "file": "sounds/forest-night.mp3" },
+    { "id": "whitenoise", "name": "White noise", "icon": "〰️", "file": "sounds/white-noise.mp3" }
   ]
 }

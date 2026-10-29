@@ -75,14 +75,14 @@ On iPhone and iPad the home screen app keeps its own settings, separate from Saf
 
 ### Sounds
 
-The **speaker** button in the bottom-right corner (next to full screen and settings) opens the Sounds panel: tap a sound to play it, tap it again or press **Stop** to stop, and use the slider for volume. One sound plays at a time, looping seamlessly with a gentle fade in and out. Nothing ever plays until someone taps a sound, so the TV stays quiet. The volume is remembered on each device.
+The **speaker** button in the bottom-right corner (next to full screen and settings) opens the Sounds panel, with eight sounds: **Rain, Thunderstorm, Ocean waves, Wind, Fireplace, Forest birds, Forest night** and **White noise** (all evened out to the same loudness, and blended at the loop point so the repeat isn't heard): tap a sound to play it, tap it again or press **Stop** to stop, and use the slider for volume. One sound plays at a time, looping seamlessly with a gentle fade in and out. Nothing ever plays until someone taps a sound, so the TV stays quiet. The volume is remembered on each device.
 
 #### Adding sounds
 
 The list of sounds is in **sounds.json**; the audio files go in the **sounds** folder. A sound whose file isn't there yet shows "coming soon". To add one from any device:
 
 1. Go to **github.com/crestwind/WeatherTideDisplay**, open the **sounds** folder, and click **Add file → Upload files**.
-2. Upload the audio file, named exactly as in sounds.json: `rain.mp3`, `fireplace.mp3`, `ocean.mp3`, `thunderstorm.mp3`, `wind.mp3` or `forest-night.mp3`.
+2. Upload the audio file, named as in sounds.json (for example `rain.mp3`), or a new name if you add a new sound to sounds.json.
 3. Click **Commit changes**. tidalweather.com updates within a couple of minutes.
 
 Tips for the files:

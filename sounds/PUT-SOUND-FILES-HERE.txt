@@ -1,2 +1,0 @@
-Put the ambient sound files here, named as in sounds.json (e.g. rain.mp3).
-See "Adding sounds" in README.md.

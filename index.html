@@ -3174,11 +3174,13 @@ addEventListener('keydown', e => {
 const Sounds = (() => {
   const FALLBACK = [
     { id: 'rain', name: 'Rain', icon: '🌧️', file: 'sounds/rain.mp3' },
-    { id: 'fireplace', name: 'Fireplace', icon: '🔥', file: 'sounds/fireplace.mp3' },
-    { id: 'ocean', name: 'Ocean waves', icon: '🌊', file: 'sounds/ocean.mp3' },
     { id: 'thunder', name: 'Thunderstorm', icon: '⛈️', file: 'sounds/thunderstorm.mp3' },
+    { id: 'ocean', name: 'Ocean waves', icon: '🌊', file: 'sounds/ocean.mp3' },
     { id: 'wind', name: 'Wind', icon: '🌬️', file: 'sounds/wind.mp3' },
+    { id: 'fireplace', name: 'Fireplace', icon: '🔥', file: 'sounds/fireplace.mp3' },
+    { id: 'birds', name: 'Forest birds', icon: '🐦', file: 'sounds/forest-birds.mp3' },
     { id: 'night', name: 'Forest night', icon: '🦗', file: 'sounds/forest-night.mp3' },
+    { id: 'whitenoise', name: 'White noise', icon: '〰️', file: 'sounds/white-noise.mp3' },
   ];
   let list = null, ready = {}, ctx = null, gain = null, src = null, current = null, loading = 0;
   const panel = $('#sndPanel'), btn = $('#sndBtn'), msg = t => { $('#sndMsg').textContent = t || ''; };
@@ -3215,8 +3217,14 @@ const Sounds = (() => {
       fadeOut();
       const g2 = ctx.createGain(), node = ctx.createBufferSource();
       node.buffer = buf; node.loop = true; node.connect(g2).connect(ctx.destination);
+      // MP3s carry a sliver of silence at each end; loop between the first and last real sound so there's no gap
+      const d = buf.getChannelData(0), n = d.length, lim = Math.min(n >> 1, buf.sampleRate * .3);
+      let a = 0, z = n - 1;
+      while (a < lim && Math.abs(d[a]) < 1e-4) a++;
+      while (z > n - lim && Math.abs(d[z]) < 1e-4) z--;
+      node.loopStart = a / buf.sampleRate; node.loopEnd = (z + 1) / buf.sampleRate;
       g2.gain.setValueAtTime(0, ctx.currentTime); g2.gain.linearRampToValueAtTime(vol(), ctx.currentTime + 1.5);
-      node.start(); src = node; gain = g2; current = s.id; msg('');
+      node.start(0, node.loopStart); src = node; gain = g2; current = s.id; msg('');
     } catch (e) { console.warn(e); if (n === loading) msg('Couldn\'t play that sound.'); }
     render();
   }
