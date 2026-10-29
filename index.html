@@ -1867,10 +1867,20 @@ const Sky = (() => {
     const coat = sea.coat === 'rain' ? '#f2c230' : sea.coat === 'snow' ? '#c0392b' : '#2f4f6f', pants = '#2d3e50', skin = '#e8b991';
     x.save(); x.translate(26, -31);
     const limb = (col, w, ...pts) => { x.strokeStyle = col; x.lineWidth = w; x.beginPath(); pts.forEach(([a, b], i) => i ? x.lineTo(a, b) : x.moveTo(a, b)); x.stroke(); };
-    const head = (hx, hy) => {
-      x.fillStyle = skin; x.beginPath(); x.arc(hx, hy, 6.5, 0, 7); x.fill();
-      if (sea.coat === 'rain') { x.fillStyle = coat; x.beginPath(); x.arc(hx, hy - 1, 8, Math.PI * .95, Math.PI * 2.05); x.fill(); }      // hood
-      else if (sea.coat === 'snow') { x.fillStyle = '#e8e8e8'; x.beginPath(); x.arc(hx, hy - 2, 7.2, Math.PI, 0); x.fill(); x.beginPath(); x.arc(hx, hy - 10, 2.6, 0, 7); x.fill(); }   // beanie
+    // his head, with a face like the camper's: eyes, a nose and a short grey beard, turned the way he's facing
+    // (look: -1 left, 0 at us, 1 right); in the rain his face shows inside his hood
+    const head = (hx, hy, look = .55) => {
+      if (sea.coat === 'rain') { x.fillStyle = coat; x.beginPath(); x.arc(hx, hy - .5, 8.3, 0, 7); x.fill(); }                         // hood
+      x.fillStyle = skin; x.beginPath(); x.arc(hx, hy, sea.coat === 'rain' ? 5.8 : 6.5, 0, 7); x.fill();
+      const ex = hx + look * 2.6;
+      x.fillStyle = '#d6d1c7'; x.beginPath(); x.arc(hx + look * 1.2, hy + .6, 6, .12 * Math.PI, .88 * Math.PI); x.closePath(); x.fill();   // beard
+      x.beginPath(); x.ellipse(ex - look * .6, hy + 3, 3.8, 3, 0, 0, Math.PI); x.fill();
+      x.fillStyle = '#1b1b1b';
+      if (Math.abs(look) < .75) { x.beginPath(); x.arc(ex - 2, hy - 1.2, .75, 0, 7); x.fill(); }
+      x.beginPath(); x.arc(ex + 2 * (look < -.75 ? -1 : 1), hy - 1.2, .75, 0, 7); x.fill();
+      x.fillStyle = '#d99f78'; x.beginPath(); x.ellipse(ex + look * 1.8, hy + .7, 1.2, 1, 0, 0, 7); x.fill();                       // nose
+      if (sea.coat === 'rain') return;
+      if (sea.coat === 'snow') { x.fillStyle = '#e8e8e8'; x.beginPath(); x.arc(hx, hy - 2, 7.2, Math.PI, 0); x.fill(); x.beginPath(); x.arc(hx, hy - 10, 2.6, 0, 7); x.fill(); }   // beanie
       else { x.fillStyle = '#8a6d3b'; x.fillRect(hx - 10, hy - 6, 20, 2.5); x.fillRect(hx - 6, hy - 12, 12, 7); }                       // bucket hat
     };
     const body = (x0, y0, x1, y1) => limb(coat, 12, [x0, y0], [x1, y1]);
@@ -1878,7 +1888,7 @@ const Sky = (() => {
       x.strokeStyle = '#3b2f2a'; x.lineWidth = 2; x.beginPath(); x.moveTo(20, 0); x.lineTo(62, -64); x.stroke();
       x.strokeStyle = 'rgba(240,240,240,.7)'; x.lineWidth = .8; x.beginPath(); x.moveTo(62, -64); x.quadraticCurveTo(80, -30, 92, 31); x.stroke();
       limb(pants, 5, [-5, 0], [-2, -18]); limb(pants, 5, [5, 0], [2, -18]);
-      body(0, -18, 0, -38); head(1, -45);
+      body(0, -18, 0, -38); head(1, -45, 0);   // (facing us)
       limb(coat, 4, [-1, -34], [-5, -24], [-4, -15]);   // left arm straight down
       limb(coat, 4, [1, -35], [11, -40], [8, -47]);     // right hand up at the brim
       x.fillStyle = skin; x.beginPath(); x.arc(8, -47, 2.2, 0, 7); x.fill();
@@ -1895,7 +1905,7 @@ const Sky = (() => {
     } else if (sea.pose === 'hold') {   // crouched, both hands gripping the cabin
       const sway = Math.sin(t * 3) * 2;
       limb(pants, 5, [-6, 0], [-2, -10], [-8, -18]); limb(pants, 5, [6, 0], [4, -10], [-4, -18]);
-      body(-6, -18, -14 + sway, -32); head(-17 + sway, -40);
+      body(-6, -18, -14 + sway, -32); head(-17 + sway, -40, -.7);
       limb(coat, 4, [-13 + sway, -30], [-24, -34], [-34, -40]); limb(coat, 4, [-11 + sway, -28], [-26, -26], [-34, -28]);
     } else if (sea.pose === 'hat') {   // braced against the wind, one hand holding his hat on
       limb(pants, 5, [-7, 0], [-3, -18]); limb(pants, 5, [7, 0], [3, -18]);
