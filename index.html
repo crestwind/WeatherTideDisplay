@@ -2146,7 +2146,7 @@ const Sky = (() => {
   function drawEagle(e, t) {
     const k = e.k, span = Wd + 520 * k, x = e.dir > 0 ? -260 * k + e.p * span : Wd + 260 * k - e.p * span;
     const y = (sea ? sea.top - Hd * .28 : Hd * .33) + Math.sin(t * 1.1) * 8 * k, night = mode.tod === 'night';
-    const w = Math.sin(t * 3.4);   // slow, powerful wingbeats
+    const ph = t * 3.4, w = Math.sin(ph), dw = Math.cos(ph);   // slow, powerful wingbeats (dw > 0 on the upstroke)
     g.save(); g.translate(x, y); g.scale(e.dir * k, k);
     // the flag, flying back from a short pole held in the talons, rippling a little
     const red = night ? '#6e1c26' : '#b22234', white = night ? '#a9adb6' : '#ffffff', blue = night ? '#23224a' : '#3c3b6e';
@@ -2163,25 +2163,53 @@ const Sky = (() => {
     // the eagle
     const brown = night ? '#22180f' : '#4a3324', dark = night ? '#170f09' : '#36241a', light = night ? '#2c2015' : '#6b4a32';
     const whiteH = night ? '#b9bcc4' : '#f6f4ee', shade = night ? '#8d919a' : '#d9d6cc', beak = night ? '#8a7020' : '#f2b705';
-    // A broad wing seen from a little above: it beats from about 25° below level to 50° above, so the far wing shows
-    // above the body and the near one below it when level. In the wing's own units u runs from the shoulder (0) to the
-    // tip (1, about 62 px) and c across it from the leading edge (0) to the trailing edge (1, 22 px). The tip splits
-    // into five spread "finger" feathers, and the trailing edge is scalloped.
-    const a = .25 + .65 * w;
-    const wing = (rx, ry, side, col) => {
-      const vx = (side > 0 ? -.18 : -.34) * 62, vy = (-.82 * Math.sin(a) + side * .57 * Math.cos(a)) * 62;   // (the near one sweeps back less)
-      const P = (u, c) => [rx + vx * u - 22 * c, ry + vy * u];
-      const poly = pts => { g.beginPath(); pts.forEach(([u, c], i) => g.lineTo(...P(u, c))); g.closePath(); g.fill(); };
-      const out = [[0, 0], [.35, -.06], [.68, -.02], [.9, .12]];
-      for (let i = 0; i < 5; i++) out.push([1.18 - i * .055, .16 + i * .2], [.93 - i * .025, .3 + i * .2]);
-      out.push([.78, 1.05], [.64, .98], [.5, 1.07], [.36, .99], [.22, 1.06], [.08, .98], [0, 1]);
-      g.fillStyle = col; poly(out);
-      g.fillStyle = side > 0 ? light : brown; poly([[0, 0], [.35, -.06], [.68, -.02], [.84, .14], [.66, .42], [.34, .48], [0, .46]]);   // coverts
-      g.strokeStyle = dark; g.lineWidth = .7; g.beginPath();
-      for (let u = .1; u < .75; u += .14) { g.moveTo(...P(u, .55)); g.lineTo(...P(u + .02, 1)); }   // feather lines
+    // Each wing has an arm (shoulder to wrist, 28 px) and a hand (wrist to tip, 34 px), worked out in 3D (x forward,
+    // y up, z towards us) and seen from about 25° above, so the far wing shows above the body and the near one below
+    // it. Over a beat the wing swings from about 30° below level to 50° above, passing level quickly. On the upstroke
+    // the wrist bends, so the hand trails down and folds back; on the downstroke the wing is spread straight and the
+    // tips lag up a little. Six long "finger" feathers fan out from the hand (the middle ones longest), and the
+    // trailing edge is a row of rounded feather tips.
+    const a = .2 + .7 * Math.sign(w) * Math.abs(w) ** .6, ah = a - .45 * dw + .15 * Math.max(0, -dw), sh = -.25 - .45 * Math.max(0, dw);
+    const proj = (x, y, z) => [x - Math.abs(z) * .3, -y * .92 + z * .4];   // (both wings also lean back a little, so neither looks stubby)
+    const lerp = (p, q, f) => [p[0] + (q[0] - p[0]) * f, p[1] + (q[1] - p[1]) * f];
+    const tipC = night ? '#100a06' : '#24170f';
+    const wing = (rx, ry, side, col, cov) => {
+      const arm = proj(-.15 * 28, Math.sin(a) * 28, side * Math.cos(a) * 28), hl = Math.hypot(sh, 1) / 34;
+      const hand = proj(sh / hl, Math.sin(ah) / hl, side * Math.cos(ah) / hl);
+      const R = [rx, ry], W = [rx + arm[0], ry + arm[1]];
+      const at = (u, back) => [W[0] + hand[0] * u - back, W[1] + hand[1] * u];   // a point on the hand, `back` px behind its leading edge
+      const rear = [rx - 24, ry + 1], wrear = at(.12, 23), fb = at(.42, 19), f0 = at(.74, 0);
+      // the fingers
+      g.fillStyle = tipC;
+      [20, 27, 30, 29, 25, 20].forEach((L, i) => {
+        const b = lerp(f0, fb, i / 5), s = .04 + i * .1;
+        const d = [hand[0] / 34 * L * Math.cos(s) - L * Math.sin(s), hand[1] / 34 * L * Math.cos(s)];
+        const n = Math.hypot(...d) || 1, px = -d[1] / n * 2.6, py = d[0] / n * 2.6;   // half the feather's width, across it
+        g.beginPath(); g.moveTo(b[0] + px, b[1] + py);
+        g.quadraticCurveTo(b[0] + d[0] * .6 + px, b[1] + d[1] * .6 + py, b[0] + d[0], b[1] + d[1]);
+        g.quadraticCurveTo(b[0] + d[0] * .6 - px * .8, b[1] + d[1] * .6 - py * .8, b[0] - px, b[1] - py);
+        g.closePath(); g.fill();
+      });
+      // the wing itself, its trailing edge scalloped into feather tips
+      const C = lerp(R, W, .5), te = [];
+      for (let i = 0; i <= 9; i++) { const s = i / 9; te.push([(1 - s) ** 2 * fb[0] + 2 * s * (1 - s) * wrear[0] + s * s * rear[0], (1 - s) ** 2 * fb[1] + 2 * s * (1 - s) * wrear[1] + s * s * rear[1]]); }
+      g.fillStyle = col; g.beginPath(); g.moveTo(...R); g.lineTo(...W); g.lineTo(...f0); g.lineTo(...fb);
+      for (let i = 1; i < te.length; i++) {
+        const p = te[i - 1], q = te[i], m = lerp(p, q, .5);
+        let nx = -(q[1] - p[1]), ny = q[0] - p[0];
+        const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+        if (nx * (m[0] - C[0]) + ny * (m[1] - C[1]) < 0) { nx = -nx; ny = -ny; }   // bulging away from the wing
+        g.quadraticCurveTo(m[0] + nx * 3, m[1] + ny * 3, q[0], q[1]);
+      }
+      g.closePath(); g.fill();
+      // the paler coverts along the front, and lines between the long flight feathers behind them
+      const ca = [rx - 13, ry + .5], cb = at(.1, 12);
+      g.fillStyle = cov; g.beginPath(); g.moveTo(...R); g.lineTo(...W); g.lineTo(...at(.45, 0)); g.lineTo(...at(.3, 10)); g.lineTo(...cb); g.lineTo(...ca); g.closePath(); g.fill();
+      g.strokeStyle = tipC; g.lineWidth = .6; g.beginPath();
+      for (let i = 1; i < 6; i++) { g.moveTo(...lerp(ca, cb, i / 6)); g.lineTo(...te[9 - Math.round(i * 1.4)]); }
       g.stroke();
     };
-    wing(2, -8, -1, dark);                                                                             // far wing
+    wing(2, -8, -1, dark, brown);                                                                      // far wing
     g.fillStyle = whiteH; g.beginPath(); g.moveTo(-21, -3); g.lineTo(-42, -9); g.quadraticCurveTo(-47, -1, -42, 7); g.lineTo(-21, 4); g.closePath(); g.fill();   // white tail
     g.strokeStyle = shade; g.lineWidth = .8; g.beginPath();
     for (const ty of [-5, 0, 4]) { g.moveTo(-24, ty * .3); g.lineTo(-43, ty); }
@@ -2193,7 +2221,7 @@ const Sky = (() => {
     g.fillStyle = beak; g.fillRect(3.5, 9.5, 5, 2.5);                                                 // feet gripping the pole
     g.strokeStyle = beak; g.lineWidth = 1.6; g.beginPath(); g.arc(6, 12.5, 2.6, -2.6, .4); g.stroke();
     g.fillStyle = '#1b1b1b'; g.beginPath(); g.arc(8.6, 13.6, .7, 0, 7); g.arc(3.6, 14, .7, 0, 7); g.fill();   // talons
-    wing(8, -4, 1, brown);                                                                             // near wing
+    wing(8, -4, 1, brown, light);                                                                           // near wing
     // white head with a ragged edge where it meets the brown, a fierce brow and a big hooked beak
     g.fillStyle = whiteH; g.beginPath(); g.moveTo(13, -9); g.quadraticCurveTo(19, -15, 26, -14); g.quadraticCurveTo(33, -13, 34, -8);
     g.lineTo(33, -4); g.quadraticCurveTo(28, 0, 21, 2); g.lineTo(19, -.5); g.lineTo(16.5, 2.5); g.lineTo(15, -1.5); g.lineTo(12, 1);
