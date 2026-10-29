@@ -450,7 +450,7 @@
       </label>
     </div>
     <label>Display style
-      <select id="displaySel"><option value="normal">Sky (default)</option><option value="ocean">Ocean</option><option value="forest" disabled>Forest (coming soon)</option><option value="tropical" disabled>Tropical (coming soon)</option><option value="city" disabled>City (coming soon)</option><option value="mirror">Smart mirror (black background, no animation)</option></select>
+      <select id="displaySel"><option value="normal">Sky (default)</option><option value="ocean">Ocean</option><option value="forest">Forest</option><option value="tropical" disabled>Tropical (coming soon)</option><option value="city" disabled>City (coming soon)</option><option value="mirror">Smart mirror (black background, no animation)</option></select>
     </label>
     <div class="row">
       <label>Background scene
@@ -1437,9 +1437,9 @@ const Sky = (() => {
   let tornado = null;
   function buildTornado() {
     if (!sc.tornado) return null;
-    const sy = Hd / 1080, tall = Hd > Wd, ocean = !!sea, k = (ocean ? .85 : 1) * Math.min(sy, Wd / 900);
-    const bot = ocean ? sea.top + 2 : Hd * .93;
-    return { cx: Wd * (tall ? .25 : ocean ? .18 : .3), top: Hd * (tall ? .24 : .17), bot, k, ocean,
+    const sy = Hd / 1080, tall = Hd > Wd, ocean = !!sea, k = (ocean || forest ? .85 : 1) * Math.min(sy, Wd / 900);
+    const bot = ocean ? sea.top + 2 : forest ? forest.top + 20 * sy : Hd * .93;   // (in the Forest style it touches down behind the trees)
+    return { cx: Wd * (tall ? .25 : ocean || forest ? .18 : .3), top: Hd * (tall ? .24 : .17), bot, k, ocean,
       wTop: 115 * k, wBot: 7 * k, sway: 38 * k,
       debris: Array.from({ length: ocean ? 0 : 40 }, () => ({ a: rnd(0, 6.3), r: rnd(.4, 1.6), up: Math.pow(Math.random(), 2), sp: rnd(2, 4.5), s: rnd(1.5, 3.5) })),
       spray: Array.from({ length: ocean ? 46 : 0 }, () => ({ a: rnd(0, 6.3), r: rnd(.5, 1.5), up: Math.pow(Math.random(), 1.5), sp: rnd(2.5, 5) })) };
@@ -1956,6 +1956,238 @@ const Sky = (() => {
       const hx = sea.bx + (26 * Math.cos(roll) + 76 * Math.sin(roll)) * sea.bs, hy = y + 4 * sea.bs + (26 * Math.sin(roll) - 76 * Math.cos(roll)) * sea.bs;
       drawThought(t, hx, hy);
     }
+  }
+
+  /* ---------- Forest display style ---------- */
+  // A campsite in a clearing in the woods: rows of pines fading into the distance, a tent set back on the left, and a
+  // camper sitting on a log by the campfire, toasting a marshmallow on a stick. Now and then he pulls it back, eats
+  // it, puts a new one on and carries on. In bad weather (any rain, storms, high wind, heavy snow) the fire is out
+  // and he's in the tent, his head poking out of the door, looking around and now and then ducking back in. At night
+  // the fire lights up the clearing, and the tent glows from his lantern when he's inside. Snow whitens the ground,
+  // the trees and the tent; in light snow he stays out by the fire.
+  let forest = null;
+  const hexRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  function buildForest() {
+    if (S.display !== 'forest') return null;
+    const { kind, tod } = mode, night = tod === 'night', golden = tod === 'golden', portrait = Hd > Wd;
+    const inside = !!(sc.rain || sc.storm || sc.wind || sc.swirl || kind === 'heavysnow'), snowy = !!sc.snow;
+    // everything at the campsite is tinted for night, sunset or a dark sky, like the boat in the Ocean style
+    const tint = night ? [[10, 18, 40], .6] : golden ? [[70, 32, 44], .35] : sc.tone === 'storm' ? [[30, 38, 44], .35] : sc.tone === 'dark' ? [[30, 40, 50], .2] : null;
+    const tc = h => `rgb(${tint ? mix(hexRgb(h), tint[0], tint[1]) : hexRgb(h)})`;
+    const C = {};
+    for (const [k, h] of Object.entries({ tent: '#e8833a', tentSide: '#bf6528', trim: '#f2cf6b', door: '#2a1a10', jacket: '#b3392e', plaid: '#5a1a16',
+      jeans: '#3b5a85', boot: '#4a2f1d', skin: '#e9b48e', beard: '#6b4326', hat: '#2f5d3a', pom: '#e8e2d0', log: '#7a5232', logEnd: '#c49a68',
+      stone: '#8b8a86', stoneDark: '#5e5d5a', stick: '#5e4128', snow: '#f4f7fa', char: '#2b2420' })) C[k] = tc(h);
+    const f = { top: Hd * (portrait ? .55 : .58), night, golden, snowy, inside, kind, C,
+      s: Math.min(Hd / 1080, Wd / 700) * (portrait ? 1 : 1.25),
+      fx: Wd * (portrait ? .62 : .36), gy: Hd * (portrait ? .74 : .72),   // the campfire, and the ground line at the campsite
+      sparks: [], smoke: [], nextSpark: 0, nextSmoke: 0,
+      eat: { st: 'roast', t: 0, dur: rnd(6, 10), toast: 0, has: true } };
+    f.bg = forestBackdrop(f, tint);
+    return f;
+  }
+  // the trees, the forest floor and the clearing don't move, so they're drawn once into their own canvas
+  function forestBackdrop(f, tint) {
+    const [c, x] = mk(Wd, Hd), sx = Wd / 1920, sy = Hd / 1080, { kind } = mode;
+    const greyed = sc.tone === 'dark' || sc.tone === 'storm' || sc.tone === 'overcast' || sc.tone === 'grey' || kind === 'fog';
+    const P = f.night ? { far: '#1e2c3e', mid: '#131f2a', near: '#0a1118', g0: '#17221c', g1: '#0a110d', clr: '#2e2a22' }
+      : f.golden ? { far: '#8c6c7c', mid: '#4b4049', near: '#29252e', g0: '#5c5038', g1: '#2c2a22', clr: '#8c6a4a' }
+      : greyed ? { far: '#73858c', mid: '#3e544c', near: '#24342c', g0: '#4c5c3f', g1: '#26301f', clr: '#6c5c46' }
+      : { far: '#86a9ae', mid: '#3d6c4f', near: '#22432e', g0: '#5f8a45', g1: '#2f4f26', clr: '#9c8259' };
+    if (f.snowy) Object.assign(P, f.night ? { g0: '#5c6779', g1: '#343c4a', clr: '#4a4f58' } : { g0: '#eef2f5', g1: '#c6d0d8', clr: '#d9d3ca' });
+    const snowCap = f.night ? 'rgba(170,182,204,.9)' : 'rgba(250,252,255,.92)';
+    const pine = (px, by, h, col, snow) => {   // a pine: drooping tiers, widest at the bottom, on a short trunk
+      x.fillStyle = col; x.fillRect(px - h * .025, by - h * .16, h * .05, h * .16);
+      for (let i = 0; i < 4; i++) {
+        const b = by - h * (.12 + i * .2), tw = h * .44 * (1 - i * .2), th = h * .4;
+        x.fillStyle = col; x.beginPath(); x.moveTo(px - tw / 2, b); x.lineTo(px, b - th); x.lineTo(px + tw / 2, b);
+        x.quadraticCurveTo(px, b - th * .14, px - tw / 2, b); x.fill();
+        if (snow) { x.fillStyle = snowCap; x.beginPath(); x.moveTo(px - tw * .2, b - th * .55); x.lineTo(px, b - th); x.lineTo(px + tw * .2, b - th * .55); x.quadraticCurveTo(px, b - th * .62, px - tw * .2, b - th * .55); x.fill(); }
+      }
+    };
+    // far ridge of small hazy pines, then the forest floor, then the middle row standing on it
+    x.fillStyle = P.far; x.fillRect(0, f.top - 22 * sy, Wd, 24 * sy);   // (a solid band at their feet, so it reads as dense forest)
+    for (let px = -10 * sx; px < Wd + 20 * sx; px += rnd(9, 16) * sx) pine(px, f.top + rnd(0, 4) * sy, rnd(40, 85) * sy, P.far, f.snowy);
+    const gr = x.createLinearGradient(0, f.top, 0, Hd);
+    gr.addColorStop(0, P.g0); gr.addColorStop(1, P.g1);
+    x.fillStyle = gr; x.fillRect(0, f.top, Wd, Hd - f.top);
+    for (let px = -20 * sx; px < Wd + 40 * sx; px += rnd(22, 40) * sx) pine(px, f.top + rnd(10, 22) * sy, rnd(90, 165) * sy, P.mid, f.snowy);
+    if (kind === 'fog' || greyed) { x.fillStyle = f.night ? 'rgba(40,50,64,.25)' : 'rgba(210,218,222,.22)'; x.fillRect(0, 0, Wd, f.gy); }   // mist between the rows
+    // a few patches and tufts on the forest floor
+    for (let i = 0; i < 70 * sx; i++) {
+      const px = rnd(0, Wd), py = rnd(f.top + 30 * sy, Hd), r = rnd(12, 40) * sx;
+      x.fillStyle = `rgba(0,0,0,${f.snowy ? rnd(.02, .05) : rnd(.04, .1)})`; x.beginPath(); x.ellipse(px, py, r, r * .25, 0, 0, 7); x.fill();
+    }
+    // the clearing round the fire
+    const s = f.s, cl = x.createRadialGradient(f.fx - 60 * s, f.gy, 0, f.fx - 60 * s, f.gy, 230 * s), clr = hexRgb(P.clr);
+    cl.addColorStop(0, P.clr); cl.addColorStop(.55, P.clr); cl.addColorStop(1, `rgba(${clr},0)`);   // fading out without a dark rim
+    x.save(); x.translate(0, f.gy); x.scale(1, .2); x.translate(0, -f.gy); x.fillStyle = cl; x.fillRect(f.fx - 360 * s, f.gy - 300 * s, 600 * s, 600 * s); x.restore();
+    // big near pines at the left edge and on the right (mostly behind the forecast boxes on a wide screen)
+    const near = Hd > Wd ? [.02, .96] : [.015, .085, .52, .6, .7, .8, .9, .98];
+    for (const u of near) pine(u * Wd + rnd(-15, 15) * sx, f.gy + rnd(60, 140) * sy, rnd(330, 460) * sy, P.near, f.snowy);
+    return c;
+  }
+  function forestTick(dt, t) {
+    const f = forest, s = f.s, e = f.eat, lit = !f.inside;
+    // roast → lift it to his mouth → eat → put a new one on and lower it back over the fire
+    e.t += dt;
+    if (e.st === 'roast') { e.toast = Math.min(1, e.t / e.dur); if (e.t > e.dur) { e.st = 'lift'; e.t = 0; } }
+    else if (e.st === 'lift' && e.t > 1) { e.st = 'eat'; e.t = 0; }
+    else if (e.st === 'eat') { if (e.t > .6) e.has = false; if (e.t > 2) { e.st = 'lower'; e.t = 0; e.has = true; e.toast = 0; } }
+    else if (e.st === 'lower' && e.t > 1) { e.st = 'roast'; e.t = 0; e.dur = rnd(7, 12); }
+    // sparks and smoke from the fire (just a thin wisp when it's out, and none in a downpour)
+    const fy = f.gy - 14 * s, drift = (sc.cloudDir || 1) * 12 * s;
+    if (lit && t > f.nextSpark) { f.nextSpark = t + rnd(.05, .25); f.sparks.push({ x: f.fx + rnd(-10, 10) * s, y: fy - 10 * s, vx: rnd(-14, 14) * s, vy: -rnd(50, 110) * s, life: 0, dur: rnd(.8, 1.8) }); }
+    if ((lit || !['heavy', 'storm', 'hurricane', 'tornado'].includes(f.kind)) && t > f.nextSmoke) {
+      f.nextSmoke = t + (lit ? rnd(.25, .45) : rnd(.7, 1.2));
+      f.smoke.push({ x: f.fx + rnd(-6, 6) * s, y: fy - (lit ? 34 : 4) * s, r: (lit ? 7 : 4) * s, life: 0, dur: rnd(4, 6), a: lit ? .16 : .1 });
+    }
+    for (const p of f.sparks) { p.life += dt; p.x += (p.vx + Math.sin(t * 7 + p.dur * 9) * 10 * s) * dt; p.y += p.vy * dt; }
+    f.sparks = f.sparks.filter(p => p.life < p.dur);
+    for (const p of f.smoke) { p.life += dt; p.y -= 26 * s * dt; p.x += (drift + Math.sin(t * .6 + p.dur) * 6 * s) * dt; p.r += 7 * s * dt; }
+    f.smoke = f.smoke.filter(p => p.life < p.dur);
+  }
+  function drawForest(ts) {
+    const f = forest, t = ts / 1000, s = f.s, C = f.C, lit = !f.inside;
+    g.drawImage(f.bg, 0, 0);
+    const tx = f.fx - 215 * s, tb = f.gy - 34 * s, k = s * .9;   // the tent, set back on the left
+    drawTent(f, t, tx, tb, k);
+    // the log he sits on, then him, then the fire in front
+    const lx = f.fx - 100 * s;
+    g.save(); g.translate(lx, f.gy); g.scale(s, s);
+    g.fillStyle = C.log; g.beginPath(); g.roundRect(-38, -19, 72, 18, 8); g.fill();
+    g.fillStyle = C.logEnd; g.beginPath(); g.ellipse(33, -10, 5, 9, 0, 0, 7); g.fill();
+    g.strokeStyle = C.log; g.lineWidth = .8; g.beginPath(); g.ellipse(33, -10, 2.5, 5, 0, 0, 7); g.stroke();
+    if (f.snowy) { g.fillStyle = C.snow; g.beginPath(); g.roundRect(-36, -21, 22, 4, 2); g.roundRect(24, -21, 9, 4, 2); g.fill(); }
+    g.restore();
+    if (lit) drawCamper(f, t, lx);
+    drawCampfire(f, t);
+    // the fire's warm glow over the clearing, the camper and the tent
+    if (lit) {
+      const a = (f.night ? .42 : f.golden ? .26 : .12) * (.9 + .1 * Math.sin(t * 11) * Math.sin(t * 7.3));
+      const gl = g.createRadialGradient(f.fx, f.gy - 24 * s, 0, f.fx, f.gy - 24 * s, 240 * s);
+      gl.addColorStop(0, `rgba(255,160,70,${a})`); gl.addColorStop(1, 'rgba(255,160,70,0)');
+      g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = gl; g.fillRect(f.fx - 240 * s, f.gy - 264 * s, 480 * s, 480 * s); g.restore();
+    }
+    for (const p of f.smoke) {
+      const u = p.life / p.dur;
+      g.fillStyle = f.night ? `rgba(120,124,132,${p.a * (1 - u)})` : `rgba(200,200,204,${p.a * (1 - u)})`;
+      g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill();
+    }
+    for (const p of f.sparks) {
+      const u = p.life / p.dur;
+      g.fillStyle = `rgba(255,${Math.round(200 - 90 * u)},80,${1 - u})`; g.beginPath(); g.arc(p.x, p.y, 1.6 * s * (1 - u * .5), 0, 7); g.fill();
+    }
+  }
+  function drawTent(f, t, tx, tb, k) {   // an A-frame tent seen from the front left, its door facing us
+    const C = f.C, glow = f.inside && f.night;
+    g.save(); g.translate(tx, tb); g.scale(k, k);
+    g.strokeStyle = 'rgba(40,30,20,.6)'; g.lineWidth = .8; g.beginPath();   // guy ropes to their pegs
+    g.moveTo(0, -102); g.lineTo(-92, 4); g.moveTo(56, -110); g.lineTo(150, -2); g.stroke();
+    g.fillStyle = C.tentSide; g.beginPath(); g.moveTo(0, -100); g.lineTo(56, -108); g.lineTo(124, -8); g.lineTo(62, 0); g.closePath(); g.fill();
+    g.fillStyle = C.tent; g.beginPath(); g.moveTo(0, -100); g.lineTo(-64, 0); g.lineTo(62, 0); g.closePath(); g.fill();
+    g.fillStyle = C.trim; g.beginPath(); g.moveTo(-60, -6); g.lineTo(58, -6); g.lineTo(62, 0); g.lineTo(-64, 0); g.closePath(); g.fill();   // the groundsheet edge
+    if (f.snowy) {   // snow along the ridge and down the roof
+      g.fillStyle = C.snow; g.beginPath(); g.moveTo(-3, -98); g.lineTo(56, -106); g.lineTo(70, -86); g.lineTo(12, -80); g.closePath(); g.fill();
+    }
+    // the door, its flaps tied back; lit up by his lantern at night when he's inside
+    const door = new Path2D('M0 -84 L-30 0 L30 0 Z');
+    if (glow) {
+      const gd = g.createLinearGradient(0, -84, 0, 0); gd.addColorStop(0, '#ffcf7a'); gd.addColorStop(1, '#e8902e');
+      g.fillStyle = gd;
+    } else g.fillStyle = C.door;
+    g.fill(door);
+    g.fillStyle = C.trim; g.beginPath(); g.moveTo(0, -84); g.lineTo(-30, 0); g.lineTo(-40, 0); g.lineTo(-5, -78); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(0, -84); g.lineTo(30, 0); g.lineTo(40, 0); g.lineTo(5, -78); g.closePath(); g.fill();
+    g.strokeStyle = C.door; g.lineWidth = 2; g.beginPath(); g.moveTo(0, -100); g.lineTo(0, -110); g.moveTo(56, -108); g.lineTo(56, -117); g.stroke();   // pole tips
+    if (f.inside) {   // his head poking out of the door: he looks one way, then the other, and now and then ducks back in
+      const look = Math.sin(t * .45) * 1.2, duck = Math.max(0, Math.sin(t * .17) - .7) / .3;
+      g.save(); g.clip(door);
+      g.translate(0, -12 + duck * 26); drawCamperHead(f, t, Math.max(-1, Math.min(1, look)), 1.4, false);
+      g.restore();
+    }
+    g.restore();
+    if (glow) {   // the tent glowing from inside
+      const gl = g.createRadialGradient(tx, tb - 40 * k, 0, tx, tb - 40 * k, 150 * k);
+      gl.addColorStop(0, 'rgba(255,190,100,.35)'); gl.addColorStop(1, 'rgba(255,190,100,0)');
+      g.save(); g.globalCompositeOperation = 'lighter'; g.fillStyle = gl; g.fillRect(tx - 150 * k, tb - 190 * k, 300 * k, 300 * k); g.restore();
+    }
+  }
+  // his head, drawn round (0, 0) in the current units: beanie with a pom-pom, beard; look turns him (-1 left, 1 right)
+  function drawCamperHead(f, t, look, sc2, chew) {
+    const C = f.C;
+    g.save(); g.scale(sc2, sc2);
+    g.fillStyle = C.skin; g.beginPath(); g.arc(0, 0, 9.5, 0, 7); g.fill();
+    g.fillStyle = C.beard; g.beginPath(); g.arc(look * 2, 1, 9.6, .15 * Math.PI, .85 * Math.PI); g.lineTo(look * 2 - 8, 1); g.quadraticCurveTo(look * 2, 6, look * 2 + 8, 1); g.closePath(); g.fill();
+    g.beginPath(); g.ellipse(look * 3, 3.5, 6.5, 6, 0, 0, Math.PI); g.fill();
+    const ex = look * 4.5;
+    g.fillStyle = '#1b1b1b';
+    if (Math.abs(look) < .75) { g.beginPath(); g.arc(ex - 3.2, -1.5, 1.1, 0, 7); g.fill(); }
+    g.beginPath(); g.arc(ex + 3.2 * (look < -.75 ? -1 : 1), -1.5, 1.1, 0, 7); g.fill();
+    g.fillStyle = C.skin; g.beginPath(); g.ellipse(ex + look * 3, 1.2, 1.8, 1.5, 0, 0, 7); g.fill();   // nose
+    if (chew) { g.fillStyle = '#3a2214'; g.beginPath(); g.ellipse(ex + look * 2, 5, 2.2, .8 + Math.abs(Math.sin(t * 10)) * 1.2, 0, 0, 7); g.fill(); }
+    g.fillStyle = C.hat; g.beginPath(); g.arc(0, -4, 10.2, Math.PI * 1.02, Math.PI * 1.98); g.closePath(); g.fill();   // beanie
+    g.fillRect(-10.4, -6.5, 20.8, 3.4);   // its folded brim, just above his eyes
+    g.fillStyle = C.pom; g.beginPath(); g.arc(0, -15, 3.2, 0, 7); g.fill();
+    g.restore();
+  }
+  function drawCamper(f, t, lx) {   // sitting on the log, facing the fire on his right, the stick out over the flames
+    const C = f.C, e = f.eat, s = f.s;
+    g.save(); g.translate(lx, f.gy); g.scale(s, s); g.lineCap = g.lineJoin = 'round';
+    // legs: thigh forward, shin down to his boots on the ground
+    g.strokeStyle = C.jeans; g.lineWidth = 9; g.beginPath(); g.moveTo(-2, -22); g.lineTo(23, -30); g.lineTo(31, -5); g.stroke();
+    g.fillStyle = C.boot; g.beginPath(); g.ellipse(35, -3.5, 8.5, 4.2, 0, 0, 7); g.fill();
+    // body in a plaid jacket, leaning a little towards the fire
+    const body = new Path2D('M-9 -19 L11 -19 Q14 -40 12 -57 Q3 -63 -6 -58 Q-11 -40 -9 -19 Z');
+    g.fillStyle = C.jacket; g.fill(body);
+    g.save(); g.clip(body); g.strokeStyle = C.plaid; g.globalAlpha = .55;
+    g.lineWidth = 2.2; g.beginPath(); for (let y = -56; y < -18; y += 8) { g.moveTo(-14, y); g.lineTo(16, y); } g.stroke();
+    g.lineWidth = 1.6; g.beginPath(); for (let x = -8; x < 14; x += 7) { g.moveTo(x, -64); g.lineTo(x, -16); } g.stroke();
+    g.restore();
+    // the stick: from the marshmallow end (T) back through his hands (H)
+    const lerp = (a, b, u) => a + (b - a) * u, roast = [96 + Math.sin(t * .7) * 3, -55 + Math.sin(t * 1.3) * 2], mouth = [16, -68];
+    const u = e.st === 'lift' ? ease(e.t) : e.st === 'eat' ? 1 : e.st === 'lower' ? 1 - ease(e.t) : 0;
+    const T = [lerp(roast[0], mouth[0], u), lerp(roast[1], mouth[1], u)], H = [lerp(30, 20, u), lerp(-44, -50, u)];
+    const dl = Math.hypot(T[0] - H[0], T[1] - H[1]) || 1, B = [H[0] - (T[0] - H[0]) / dl * 20, H[1] - (T[1] - H[1]) / dl * 20];
+    g.strokeStyle = C.stick; g.lineWidth = 2.6; g.beginPath(); g.moveTo(...B); g.lineTo(...T); g.stroke();
+    if (e.has) {   // the marshmallow: white, toasting golden brown over the fire
+      const m = mix([248, 244, 236], [196, 128, 58], e.toast);
+      g.save(); g.translate(...T); g.rotate(Math.atan2(T[1] - H[1], T[0] - H[0]));
+      g.fillStyle = `rgb(${m})`; g.beginPath(); g.roundRect(-5.5, -4.5, 11, 9, 3); g.fill();
+      g.restore();
+    }
+    // arms to the stick
+    g.strokeStyle = C.jacket; g.lineWidth = 6.5;
+    const sh = [5, -53], el = [lerp(sh[0], H[0], .55), lerp(sh[1], H[1], .55) + 5];
+    g.beginPath(); g.moveTo(...sh); g.quadraticCurveTo(...el, ...H); g.stroke();
+    g.fillStyle = C.skin; g.beginPath(); g.arc(...H, 3.4, 0, 7); g.arc(H[0] + (T[0] - H[0]) / dl * 8, H[1] + (T[1] - H[1]) / dl * 8, 3.2, 0, 7); g.fill();
+    g.translate(6, -69); drawCamperHead(f, t, .55, 1, e.st === 'eat' && e.t > .6);
+    g.restore();
+  }
+  function drawCampfire(f, t) {
+    const C = f.C, s = f.s, lit = !f.inside;
+    g.save(); g.translate(f.fx, f.gy); g.scale(s, s);
+    // the ring of stones (the back ones first), and three logs leaning together
+    const stones = [];
+    for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2; stones.push([Math.cos(a) * 26, -4 + Math.sin(a) * 7, 6 + (i % 3) * 1.2]); }
+    const stone = ([x, y, r]) => { g.fillStyle = C.stone; g.beginPath(); g.ellipse(x, y, r, r * .7, 0, 0, 7); g.fill(); g.fillStyle = C.stoneDark; g.beginPath(); g.ellipse(x, y + r * .25, r, r * .45, 0, 0, Math.PI); g.fill(); };
+    stones.filter(st => st[1] < -4).forEach(stone);
+    g.strokeStyle = lit ? C.log : C.char; g.lineWidth = 5.5; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(-17, -2); g.lineTo(3, -25); g.moveTo(17, -2); g.lineTo(-3, -25); g.moveTo(-4, 0); g.lineTo(1, -27); g.stroke();
+    if (f.snowy && !lit) { g.fillStyle = C.snow; g.beginPath(); g.ellipse(0, -4, 14, 3, 0, 0, 7); g.fill(); }
+    if (lit) {   // flames: five flickering tongues in three layers, orange outside to pale yellow in the middle
+      for (const [col, sz] of [['#ff6a1a', 1], ['#ffa62b', .72], ['#ffe9a0', .42]]) {
+        g.fillStyle = col;
+        for (let i = 0; i < 5; i++) {
+          const bx = (-12 + i * 6) * sz, h = (i === 2 ? 46 : i === 1 || i === 3 ? 36 : 24) * sz * (.78 + .16 * Math.sin(t * 9 + i * 1.7) + .1 * Math.sin(t * 13.7 + i * 2.3));
+          const sw = Math.sin(t * 4.2 + i * 1.3) * 3.5 * sz, w = 7 * sz + 2;
+          g.beginPath(); g.moveTo(bx - w, -3); g.quadraticCurveTo(bx - w * 1.2 + sw * .4, -h * .5, bx + sw, -h - 3);
+          g.quadraticCurveTo(bx + w * 1.2 + sw * .4, -h * .5, bx + w, -3); g.closePath(); g.fill();
+        }
+      }
+    }
+    stones.filter(st => st[1] >= -4).forEach(stone);
+    g.restore();
   }
 
   /* ---------- Random events ---------- */
@@ -2678,6 +2910,7 @@ const Sky = (() => {
     flashes = []; bolt = null; nextBolt = performance.now() + 3000;
     sea = buildSea();
     if (sea) sea.lhImg = lighthouseSprite();
+    forest = buildForest();
     tornado = buildTornado();
   }
 
@@ -2764,6 +2997,7 @@ const Sky = (() => {
     if (sea) talkTick(t);
     if (sea && sea.dolphinsOk) podTick(dt);
     if (sea) { diverTick(dt); yachtTick(dt); }
+    if (forest) forestTick(dt, t);
     updateGlass(dt, t);
     for (const c of clouds) {
       c.x += c.v * gust * dt;
@@ -2842,6 +3076,7 @@ const Sky = (() => {
       g.globalAlpha = 1;
     }
     if (sea) { g.globalAlpha = 1; drawSea(ts); }   // Ocean display style: below the sky, under the rain, snow and fog
+    if (forest) { g.globalAlpha = 1; drawForest(ts); }   // Forest display style, likewise
     for (const f of flares) { g.fillStyle = f.gr; g.beginPath(); g.arc(f.x, f.y, f.r, 0, 7); g.fill(); }
     if (windLines.length) {   // faint streaks of wind
       g.strokeStyle = 'rgb(255,255,255)'; g.lineWidth = Math.max(1, 1.4 * Hd / 1080); g.lineCap = 'round';
