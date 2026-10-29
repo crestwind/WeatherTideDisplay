@@ -57,6 +57,16 @@ The biplane's banner says whatever is in the file **banner.txt** (one line, up t
 
 tidalweather.com updates within a couple of minutes, and screens pick up the new message within half an hour (or straight away when reloaded with F5).
 
+### Adding it to a home screen
+
+Tidal Weather can sit on a phone, tablet or computer like an app, with its blue wave icon, opening full-screen without the browser bar:
+
+- **iPhone / iPad (Safari):** tap **Share**, then **Add to Home Screen**.
+- **Android (Chrome):** tap the **⋮** menu, then **Add to Home screen** or **Install app**.
+- **Computer (Chrome or Edge):** click the **install** icon at the right end of the address bar.
+
+On iPhone and iPad the home screen app keeps its own settings, separate from Safari, so set the location once more the first time it opens.
+
 ### Keeping the TV on
 
 Set the TV computer's power settings so the screen never turns off or goes to sleep. The display can't control this from a web page.

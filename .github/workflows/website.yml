@@ -33,7 +33,7 @@ jobs:
       - name: Build the site
         run: |
           mkdir _site
-          cp index.html icon.png icon.ico logo.png banner.txt nj-emergency.sh _site/
+          cp index.html icon.png icon.ico logo.png banner.txt manifest.webmanifest app-icon-180.png app-icon-192.png app-icon-512.png nj-emergency.sh _site/
           echo "window.APP_VERSION = { built: \"$(git log -1 --format=%cs)\" };" > _site/version.js
           # If nj.gov is down, publish without it; the page simply skips the NJ check
           sh _site/nj-emergency.sh || echo "NJ check failed; publishing without it"
