@@ -65,6 +65,7 @@ Notes for picking this project back up later. `README.md` is the user manual; th
 6. **GitHub sign-in.** `gh auth login` typed by the user with `!` didn't save a login. Running `echo "" | gh auth login --web …` in the background and giving the user the one-time code worked. Pushing a workflow file needs the `workflow` scope (`gh auth refresh -s workflow`).
 7. **Auto mode** blocks creating a public repo until the user explicitly says yes in the conversation.
 8. **`.jfif` images** can't be viewed directly by the Read tool; convert them to PNG with System.Drawing first.
+9. **Open-Meteo's daily limit (about 10,000 per internet connection, reset at midnight UTC).** It counts each point of a multi-point request as one call, and long or many-variable requests as several. The forecast map is ~240 points per load, and the history since 1940 is very heavy. On 2026-10-29 about 70 test screenshots from this PC each loaded the map (it used to start loading 200px before it scrolled into view, which a 1080-tall screen already reached), the limit ran out, and the site showed "Can't reach the weather service" on this connection until the reset. Fixed: the map now loads only when a fifth of it is on screen. Keep screenshot runs few, and never let a test copy scroll to the map or history unless that's what's being tested.
 
 ## Testing recipe (on this PC)
 

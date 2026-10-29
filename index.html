@@ -3788,9 +3788,11 @@ const TideYear = (() => {
   return { show(on) { shown = on; if (on) load(); }, reset() { doneKey = ''; if (shown) load(); }, tidesLoaded() { if (shown) load(); } };
 })();
 
-// Load the radar and history when they scroll into view (a little before, so they're ready).
-new IntersectionObserver(es => es.forEach(e => Radar.show(e.isIntersecting)),
-  { rootMargin: '200px' }).observe($('#radar'));
+// Load the radar and history when they scroll into view (the history a little before, so it's ready). The forecast
+// map waits until a fifth of it is actually on screen: Open-Meteo counts each of its ~240 points as one request
+// against its daily limit per internet connection, so it mustn't load for a screen that just sits at the top.
+new IntersectionObserver(es => es.forEach(e => Radar.show(e.intersectionRatio >= .2)),
+  { threshold: [0, .2] }).observe($('#radar'));
 new IntersectionObserver(es => es.forEach(e => History.show(e.isIntersecting)), { rootMargin: '200px' }).observe($('#hist'));
 new IntersectionObserver(es => es.forEach(e => TideYear.show(e.isIntersecting)), { rootMargin: '200px' }).observe($('#tideYear'));
 $('#moreHint').onclick = () => $('#more').scrollIntoView({ behavior: 'smooth' });
