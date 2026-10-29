@@ -113,7 +113,9 @@ Built the display, the animated backgrounds, alerts (NWS, USGS, FEMA, NJ), the a
 - The diver's snorkel turns with his head (it's placed at an angle round the head and drawn behind the hood, shaded, when it's on the far side).
 - The eagle was redrawn (the flag was kept as it was): shaped body, white fanned tail, white head with a ragged edge, brow and hooked beak, feet gripping the pole, and broad wings with five "finger" feathers seen from a little above (`wing(rx, ry, side, col)` in `drawEagle`; u along the span, c across the chord); the wings are two-part (arm and hand, worked out in 3D with a bending wrist) with six finger feathers and a scalloped trailing edge, so both show through the whole beat. To screenshot it, sed `e.p` to a fixed value, `const ph = t * 3.4` to a fixed phase and `e.dir` to 1 in a scratch copy, with `?event=eagle&display=ocean`.
 
-**Where we left off (2026-10-29):** everything is live on tidalweather.com and the test site is off. Next session the user wants to redesign the giant. Still open: the user clicking **Verify** for the domain (GitHub Settings → Pages), and the Forest, Tropical and City display styles.
+- tidalweather.com is now a verified domain for the crestwind GitHub account (TXT record `_github-pages-challenge-crestwind` in Cloudflare DNS; leave it in place).
+
+**Where we left off (2026-10-29, later):** everything is live on tidalweather.com (banner rotation, diver, yacht, new eagle, map loading fix) and the test site is on. Still open: redesign the giant, and the Forest, Tropical and City display styles.
 
 ## Ideas not done yet
 
