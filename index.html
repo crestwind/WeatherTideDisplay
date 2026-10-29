@@ -1707,7 +1707,12 @@ const Sky = (() => {
     return pickLine(groups);
   }
   function talkTick(t) {
-    if (!sea || stage.ev) { talk.react = null; return; }   // quiet during a major random event
+    if (!sea || stage.ev) {   // quiet during a major random event
+      talk.react = null;
+      // a thought that comes due during a major random event is skipped: start his timer over instead
+      if (sea && stage.ev && t > talk.next) talk.next = t + (/hurricane|tornado/.test(mode.kind) ? rnd(50, 80) : rnd(120, 240));
+      return;
+    }
     // When the background changes (the weather or the time of day), reset the timer: drop whatever he was thinking
     // and say something about the new scene in a few seconds, then carry on at the usual pace.
     const scene = mode.kind + '|' + mode.tod;
@@ -1972,8 +1977,8 @@ const Sky = (() => {
   const BAD_SKY = ['windy', 'storm', 'hurricane', 'tornado', 'heavy', 'heavysnow'];
   const flyOK = () => !BAD_SKY.includes(mode.kind);
   const forced = (location.search.match(/[?&]event=(\w+)/) || [])[1] || (/[?&]plane\b/.test(location.search) ? 'biplane' : '');
-  const stage = { ev: null, next: performance.now() / 1000 + (forced ? 2 : 30), last: '', first: true };
-  const MAJORS = { biplane: 2, giant: 1, mermaid: 1, ufo: 1, eagle: 1, nessie: 1 };   // how likely each one is
+  const stage = { ev: null, next: performance.now() / 1000 + (forced ? 2 : 30), last: '', lastOther: '', first: true };
+  const MAJORS = ['biplane', 'giant', 'mermaid', 'ufo', 'eagle', 'nessie'];
   const saluting = () => !!(stage.ev && stage.ev.kind === 'eagle' && sea && (sea.pose === 'fish' || sea.pose === 'mug'));
   const ease = u => { u = Math.min(1, Math.max(0, u)); return u * u * (3 - 2 * u); };
   const randFish = () => FISH[Math.floor(Math.random() * FISH.length)];
@@ -2009,16 +2014,20 @@ const Sky = (() => {
       const over = e.kind === 'biplane' ? !plane : e.p >= 1;
       if (!over && eligible(e.kind)) return;   // still going (it stops early if the weather turns against it)
       if (e.kind === 'biplane') plane = null;
-      stage.ev = null; stage.last = e.kind; stage.next = t + rnd(150, 300);
+      stage.ev = null; stage.last = e.kind; stage.next = t + rnd(150, 210);   // the next one in 2½ to 3½ minutes
+      if (e.kind !== 'biplane') stage.lastOther = e.kind;
       if (over && e.say && sea) { talk.line = e.say; talk.isCatch = true; talk.start = t; talk.dur = 6; }   // his reaction
       else talk.next = Math.max(talk.next, t + 8);
       return;
     }
     if (t < stage.next || talk.line) return;   // wait for the fisherman to finish his thought
-    let kind = stage.first ? (forced || 'biplane') : '';
-    if (!kind || !MAJORS[kind] || !eligible(kind)) {
-      const pool = Object.keys(MAJORS).filter(k => k !== stage.last && eligible(k)).flatMap(k => Array(MAJORS[k]).fill(k));
-      kind = pool[Math.floor(Math.random() * pool.length)];
+    // every other event is the biplane; the ones in between are picked at random, never the same as the last in-between
+    // one (if the biplane can't fly in this weather, its turn goes to another event instead)
+    let kind = stage.first ? (forced || 'biplane') : stage.last !== 'biplane' ? 'biplane' : '';
+    if (!kind || !MAJORS.includes(kind) || !eligible(kind)) {
+      const pool = MAJORS.filter(k => k !== 'biplane' && k !== stage.lastOther && eligible(k));
+      // (only if nothing else can happen in this weather does the last one repeat)
+      kind = pool[Math.floor(Math.random() * pool.length)] || (eligible(stage.lastOther) ? stage.lastOther : '');
     }
     stage.first = false;
     stage.ev = kind ? startMajor(kind, t) : null;

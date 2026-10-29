@@ -207,7 +207,7 @@ Random events are the occasional visitors that pass through the scene at random 
 
 There are two kinds:
 
-- **Major random events** happen **one at a time**, about every 2½ to 5 minutes, and never while the fisherman is thinking: he stays quiet until it's over, and some end with him saying something. The biplane always goes first, about 30 seconds after the page opens, so its banner gets seen; after that, each one is picked at random from those that suit the scene, never the same one twice in a row.
+- **Major random events** happen **one at a time**, every 2½ to 3½ minutes. **Every other one is the biplane**, starting about 30 seconds after the page opens, so its banner gets seen often; the ones in between are picked at random from those that suit the scene, never the same as the previous in-between one (if the biplane can't fly in the weather, another event takes its turn). They wait for a thought the fisherman is already having to finish; he stays quiet during the event, and any thought that comes due while it's on is skipped. Some events end with him saying something.
 - **Minor random events** happen whenever, each on its own timer, alongside each other and alongside major events.
 
 **Flying events** (seagulls, the biplane, the helicopters, the jet, the eagle and the UFO) show up in every weather and at every time of day except **high wind, thunderstorms, hurricanes, tornadoes, heavy rain and heavy snow**.
