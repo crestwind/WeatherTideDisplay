@@ -185,11 +185,7 @@ The background changes on its own to match the current weather, the time of day 
 
 It appears on clear, partly cloudy and windy nights.
 
-**Seagulls** fly across on clear, partly cloudy and cloudy days: a single gull or a small group of up to five, every 20 seconds to a minute (the first within about 10 seconds). They flap with the odd glide, swoop gently up and down instead of flying straight, and tilt as they climb and dip. By day they're white with black wingtips (grey under an overcast sky, where white would fade into the clouds); at sunrise and sunset they're dark silhouettes.
-
-**A biplane towing a banner** crosses the sky right to left about 30 seconds after the page opens, then every 5 minutes, in any weather (not in smart mirror mode or with the animation off). It flies level in calm weather, bobs and tilts in wind, and gets bumped about in storms; the banner trails just behind with a small ripple so it stays readable. Its message is in **banner.txt** (see [Changing the banner message](#changing-the-banner-message)). Add `?plane` to the address to send one over straight away.
-
-**Shooting stars** appear on clear nights only: the first within about half a minute of the scene starting, then every 30 seconds to 2 minutes at random.
+The seagulls, the biplane and the other occasional visitors are described under [Random events](#random-events).
 
 The **high wind** scene comes on with sustained winds of 25 mph or more, gusts of 40 mph or more, or a High Wind Warning. Rain, snow, thunderstorm and fog scenes take priority over it.
 
@@ -204,6 +200,28 @@ These effects appear on top of everything else, as if they were on the TV screen
 - **Rain:** drops land on the screen. Small ones dry up, and bigger ones run down in jerks, leaving tiny beads of water behind. There's more of this the harder it rains.
 - **Snow:** flakes stick to the screen as ice crystals, then melt into water beads. Some of the beads run down.
 - **Wind and hurricane:** a leaf slaps onto the screen now and then, sticks for a second or two, then peels off and blows away.
+
+## Random events
+
+Random events are the occasional visitors that pass through the scene at random times, so the display never looks quite the same twice. None of them appear in smart mirror mode or with **Background animation** set to **Off**.
+
+| Random event | Where | When | How often |
+|---|---|---|---|
+| **Seagulls** | Normal and Ocean | Clear, partly cloudy and cloudy days | Every 20 seconds to a minute (the first within about 10 seconds) |
+| **Dolphins** | Ocean | Nice days: no rain or storms | A pod every 25 to 60 seconds |
+| **Biplane with banner** | Normal and Ocean | Any weather | About 30 seconds after the page opens, then every 5 minutes |
+| **Jumping fish** | Ocean | Whenever the fisherman is fishing | Every 4 to 12 seconds |
+| **Shooting stars** | Normal and Ocean | Clear nights | Every 30 seconds to 2 minutes (the first within about half a minute) |
+
+**Seagulls:** a single gull or a small group of up to five flies across from either side. They flap with the odd glide, swoop gently up and down instead of flying straight, and tilt as they climb and dip. By day they're white with black wingtips (grey under an overcast sky, where white would fade into the clouds); at sunrise and sunset they're dark silhouettes.
+
+**Dolphins:** a pod of two or three swims across the open sea, each arcing out of the water and back in three or four times with a small splash. Pods farther out are smaller and pass behind the boat; nearer ones pass in front. At sunset and at night they're dark silhouettes.
+
+**Biplane with banner:** a red biplane with yellow wings crosses the sky right to left, towing a banner with a message (see [Changing the banner message](#changing-the-banner-message)). It flies level in calm weather, bobs and tilts in wind, and gets bumped about in storms; the banner trails just behind with only a small ripple, so it stays readable. At night it shows red and green wingtip lights. The fisherman never thinks while the plane is passing, so the two don't overlap. Add `?plane` to the address to send one over straight away.
+
+**Jumping fish:** a fish leaps out of the sea away from the boat, arcs through the air and drops back in, with a splash going out and coming back in. Fish farther out look smaller. At sunset and at night they're dark silhouettes. On a wide screen they only jump in the open sea on the left, since the forecast boxes cover the right.
+
+**Shooting stars:** a bright streak crosses part of the night sky and fades out in about a second.
 
 ## Alerts
 
