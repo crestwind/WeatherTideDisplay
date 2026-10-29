@@ -1,6 +1,6 @@
 # The biplane's banner messages, one per line (up to 70 characters each).
 # Each flight shows the next one in order, then starts again from the top.
 # Lines starting with # (like these) are notes and never shown.
-Check out our display styles in settings
+Something broken? Want a new feature? Tap Send feedback in settings
 New: relaxing sounds - tap the speaker button
-New: Ocean style - pick it in settings
+Check out our display styles in settings
