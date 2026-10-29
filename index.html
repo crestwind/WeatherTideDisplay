@@ -1987,7 +1987,7 @@ const Sky = (() => {
       stone: '#8b8a86', stoneDark: '#5e5d5a', stick: '#5e4128', snow: '#f4f7fa', char: '#2b2420',
       deer: '#a4723f', belly: '#eadfcd', bear: '#2a211c', snout: '#b08a64', coon: '#8a857e', coonDark: '#2b2826', coonFace: '#ddd8d0',
       rabbit: '#8f7b66', owl: '#7a6654', owlFace: '#c4b094', squirrel: '#9a5a2e', snag: '#6e5d4d', bag: '#f4f1ea', bagBand: '#4a7fc0',
-      big: '#3d2c21', bigFace: '#6a5444' })) C[k] = tc(h);
+      big: '#3d2c21', bigFace: '#6a5444', buck: '#8a5c34', antler: '#e2d4b4' })) C[k] = tc(h);
     const f = { top: Hd * (portrait ? .55 : .58), night, golden, snowy, inside, kind, C,
       s: Math.min(Hd / 1080, Wd / 700) * (portrait ? 1 : 1.25),
       fx: Wd * (portrait ? .62 : .36), gy: Hd * (portrait ? .74 : .72),   // the campfire, and the ground line at the campsite
@@ -2093,7 +2093,7 @@ const Sky = (() => {
       if (m) { m.t += dt; if (m.t > m.dur || !ok) { f[key] = null; N[key] = gap(lo, hi); } }
       else if (ok && t > N[key]) f[key] = Object.assign({ t: 0 }, make());
     };
-    run('deer', calm, 120, 300, () => ({ dur: 13, fawn: Math.random() < .45, x1: Wd * (wide ? rnd(.1, .2) : rnd(.15, .35)) }));
+    run('deer', calm, 120, 300, () => ({ dur: 13, fawn: Math.random() < .5, buck: Math.random() < .35, x1: Wd * (wide ? rnd(.16, .19) : rnd(.15, .35)) }));
     run('rabbit', calm, 60, 180, () => ({ dur: 99, x: -20 * sx, hp: 0, sit: 0, sat: false, px: Wd * (wide ? rnd(.06, .14) : rnd(.2, .4)), end: Wd * (wide ? .47 : 1.03) }));
     if (f.rabbit) {   // hop, hop, stop to nibble once, hop on
       const r = f.rabbit, step = 34 * f.s;
@@ -2138,8 +2138,10 @@ const Sky = (() => {
     drawSnag(f, t);
     if (f.deer) drawDeer(f, t);
     const tx = f.fx - 215 * s, tb = f.gy - 34 * s, k = s * .9, lx = f.fx - 100 * s;   // the tent, set back on the left; his log
-    // He hides in the tent while the bear's about, and keeps an eye on Bigfoot and the raccoon.
-    const hiding = !!(ev && ev.kind === 'bear' && ev.p > .06 && ev.p < .93);
+    // When the bear turns up he jumps up, runs to the tent and dives in, watches it from the doorway, and once it's
+    // gone crawls out and walks back to his log. He also keeps an eye on Bigfoot and the raccoon.
+    const bp = ev && ev.kind === 'bear' ? ev.p : -1;
+    const running = bp >= .03 && bp < .11, coming = bp >= .86 && bp < .96, hiding = bp >= .11 && bp < .86;
     const bearX = ev && ev.kind === 'bear' ? bearPos(f, ev, lx)[0] : 0;
     f.look = !ev || ev.p < .08 || ev.p > .9 ? .55 : ev.kind === 'bigfoot' ? (bigfootX(f, ev) < lx ? -.85 : .85) : ev.kind === 'raccoon' && ev.p > .25 ? -.9 : .55;
     drawTent(f, t, tx, tb, k, lit && !hiding ? null : hiding ? (bearX > tx ? 1 : -1) : 0);
@@ -2155,7 +2157,13 @@ const Sky = (() => {
     const coon = ev && ev.kind === 'raccoon';
     if (lit && !(coon && ev.p > .5) && t > f.bagBack) drawBag(f, lx - 50 * s, f.gy, 1);   // (after the raccoon takes it, a new one turns up later)
     if (coon && ev.p > .5) f.bagBack = t + 90;
-    if (lit && !hiding) drawCamper(f, t, lx);
+    if (running) {   // up off the log, a quick dash to the tent, and a dive through the door
+      const u = (bp - .03) / .08, go = Math.max(0, (u - .12) / .88);
+      drawCamperOnFoot(f, t, lrp(lx, tx + 6 * k, ease(go)), lrp(f.gy, tb, ease(go)), lrp(s, k, go), -1, go > 0 ? t * 16 : 0, true, Math.max(0, (u - .72) / .28), 1);
+    } else if (coming) {   // crawls out of the door, stands up and walks back to his seat
+      const u = (bp - .86) / .1, go = Math.max(0, (u - .25) / .75);
+      drawCamperOnFoot(f, t, lrp(tx + 6 * k, lx, ease(go)), lrp(tb, f.gy, ease(go)), lrp(k, s, go), 1, go > 0 && go < 1 ? t * 9 : 0, false, 0, Math.min(1, u / .25));
+    } else if (lit && !hiding) drawCamper(f, t, lx);
     if (coon) drawRaccoon(f, ev, t, lx);
     drawCampfire(f, t);
     // the fire's warm glow over the clearing, the camper and the tent
@@ -2285,6 +2293,35 @@ const Sky = (() => {
     g.translate(6, -69); drawCamperHead(f, t, f.look ?? .55, 1, e.st === 'eat' && e.t > .6);
     g.restore();
   }
+  // The camper on his feet: walking or running (gait is the stride phase, 0 standing), facing dir (-1 left, 1 right),
+  // leaning in when he runs; dive (0-1) tips him headfirst and fades him out through the tent door; alpha fades him in.
+  function drawCamperOnFoot(f, t, x, y, k, dir, gait, run, dive, alpha) {
+    const C = f.C, sw = gait ? Math.sin(gait) : 0, bob = gait ? Math.abs(Math.cos(gait)) * (run ? 3 : 1.5) : 0;
+    g.save(); g.globalAlpha = alpha * (1 - dive * .9); g.translate(x, y); g.scale(dir * k, k); g.lineCap = g.lineJoin = 'round';
+    if (dive) { g.translate(0, -Math.sin(Math.PI * dive) * 16); g.rotate(dive * 1.3); }   // a headfirst hop through the door
+    g.translate(0, -bob);
+    g.strokeStyle = C.jeans; g.lineWidth = 8;
+    for (const sg of [1, -1]) {   // legs, striding
+      const fx = sg * sw * (run ? 14 : 10);
+      g.beginPath(); g.moveTo(0, -36); g.lineTo(fx * .5 + 4, -18); g.lineTo(fx, -2); g.stroke();
+      g.fillStyle = C.boot; g.beginPath(); g.ellipse(fx + 3, -1.5, 6.5, 3.2, 0, 0, 7); g.fill();
+    }
+    g.save(); g.translate(0, -36); g.rotate(run ? .25 : .05);   // the upper body, leaning forward when he runs
+    const body = new Path2D('M-8 2 L10 2 Q12 -18 10 -34 Q2 -39 -6 -35 Q-10 -18 -8 2 Z');
+    g.fillStyle = C.jacket; g.fill(body);
+    g.save(); g.clip(body); g.strokeStyle = C.plaid; g.globalAlpha *= .55; g.lineWidth = 2.2; g.beginPath();
+    for (let yy = -33; yy < 2; yy += 8) { g.moveTo(-12, yy); g.lineTo(14, yy); }
+    for (let xx = -6; xx < 12; xx += 7) { g.moveTo(xx, -40); g.lineTo(xx, 4); }
+    g.stroke(); g.restore();
+    g.strokeStyle = C.jacket; g.lineWidth = 6;
+    for (const sg of [-1, 1]) {   // arms swinging against the legs
+      const hx = sg * sw * (run ? 14 : 9) + 3, hy = run ? -14 : -8;
+      g.beginPath(); g.moveTo(2, -30); g.lineTo(hx, hy); g.stroke();
+      g.fillStyle = C.skin; g.beginPath(); g.arc(hx, hy, 3.2, 0, 7); g.fill();
+    }
+    g.translate(4, -45); drawCamperHead(f, t, .9, 1, false);
+    g.restore(); g.restore();
+  }
   function drawCampfire(f, t) {
     const C = f.C, s = f.s, lit = !f.inside;
     g.save(); g.translate(f.fx, f.gy); g.scale(s, s);
@@ -2396,27 +2433,38 @@ const Sky = (() => {
     if (dr.t < 4) { x = lrp(x0, dr.x1, ease(dr.t / 4)); gait = t * 7; }
     else if (dr.t < 9.25) { x = dr.x1; hu = dr.t < 4.5 ? 1 - (dr.t - 4) * 2 : dr.t < 6.4 ? 0 : Math.min(1, (dr.t - 6.4) * 2.5); }
     else { d = -1; x = lrp(dr.x1, x0, Math.max(0, dr.t - 9.5) / 3.5); gait = t * 11; }
-    const one = (ox, sz, fawn, lag) => {
-      g.save(); g.translate(x - d * ox * k, y); g.scale(d * k * sz, k * sz); deerShape(f.C, gait + lag, Math.max(0, Math.min(1, hu)), fawn); g.restore();
+    const one = (ox, oy, sz, kind, lag) => {
+      g.save(); g.translate(x - d * ox * k, y + oy * k); g.scale(d * k * sz, k * sz); deerShape(f.C, gait + lag, Math.max(0, Math.min(1, hu)), kind); g.restore();
     };
-    if (dr.fawn) one(46, .62, true, 1.3);
-    one(0, 1, false, 0);
+    // back to front: the buck (sometimes) a little behind her, the doe, and her fawn (often) out in front
+    if (dr.buck) one(38, -6, 1.12, 'buck', 2.1);
+    one(0, 0, 1, 'doe', 0);
+    if (dr.fawn) one(-42, 4, .62, 'fawn', 1.3);
   }
-  function deerShape(C, gait, hu, fawn) {   // a white-tailed deer from the side, facing right; hu: 1 head up, 0 grazing
-    g.strokeStyle = C.deer; g.lineWidth = fawn ? 2.8 : 3.2; g.lineCap = 'round';
+  function deerShape(C, gait, hu, kind) {   // a white-tailed deer from the side, facing right; hu: 1 head up, 0 grazing
+    const fawn = kind === 'fawn', coat = kind === 'buck' ? C.buck : C.deer;
+    g.strokeStyle = coat; g.lineWidth = fawn ? 2.8 : 3.2; g.lineCap = 'round';
     for (const [hx, ph] of [[14, 0], [10, Math.PI], [-14, Math.PI], [-18, 0]]) {
       const sw = gait ? Math.sin(gait + ph) * 6 : 0;
       g.beginPath(); g.moveTo(hx, -34); g.lineTo(hx + sw * .4, -16); g.lineTo(hx + sw, 0); g.stroke();
     }
-    g.fillStyle = C.deer; g.beginPath(); g.ellipse(-2, -40, 22, 10.5, 0, 0, 7); g.fill();
+    g.fillStyle = coat; g.beginPath(); g.ellipse(-2, -40, 22, 10.5, 0, 0, 7); g.fill();
     g.fillStyle = C.belly; g.beginPath(); g.ellipse(-2, -32.5, 15, 3, 0, 0, 7); g.fill();
     g.beginPath(); g.ellipse(-24, -45, 3, 5.5, .4, 0, 7); g.fill();                                                // white tail
     if (fawn) { g.fillStyle = 'rgba(255,255,255,.75)'; for (const [a, b] of [[-12, -45], [-5, -47], [2, -46], [-8, -41], [0, -42], [-16, -42]]) { g.beginPath(); g.arc(a, b, 1.4, 0, 7); g.fill(); } }
     const hx = lrp(25, 27, hu), hy = lrp(-10, -64, hu), ang = lrp(.9, -.2, hu);
-    g.strokeStyle = C.deer; g.lineWidth = 9; g.beginPath(); g.moveTo(14, -44); g.lineTo(hx - 3, hy + 3); g.stroke();   // neck
-    g.save(); g.translate(hx, hy); g.rotate(ang); g.fillStyle = C.deer;
+    g.strokeStyle = coat; g.lineWidth = kind === 'buck' ? 11 : 9; g.beginPath(); g.moveTo(14, -44); g.lineTo(hx - 3, hy + 3); g.stroke();   // neck
+    g.save(); g.translate(hx, hy); g.rotate(ang); g.fillStyle = coat;
     g.beginPath(); g.ellipse(3, 0, 8.5, 4.6, 0, 0, 7); g.fill();
     g.beginPath(); g.ellipse(-3, -7, 2.4, 5, -.5, 0, 7); g.fill(); g.beginPath(); g.ellipse(1, -7.5, 2.4, 5, .2, 0, 7); g.fill();   // ears
+    if (kind === 'buck') {   // antlers: a main beam sweeping back, up and forward, with tines rising from it
+      g.strokeStyle = C.antler; g.lineWidth = 1.8; g.lineCap = 'round'; g.beginPath();
+      for (const o of [0, 2.5]) {   // (the far antler just behind the near one)
+        g.moveTo(-1 + o, -4); g.quadraticCurveTo(-9 + o, -20, 6 + o, -22);
+        g.moveTo(-5 + o, -13); g.lineTo(-6 + o, -21); g.moveTo(-1 + o, -18.5); g.lineTo(-1 + o, -27); g.moveTo(3.5 + o, -21); g.lineTo(5 + o, -28);
+      }
+      g.stroke();
+    }
     g.fillStyle = '#1b1b1b'; g.beginPath(); g.arc(11, .5, 1.6, 0, 7); g.arc(3, -1.3, 1.1, 0, 7); g.fill();   // nose, eye
     g.restore();
   }
