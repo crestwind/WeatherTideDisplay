@@ -510,6 +510,8 @@
 
 <!-- version.js is written when the website is published; the test copy on the PC has none -->
 <script src="version.js"></script>
+<!-- what the fisherman thinks, in the Ocean style (edit this file to change his lines) -->
+<script src="fisherman-lines.js"></script>
 <script>
 'use strict';
 const $ = s => document.querySelector(s);
@@ -1624,12 +1626,12 @@ const Sky = (() => {
   // What he can catch: local saltwater fish (length and depth in 1080p units), and now and then an old boot.
   const FISH = [
     // bold, distinct colours: on the line the fish is small, and silvery greys all looked alike from across the room
-    { len: 24, h: 4.6, back: '#c9d1d8', belly: '#f4f6f8', marks: 'lines' },   // striped bass: bright silver, black stripes
-    { len: 22, h: 4.4, back: '#1d8fb0', belly: '#bfe3ee' },                    // bluefish: bright blue
-    { len: 20, h: 3.8, back: '#2f9a6c', belly: '#e2efe6', marks: 'bars' },    // mackerel: green with dark bars
-    { len: 20, h: 5.2, back: '#e0453a', belly: '#f6a99f' },                    // red snapper: red
-    { len: 18, h: 7, back: '#9a7442', belly: '#c9a46e', marks: 'spots' },     // flounder: sandy brown, spotted
-    { len: 18, h: 5.4, back: '#23262e', belly: '#4a4f5c' },                    // black sea bass: nearly black
+    { name: 'striped bass', len: 24, h: 4.6, back: '#c9d1d8', belly: '#f4f6f8', marks: 'lines' },   // striped bass: bright silver, black stripes
+    { name: 'bluefish', len: 22, h: 4.4, back: '#1d8fb0', belly: '#bfe3ee' },                    // bluefish: bright blue
+    { name: 'mackerel', len: 20, h: 3.8, back: '#2f9a6c', belly: '#e2efe6', marks: 'bars' },    // mackerel: green with dark bars
+    { name: 'red snapper', len: 20, h: 5.2, back: '#e0453a', belly: '#f6a99f' },                    // red snapper: red
+    { name: 'flounder', len: 18, h: 7, back: '#9a7442', belly: '#c9a46e', marks: 'spots' },     // flounder: sandy brown, spotted
+    { name: 'black sea bass', len: 18, h: 5.4, back: '#23262e', belly: '#4a4f5c' },                    // black sea bass: nearly black
   ];
   // A fish with its mouth at (0,0) and its body along -x. `mono` draws a plain silhouette (night and sunset jumps).
   function drawFishShape(c, f, k, flap, mono) {
@@ -1666,6 +1668,86 @@ const Sky = (() => {
     const next = { wait: ['bite', 1.6], bite: ['reel', 2.2], reel: ['land', 1], land: ['cast', 1.2], cast: ['wait', rnd(10, 25)] }[f.st];
     f.st = next[0]; f.dur = next[1]; f.t = 0;
     if (f.st === 'reel') { f.catch = Math.random() < 1 / 15 ? 'boot' : FISH[Math.floor(Math.random() * FISH.length)]; f.size = rnd(.85, 1.2); }
+    if (f.st === 'land') talk.react = f.catch;   // he might say something about it
+  }
+
+  // The fisherman's thought bubbles (Ocean style): every 2-4 minutes (about every minute in a hurricane or tornado)
+  // he thinks a line from fisherman-lines.js that suits the weather, time of day and temperature, and now and then
+  // says something about his catch. He stays quiet while the biplane is passing. Lives outside build(), so a scene
+  // change doesn't reset it. ?talk in the address makes him start straight away.
+  const talk = { next: performance.now() / 1000 + (/[?&]talk/.test(location.search) ? 3 : 25), line: '', start: 0, dur: 9, recent: [], react: null };
+  function fillIn(s, extra) {
+    const d = W && W.daily, c = W && W.current, r = v => v == null ? '' : Math.round(v);
+    return s.replace(/\{temp\}/g, c ? r(c.temperature_2m) : '').replace(/\{high\}/g, d ? r(d.temperature_2m_max[0]) : '')
+      .replace(/\{low\}/g, d ? r(d.temperature_2m_min[0]) : '').replace(/\{town\}/g, (S.name || '').split(',')[0] || 'friends')
+      .replace(/\{day\}/g, new Date().toLocaleDateString('en-US', { weekday: 'long' })).replace(/\{fish\}/g, extra || 'fish');
+  }
+  function pickLine(groups, extra) {
+    const L = window.TW_LINES || {}, pool = [];
+    for (const [g, weight] of groups) for (const s of (L[g] || [])) for (let i = 0; i < weight; i++) pool.push(s);
+    let fresh = pool.filter(s => !talk.recent.includes(s));
+    if (!fresh.length) fresh = pool;
+    if (!fresh.length) return '';
+    const s = fresh[Math.floor(Math.random() * fresh.length)];
+    talk.recent.push(s); if (talk.recent.length > 25) talk.recent.shift();
+    // leave out lines whose {temp}/{high}/{low} can't be filled in yet (weather still loading)
+    return /\{(temp|high|low)\}/.test(s) && !W ? pickLine(groups.filter(([g]) => !['hot', 'cold'].includes(g)), extra) : fillIn(s, extra);
+  }
+  function chooseThought() {
+    const kind = mode.kind, h = new Date().getHours();
+    if (kind === 'hurricane' || kind === 'tornado') return pickLine([[kind, 1]]);
+    const groups = [[kind, 3]];
+    const tod = mode.tod === 'night' ? 'night' : h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+    groups.push([tod, 1]);
+    if (W) { const f = imp() ? W.current.temperature_2m : W.current.temperature_2m * 9 / 5 + 32; if (f >= 85) groups.push(['hot', 2]); if (f <= 35) groups.push(['cold', 2]); }
+    if (sea.pose !== 'hold') groups.push(['any', 1]);       // in heavy rain and thunderstorms, only weather lines
+    if (sea.pose === 'fish') groups.push(['fishing', 1]);
+    return pickLine(groups);
+  }
+  function talkTick(t) {
+    if (!sea || plane) { if (talk.line && plane) talk.line = ''; return; }   // never over the plane
+    if (talk.line) {
+      if (t - talk.start > talk.dur) { talk.line = ''; talk.next = t + (sea.pose === 'hold' && /hurricane|tornado/.test(mode.kind) ? rnd(50, 80) : rnd(120, 240)); }
+      return;
+    }
+    let line = '';
+    if (talk.react) {   // just landed something: always grumble about a boot, cheer about half the fish
+      const c = talk.react; talk.react = null;
+      if (c === 'boot') line = pickLine([['boot', 1]]); else if (Math.random() < .5) line = pickLine([['catch', 1]], c.name);
+    }
+    if (!line && t > talk.next) line = chooseThought();
+    if (line) { talk.line = line; talk.start = t; talk.dur = Math.min(12, 6 + line.length / 10); }
+  }
+  // A thought bubble: a scalloped white cloud of text, with three little circles trailing down to his head.
+  function drawThought(t, hx, hy) {
+    const k = Math.max(.75, sea.bs), a = Math.min(1, (t - talk.start) / .4, (talk.start + talk.dur - t) / .5);
+    if (a <= 0) return;
+    const fs = Math.max(14, Math.round(17 * k)), font = `600 ${fs}px "Segoe UI", Inter, Roboto, Arial, sans-serif`;
+    g.font = font;
+    // where it can go: above the boat, clear of the town name on the left and the forecast boxes on the right
+    const wide = Wd > Hd, lo = wide ? Wd * .31 : Wd * .48, hi = wide ? Wd * .455 : Wd * .97, maxW = Math.max(120, Math.min(hi - lo - 24 * k, 300 * k));
+    const words = talk.line.split(' '), lines = [];
+    let cur = '';
+    for (const w of words) { const test = cur ? cur + ' ' + w : w; if (g.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; } else cur = test; }
+    if (cur) lines.push(cur);
+    const tw = Math.max(...lines.map(l => g.measureText(l).width)), lh = fs * 1.25, pw = 16 * k, ph = 11 * k;
+    const bw = tw + pw * 2, bh = lines.length * lh + ph * 2;
+    let bx = Math.min(Math.max(hx - bw * .35, lo), hi - bw), by = hy - 58 * k - bh;
+    g.save(); g.globalAlpha = a;
+    g.fillStyle = 'rgba(255,255,255,.96)'; g.shadowColor = 'rgba(0,0,0,.25)'; g.shadowBlur = 10 * k;
+    // the cloud: a rounded box with bumps around the edge
+    const r = Math.min(bh / 2, 18 * k);
+    g.beginPath(); g.roundRect(bx, by, bw, bh, r); g.fill();
+    g.shadowBlur = 0;
+    for (let x = bx + r; x < bx + bw - r * .6; x += r * 1.15) { g.beginPath(); g.arc(x, by + r * .25, r * .62, 0, 7); g.arc(x + r * .55, by + bh - r * .25, r * .62, 0, 7); g.fill(); }
+    // three little circles down to his head
+    const tx = Math.min(Math.max(hx + 6 * k, bx + r), bx + bw - r);
+    for (const [f, rr] of [[.25, 7], [.55, 5], [.82, 3.4]]) {
+      g.beginPath(); g.arc(tx + (hx - tx) * f, by + bh + (hy - 8 * k - by - bh) * f, rr * k, 0, 7); g.fill();
+    }
+    g.fillStyle = '#1f3a5a'; g.textBaseline = 'middle'; g.font = font;
+    lines.forEach((l, i) => g.fillText(l, bx + pw + (tw - g.measureText(l).width) / 2, by + ph + lh * (i + .5)));
+    g.restore();
   }
   // Fish leaping out of the sea every few seconds, away from the boat, with a splash going out and coming back in.
   function jumpTick(dt) {
@@ -1832,6 +1914,10 @@ const Sky = (() => {
     for (let i = b + 1; i < L.length; i++) { drawLayer(L[i], t); drawDolphins(t, i); }
     if (sea.pose === 'fish') drawJumps(t);   // leaping fish, only where he's fishing
     drawGlint(t, y, Hd);
+    if (talk.line) {   // his head is at about (26, -76) in the boat's own units; follow the boat as it rocks
+      const hx = sea.bx + (26 * Math.cos(roll) + 76 * Math.sin(roll)) * sea.bs, hy = y + 4 * sea.bs + (26 * Math.sin(roll) - 76 * Math.cos(roll)) * sea.bs;
+      drawThought(t, hx, hy);
+    }
   }
 
   // A lighthouse like Barnegat Light: a tapered tower, white below and red above, with a black gallery, lantern room
@@ -2110,6 +2196,7 @@ const Sky = (() => {
     planeTick(t);
     if (tornado) for (const d of [...tornado.debris, ...tornado.spray]) d.a += d.sp * dt;   // whirling round the base
     if (sea && sea.pose === 'fish') { fishingTick(dt); jumpTick(dt); }
+    if (sea) talkTick(t);
     if (sea && sea.dolphinsOk) podTick(dt);
     updateGlass(dt, t);
     for (const c of clouds) {

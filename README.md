@@ -46,6 +46,12 @@ Settings (location, units and so on) are saved in the browser that shows the dis
 
 To set up a TV without typing in the settings panel, put the location in the address, e.g. `https://tidalweather.com/?lat=38.935&lon=-74.906&name=Cape%20May`. As long as the TV opens that address (bookmark it, or set it as the browser's home page), the location is always right, even if the browser's settings are cleared. To store it in the browser instead, open settings and press **Save**.
 
+### The fisherman's thoughts
+
+In the Ocean style, a thought bubble pops up over the fisherman every 2 to 4 minutes for a few seconds. He picks a line that suits the weather (sunny, rain, snow, fog, wind, storms…), the time of day and the temperature, and now and then comments on his catch. In a hurricane or tornado he only gives safety advice, about once a minute. He never repeats a line too soon, and stays quiet while the biplane passes. Add `?talk` to the address to make him start straight away.
+
+All his lines are in **fisherman-lines.js**, grouped by situation (`clear`, `rain`, `snow`, `hurricane`, `tornado`, `morning`, `night`, `hot`, `cold`, `catch`, `boot` and so on). To change them, open the file on GitHub, click the **pencil** icon, and edit the lines in quotes: keep the quotes and the comma at the end of each line. These words get filled in for you: `{temp}`, `{high}`, `{low}`, `{town}`, `{day}`, and in catch lines `{fish}`.
+
 ### Changing the banner message
 
 The biplane's banner says whatever is in the file **banner.txt** (one line, up to 70 characters; an empty file grounds the plane). To change it from any device:
