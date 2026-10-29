@@ -122,7 +122,7 @@ Built the display, the animated backgrounds, alerts (NWS, USGS, FEMA, NJ), the a
 - **The camper talks** like the fisherman: `talk`/`pickLine` read `window.TW_CAMP_LINES` (camper-lines.js, published by the workflow) when `forest` is set; groups `camping` (by the fire) / `tent` (sheltering) replace `fishing`, and `talk.react = 'snack'` after 1 in 4 marshmallows. `holding()` stands in for the fisherman's 'hold' pose. The bubble's position comes from `drawForest` (his head by the fire or in the tent door).
 - **Screenshot trap again:** forest timers and `stage.next` use `performance.now()`, so in headless screenshots set `const now = -1e9` (buildForest), `stage.next: -1e9` and `talk.next: -1e9` in the scratch copy, and copy camper-lines.js next to it.
 
-**Where we left off (2026-10-29, later):** live on tidalweather.com: banner rotation, diver, yacht, new eagle, map loading fix. On the test site only: the tide box fix (the main-site publish was stuck on GitHub's side) and the Forest style with its own random events and the camper's talk. The user wants the Forest kept off the main site until it's complete. Still open: redesign the giant, and the Tropical and City display styles.
+**Where we left off (2026-10-29, afternoon):** everything is live on tidalweather.com, including the Forest style with its own random events (majors: biplane, Bigfoot, bear, raccoon, skunk, ranger; minors: geese/crows, bats, deer, rabbit, squirrel, owl, fireflies, hot air balloon, shooting stars) and the camper's talk; the test site is on. Still open: redesign the giant (then Ocean and Forest have 6 majors each), and the Tropical and City display styles. Each background is meant to have its own events; only the biplane and shooting stars are shared.
 
 ## Ideas not done yet
 
