@@ -155,7 +155,7 @@ It appears on clear, partly cloudy and windy nights.
 
 **A biplane towing a banner** crosses the sky right to left about 30 seconds after the page opens, then every 5 minutes, in any weather (not in smart mirror mode or with the animation off). It flies level in calm weather, bobs and tilts in wind, and gets bumped about in storms; the banner trails just behind with a small ripple so it stays readable. Its message is in **banner.txt** (see [Changing the banner message](#changing-the-banner-message)). Add `?plane` to the address to send one over straight away.
 
-&: the first within about half a minute of the scene starting, then every 30 seconds to 2 minutes at random.
+**Shooting stars** appear on clear nights only: the first within about half a minute of the scene starting, then every 30 seconds to 2 minutes at random.
 
 The **high wind** scene comes on with sustained winds of 25 mph or more, gusts of 40 mph or more, or a High Wind Warning. Rain, snow, thunderstorm and fog scenes take priority over it.
 
