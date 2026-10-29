@@ -49,6 +49,7 @@ Notes for picking this project back up later. `README.md` is the user manual; th
 
 - **Website only, plus a local test copy.** No more flash drive. Changes are tested locally before uploading.
 - **Public GitHub repo.** Free Pages needs it. The user was worried about exposing keys; there are none (checked 2026-10-28). Any future key goes in GitHub Secrets, never in the code.
+- **Open-Meteo stays on the free, non-commercial tier** (decided 2026-10-29). The site is free with no ads or subscriptions, which Open-Meteo's terms count as non-commercial. The source is named on the forecast boxes, status line and history, which the user considers enough credit for now. Revisit if traffic grows or the site ever takes ads, payments or becomes an official company tool. A paid plan would need the requests to go through the Cloudflare Worker (to hide the API key and share results between visitors); the cheapest plan has no historical data.
 - **NJ state emergencies:** weather and safety only. The script filters out crop, farm, agriculture, livestock, harvest and orchard declarations. This was triggered by EO 18, a crop-freeze emergency from May 2026 that was never ended.
 - **Test alerts are shown *alongside* real alerts,** never instead of them. They're tagged PREVIEW and never logged. URL parameters only pre-fill settings, and saving clears them from the address.
 - **Drops on the screen have no trail.** The user disliked both the grey bar version and the faint streak version. Only the small beads left behind remain.
