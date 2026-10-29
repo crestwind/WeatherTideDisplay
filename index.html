@@ -2473,16 +2473,24 @@ const Sky = (() => {
       g.fillStyle = night ? '#6b5a14' : '#f1c40f'; g.beginPath(); g.roundRect(9, -30, 8, 34, 3); g.fill();   // air tank behind his shoulder
       g.fillStyle = '#8a9299'; g.fillRect(11, -34, 4, 5);                                                       // its valve
       g.fillStyle = suit; g.beginPath(); g.ellipse(0, 8, 24, 15, 0, 0, 7); g.fill();                            // shoulders
-      g.beginPath(); g.arc(0, -16, 12, 0, 7); g.fill();                                                          // hood
-      const mx = look * 6, mw = 17 * (1 - .4 * Math.abs(look));
+      // his head turns up to about 57° each way; the mask and the snorkel (strapped beside the mask, on our left when
+      // he faces us) go round with it, and the snorkel passes behind his head when he looks left
+      // (its top leans back, away from his face, and it's shaded darker while it's behind)
+      const sa = look - 1.35, sx = 12 * Math.sin(sa), tx = sx - 6 * Math.sin(look) - 2 * Math.cos(look);
+      const snorkel = () => {
+        g.strokeStyle = Math.cos(sa) < 0 ? (night ? '#4a2e0a' : '#b06e0c') : mask; g.lineWidth = 3; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(sx, -15); g.quadraticCurveTo(sx * 1.2, -24, tx, -38); g.stroke();
+      };
+      if (Math.cos(sa) < 0) snorkel();
+      g.fillStyle = suit; g.beginPath(); g.arc(0, -16, 12, 0, 7); g.fill();                                       // hood
+      const mx = 10 * Math.sin(look), mw = 17 * (1 - .4 * Math.abs(look));
       g.fillStyle = night ? '#5c4636' : '#e3b48f'; g.beginPath(); g.ellipse(mx * .9, -14, mw * .5, 8, 0, 0, 7); g.fill();   // face
       g.fillStyle = mask; g.beginPath(); g.roundRect(mx - mw / 2 - 1.5, -24, mw + 3, 10, 4); g.fill();          // mask
       g.fillStyle = glass; g.beginPath(); g.roundRect(mx - mw / 2, -22.5, mw, 7, 3); g.fill();
       if (!night) { g.fillStyle = 'rgba(255,255,255,.75)'; g.fillRect(mx - mw / 2 + 2, -21.5, 3, 2); }          // glint
       g.fillStyle = '#3a4048'; g.beginPath(); g.roundRect(mx - 3, -12, 6, 4, 1.5); g.fill();                     // regulator
       g.strokeStyle = '#3a4048'; g.lineWidth = 2; g.beginPath(); g.moveTo(mx + 3, -10); g.quadraticCurveTo(14, -8, 13, 2); g.stroke();   // its hose
-      g.strokeStyle = mask; g.lineWidth = 3; g.lineCap = 'round';                                                // snorkel
-      g.beginPath(); g.moveTo(-10 + look * 3, -14); g.quadraticCurveTo(-15 + look * 3, -20, -13 + look * 3, -36); g.stroke();
+      if (Math.cos(sa) >= 0) snorkel();
       if (night) {   // headlamp
         const hx = mx * .8, glow = g.createRadialGradient(hx, -29, 0, hx, -29, 14);
         glow.addColorStop(0, 'rgba(255,240,190,.9)'); glow.addColorStop(1, 'rgba(255,240,190,0)');
