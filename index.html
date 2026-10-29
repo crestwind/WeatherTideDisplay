@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- Security: the page may only load its own files and talk to the weather services below, and never tells them which page asked. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://server.arcgisonline.com; connect-src 'self' https://tidal-weather.tidalweather.workers.dev https://api.open-meteo.com https://archive-api.open-meteo.com https://marine-api.open-meteo.com https://geocoding-api.open-meteo.com https://api.tidesandcurrents.noaa.gov https://api.weather.gov https://earthquake.usgs.gov https://www.fema.gov; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://server.arcgisonline.com; connect-src 'self' https://tidal-weather.tidalweather.workers.dev https://api.open-meteo.com https://archive-api.open-meteo.com https://marine-api.open-meteo.com https://geocoding-api.open-meteo.com https://api.zippopotam.us https://api.tidesandcurrents.noaa.gov https://api.weather.gov https://earthquake.usgs.gov https://www.fema.gov; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Tidal Weather</title>
 <link rel="icon" href="icon.png">
@@ -4008,6 +4008,15 @@ async function search(q) {
   if (q.length < 2) { box.innerHTML = ''; return []; }
   box.innerHTML = '<div class="msg">Searching…</div>';
   try {
+    // A US ZIP code: the place finder below only knows ZIPs tied to a town record (it misses e.g. 08807 Bridgewater NJ,
+    // and 08002 finds Barcelona first), so ask a ZIP directory first, and fall back to the place finder if it has nothing.
+    const zip = q.match(/^(\d{5})(?:-\d{4})?$/);
+    if (zip) {
+      const z = await getJSON('https://api.zippopotam.us/us/' + zip[1]).catch(() => null);
+      if (seq !== searchSeq) return [];
+      const res = (z && z.places || []).map(p => ({ name: `${p['place name']}, ${p.state}`, lat: +p.latitude, lon: +p.longitude }));
+      if (res.length) { showResults(res); return res; }
+    }
     // The place finder only understands "Town, State" with a comma, so the state or country is matched here instead:
     // after a comma, or else the last 1-3 words ("Cape May NJ", "Portland Maine", "Paris France") if the whole text finds nothing.
     const find = async name => (await getJSON('https://geocoding-api.open-meteo.com/v1/search?' + qs({ name, count: 20, language: 'en', format: 'json' }))).results || [];
