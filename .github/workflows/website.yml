@@ -28,7 +28,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build the site
         run: |
@@ -48,12 +48,12 @@ jobs:
           sed -i 's|</body>|<div style="position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99;background:#c0392b;color:#fff;font:600 12px sans-serif;letter-spacing:.08em;padding:2px 12px;border-radius:0 0 6px 6px">TEST SITE · SHOWCASE</div>\n</body>|' _site/index.html
           grep -q 'name="robots"' _site/index.html && grep -q 'TW_SHOWCASE = true' _site/index.html && grep -q 'TEST SITE' _site/index.html
 
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
       - id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
       # GitHub pauses scheduled runs after 60 days without a commit, so add an empty one every 45 days
       - name: Keep the schedule alive
