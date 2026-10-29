@@ -1706,13 +1706,13 @@ const Sky = (() => {
   }
   function talkTick(t) {
     if (!sea || plane) { if (talk.line && plane) talk.line = ''; return; }   // never over the plane
-    // When the weather changes, react to it soon instead of waiting out the 2-4 minute timer: within a few seconds
-    // for a hurricane or tornado (dropping any calmer thought he's in the middle of), within ~15 s otherwise.
-    if (mode.kind !== talk.kind) {
-      const urgent = /hurricane|tornado/.test(mode.kind), changed = talk.kind != null;
-      talk.kind = mode.kind;
-      if (urgent) { talk.line = ''; talk.next = Math.min(talk.next, t + 3); }
-      else if (changed) talk.next = Math.min(talk.next, t + rnd(8, 15));
+    // When the background changes (the weather or the time of day), reset the timer: drop whatever he was thinking
+    // and say something about the new scene in a few seconds, then carry on at the usual pace.
+    const scene = mode.kind + '|' + mode.tod;
+    if (scene !== talk.kind) {
+      const first = talk.kind == null;
+      talk.kind = scene;
+      if (!first) { talk.line = ''; talk.react = null; talk.next = t + (/hurricane|tornado/.test(mode.kind) ? 3 : rnd(4, 8)); }
     }
     if (talk.line) {
       if (t - talk.start > talk.dur) { talk.line = ''; talk.next = t + (sea.pose === 'hold' && /hurricane|tornado/.test(mode.kind) ? rnd(50, 80) : rnd(120, 240)); }
