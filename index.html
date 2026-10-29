@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- Security: the page may only load its own files and talk to the weather services below, and never tells them which page asked. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://server.arcgisonline.com; connect-src https://tidal-weather.tidalweather.workers.dev https://api.open-meteo.com https://archive-api.open-meteo.com https://marine-api.open-meteo.com https://geocoding-api.open-meteo.com https://api.tidesandcurrents.noaa.gov https://api.weather.gov https://earthquake.usgs.gov https://www.fema.gov; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://server.arcgisonline.com; connect-src 'self' https://tidal-weather.tidalweather.workers.dev https://api.open-meteo.com https://archive-api.open-meteo.com https://marine-api.open-meteo.com https://geocoding-api.open-meteo.com https://api.tidesandcurrents.noaa.gov https://api.weather.gov https://earthquake.usgs.gov https://www.fema.gov; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Tidal Weather</title>
 <link rel="icon" href="icon.png">
@@ -1290,6 +1290,88 @@ const Sky = (() => {
   // Seagulls: on clear and partly cloudy days, a gull or a small flock flies across every 20 s to 1 min.
   // They flap with the odd glide, climbing a little while flapping and sinking while gliding, swoop gently up and
   // down, and tilt to match. Wings move between up (w = 1) and down (w = -1).
+  // A biplane towing a banner (its text comes from banner.txt; see loadBanner) crosses the sky right to left about
+  // 30 s after the page opens and then every 5 minutes. It flies level in calm weather, bobs and tilts in wind, and gets
+  // bumped about in storms. The banner trails a moment behind with only a small ripple, so it stays easy to read.
+  // This state lives outside build(), so a scene change doesn't reset the schedule. ?plane in the address sends one now.
+  let plane = null, nextPlane = performance.now() / 1000 + (/[?&]plane/.test(location.search) ? 2 : 30);
+  const bannerCv = document.createElement('canvas');
+  let bannerKey = '';
+  function planeTick(t) {
+    if (plane && plane.x < plane.end) plane = null;
+    if (!plane && t > nextPlane) {
+      const text = window.TW_BANNER || '';
+      nextPlane = t + 300;
+      if (!text || S.display === 'mirror' || S.motion === 'off') return;
+      const k = Hd / 1080 * (Hd > Wd ? .8 : 1.3);   // big enough to read the banner from across a room
+      plane = { k, t0: t, x: Wd + 30 * k, y0: Hd * (Hd > Wd ? .48 : .36), v: 120 * Math.min(Wd / 1920, 1.2) + 40, text };
+      plane.end = -(120 * k + bannerSprite(plane).width) - 40;
+    }
+    if (plane) plane.x = Wd + 30 * plane.k - (t - plane.t0) * plane.v;
+  }
+  // How far the plane is pushed up or down at time t: barely in calm air, more in wind, jolts in storms.
+  function planeBob(t, k) {
+    let y = 3 * Math.sin(t * .8);
+    if (sc.wind || sc.storm) y += 10 * Math.sin(t * 1.3) + 6 * Math.sin(t * 3.1 + 1);
+    if (sc.storm) y += 9 * Math.sin(t * 5.7) * Math.sin(t * .9) + 5 * Math.sin(t * 8.3 + 2);
+    return y * k;
+  }
+  // The banner cloth with its text, drawn once per text, size and light.
+  function bannerSprite(p) {
+    const key = [p.text, p.k, mode.tod, sc.tone].join('|');
+    if (key === bannerKey) return bannerCv;
+    bannerKey = key;
+    const k = p.k, H = Math.round(34 * k), font = `700 ${Math.round(20 * k)}px "Segoe UI", Inter, Roboto, Arial, sans-serif`, x = bannerCv.getContext('2d');
+    x.font = font; const W = Math.round(x.measureText(p.text).width + 34 * k);
+    bannerCv.width = W; bannerCv.height = H;
+    x.fillStyle = '#fbf6ea'; x.fillRect(0, 0, W, H);
+    x.fillStyle = '#c0392b'; x.fillRect(0, 0, W, 3 * k); x.fillRect(0, H - 3 * k, W, 3 * k);
+    x.font = font; x.fillStyle = '#1f3a5a'; x.textBaseline = 'middle'; x.fillText(p.text, 17 * k, H / 2 + k);
+    const tint = mode.tod === 'night' ? 'rgba(20,30,60,.4)' : mode.tod === 'golden' ? 'rgba(120,60,50,.25)' : sc.tone === 'storm' || sc.tone === 'dark' ? 'rgba(40,48,60,.25)' : null;
+    if (tint) { x.globalCompositeOperation = 'source-atop'; x.fillStyle = tint; x.fillRect(0, 0, W, H); x.globalCompositeOperation = 'source-over'; }
+    return bannerCv;
+  }
+  function drawPlane(ts) {
+    const t = ts / 1000, p = plane, k = p.k, rough = sc.storm ? 2 : sc.wind ? 1 : 0;
+    const y = p.y0 + planeBob(t, k), pitch = Math.atan2(planeBob(t + .05, k) - planeBob(t - .05, k), p.v * .1) * .8;
+    // the banner, trailing a moment behind the plane: drawn in thin slices, each a little later along the plane's path
+    const img = bannerSprite(p), bx = p.x + 110 * k, slice = Math.max(4, Math.round(6 * k)), lag = .45;
+    const by = t => p.y0 + planeBob(t - lag, k) - img.height / 2 + 6 * k;
+    for (let sx = 0; sx < img.width; sx += slice) {
+      const u = sx / img.width, ripple = (1.2 + 2.5 * rough) * k * Math.sin(t * (3 + rough) - u * 7) * (.3 + u);
+      g.drawImage(img, sx, 0, slice, img.height, bx + sx, by(t - u * .35) + ripple, slice + .6, img.height);
+    }
+    g.strokeStyle = 'rgba(40,40,40,.6)'; g.lineWidth = Math.max(1, k);   // tow line from the tail to the banner
+    g.beginPath(); g.moveTo(p.x + 74 * k, y + 2 * k); g.lineTo(bx, by(t) + 4 * k); g.moveTo(p.x + 74 * k, y + 2 * k); g.lineTo(bx, by(t) + img.height - 4 * k); g.stroke();
+    // the biplane, nose to the left
+    g.save(); g.translate(p.x, y); g.rotate(-pitch); g.scale(k, k);
+    const night = mode.tod === 'night';
+    g.fillStyle = '#d64535';
+    g.beginPath(); g.moveTo(62, -4); g.lineTo(70, -19); g.lineTo(77, -18); g.lineTo(75, -3); g.closePath(); g.fill();   // tail fin
+    g.fillRect(60, -2, 19, 3.5);                                                                                           // tailplane
+    g.beginPath(); g.moveTo(4, -6); g.lineTo(60, -4); g.lineTo(76, -2); g.lineTo(60, 4.5); g.lineTo(6, 7);
+    g.quadraticCurveTo(-1, 1, 4, -6); g.closePath(); g.fill();                                                             // fuselage
+    g.fillStyle = '#fbf6ea'; g.fillRect(48, -4.6, 3, 9);                                                                   // stripe
+    g.strokeStyle = '#5a4a3a'; g.lineWidth = 1.4;
+    g.beginPath(); for (const sx of [17, 37]) { g.moveTo(sx, -15); g.lineTo(sx, 6); } g.moveTo(17, -15); g.lineTo(37, 6); g.moveTo(37, -15); g.lineTo(17, 6);
+    g.moveTo(15, 7); g.lineTo(19, 14); g.moveTo(25, 6); g.lineTo(19, 14); g.stroke();                                      // struts and wires
+    g.fillStyle = '#f2c230'; g.fillRect(9, -19, 37, 4.5); g.fillRect(13, 5, 29, 3.5);                                      // wings
+    g.fillStyle = '#2b2b2b'; g.beginPath(); g.arc(19, 15, 3.6, 0, 7); g.fill();                                            // wheel
+    g.beginPath(); g.arc(3, 0, 6.2, 0, 7); g.fill();                                                                       // engine cowling
+    g.fillStyle = '#8a5a3a'; g.beginPath(); g.arc(30, -9.5, 4.2, Math.PI, 0); g.fill(); g.fillRect(25.8, -9.5, 8.4, 2);   // pilot's cap
+    g.fillStyle = '#e8b991'; g.beginPath(); g.arc(30, -8, 3.2, 0, Math.PI); g.fill();
+    g.fillStyle = '#a9d2ef'; g.fillRect(26.5, -10, 3, 1.6);                                                                // goggles
+    const spin = Math.abs(Math.sin(t * 40));                                                                               // propeller
+    g.fillStyle = 'rgba(200,200,200,.28)'; g.beginPath(); g.ellipse(-3, 0, 2, 14, 0, 0, 7); g.fill();
+    g.fillStyle = '#3a3a3a'; g.beginPath(); g.ellipse(-3, 0, 1.4, 13 * spin + 1, 0, 0, 7); g.fill();
+    if (night) {   // a little red and green navigation light on each wingtip, and the plane in shadow
+      g.fillStyle = 'rgba(10,18,40,.45)'; g.fillRect(-6, -22, 86, 40);
+      g.fillStyle = '#ff4a4a'; g.beginPath(); g.arc(9, -17, 1.8, 0, 7); g.fill();
+      g.fillStyle = '#4aff7a'; g.beginPath(); g.arc(46, -17, 1.8, 0, 7); g.fill();
+    }
+    g.restore();
+  }
+
   let birds = false, flock = [], nextFlock = 0;
   function newFlock() {
     const sx = Wd / 1920, dir = Math.random() < .5 ? 1 : -1, n = Math.random() < .45 ? 1 : Math.floor(rnd(2, 6));
@@ -1896,6 +1978,7 @@ const Sky = (() => {
       else if (t > nextMeteor) meteor = newMeteor();
     }
     if (birds) updateBirds(dt, t);
+    planeTick(t);
     if (sea && sea.pose === 'fish') { fishingTick(dt); jumpTick(dt); }
     if (sea && sea.dolphinsOk) podTick(dt);
     updateGlass(dt, t);
@@ -1960,6 +2043,7 @@ const Sky = (() => {
     }
     for (const c of clouds) { g.globalAlpha = c.a; g.drawImage(c.img, c.x, c.y, c.w, c.h); }
     if (flock.length) { g.globalAlpha = 1; drawBirds(); }
+    if (plane) { g.globalAlpha = 1; drawPlane(ts); }
     g.globalAlpha = 1;
     if (swirl) {
       g.strokeStyle = 'rgb(222,230,234)'; g.lineCap = 'round';
@@ -2838,6 +2922,17 @@ new IntersectionObserver(es => es.forEach(e => History.show(e.isIntersecting)), 
 new IntersectionObserver(es => es.forEach(e => TideYear.show(e.isIntersecting)), { rootMargin: '200px' }).observe($('#tideYear'));
 $('#moreHint').onclick = () => $('#more').scrollIntoView({ behavior: 'smooth' });
 $('#chgLoc').onclick = () => openSettings();   // settings opens with the location box selected, ready to type
+
+// The biplane's banner message comes from banner.txt next to this page, so it can be changed without touching the
+// code (an empty file grounds the plane). If the file can't be read (e.g. the test copy opened from disk), this is used.
+window.TW_BANNER = 'Check out our display styles in settings';
+async function loadBanner() {
+  try {
+    const r = await fetch('banner.txt', { cache: 'no-store' });
+    if (r.ok) window.TW_BANNER = (await r.text()).replace(/\s+/g, ' ').trim().slice(0, 70);
+  } catch (e) { /* keep the built-in message */ }
+}
+loadBanner(); setInterval(loadBanner, 30 * 60e3);
 
 // Feedback and visit counting go to Tidal Weather's small Cloudflare program (worker/worker.js).
 const WORKER = 'https://tidal-weather.tidalweather.workers.dev';

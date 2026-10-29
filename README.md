@@ -46,6 +46,17 @@ Settings (location, units and so on) are saved in the browser that shows the dis
 
 To set up a TV without typing in the settings panel, put the location in the address, e.g. `https://tidalweather.com/?lat=38.935&lon=-74.906&name=Cape%20May`. As long as the TV opens that address (bookmark it, or set it as the browser's home page), the location is always right, even if the browser's settings are cleared. To store it in the browser instead, open settings and press **Save**.
 
+### Changing the banner message
+
+The biplane's banner says whatever is in the file **banner.txt** (one line, up to 70 characters; an empty file grounds the plane). To change it from any device:
+
+1. Go to **github.com/crestwind/WeatherTideDisplay** and sign in.
+2. Click **banner.txt**, then the **pencil** icon (Edit this file).
+3. Replace the text with the new message.
+4. Click **Commit changes…**, then **Commit changes** again.
+
+tidalweather.com updates within a couple of minutes, and screens pick up the new message within half an hour (or straight away when reloaded with F5).
+
 ### Keeping the TV on
 
 Set the TV computer's power settings so the screen never turns off or goes to sleep. The display can't control this from a web page.
@@ -142,7 +153,9 @@ It appears on clear, partly cloudy and windy nights.
 
 **Seagulls** fly across on clear, partly cloudy and cloudy days: a single gull or a small group of up to five, every 20 seconds to a minute (the first within about 10 seconds). They flap with the odd glide, swoop gently up and down instead of flying straight, and tilt as they climb and dip. By day they're white with black wingtips (grey under an overcast sky, where white would fade into the clouds); at sunrise and sunset they're dark silhouettes.
 
-**Shooting stars** appear on clear nights only: the first within about half a minute of the scene starting, then every 30 seconds to 2 minutes at random.
+**A biplane towing a banner** crosses the sky right to left about 30 seconds after the page opens, then every 5 minutes, in any weather (not in smart mirror mode or with the animation off). It flies level in calm weather, bobs and tilts in wind, and gets bumped about in storms; the banner trails just behind with a small ripple so it stays readable. Its message is in **banner.txt** (see [Changing the banner message](#changing-the-banner-message)). Add `?plane` to the address to send one over straight away.
+
+&: the first within about half a minute of the scene starting, then every 30 seconds to 2 minutes at random.
 
 The **high wind** scene comes on with sustained winds of 25 mph or more, gusts of 40 mph or more, or a High Wind Warning. Rain, snow, thunderstorm and fog scenes take priority over it.
 
