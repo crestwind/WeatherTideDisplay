@@ -1295,7 +1295,7 @@ const Sky = (() => {
   // bumped about in storms. The banner trails a moment behind with only a small ripple, so it stays easy to read.
   // This state lives outside build(), so a scene change doesn't reset the schedule. ?plane in the address sends one now.
   let plane = null, nextPlane = performance.now() / 1000 + (/[?&]plane/.test(location.search) ? 2 : 30);
-  const bannerCv = document.createElement('canvas');
+  const bannerCv = document.createElement('canvas'), planeCv = document.createElement('canvas');
   let bannerKey = '';
   function planeTick(t) {
     if (plane && plane.x < plane.end) plane = null;
@@ -1344,32 +1344,37 @@ const Sky = (() => {
     g.strokeStyle = 'rgba(40,40,40,.6)'; g.lineWidth = Math.max(1, k);   // tow line from the tail to the banner
     g.beginPath(); g.moveTo(p.x + 74 * k, y + 2 * k); g.lineTo(bx, by(t) + 4 * k); g.moveTo(p.x + 74 * k, y + 2 * k); g.lineTo(bx, by(t) + img.height - 4 * k); g.stroke();
     // the biplane, nose to the left
-    g.save(); g.translate(p.x, y); g.rotate(-pitch); g.scale(k, k);
+    // drawn into its own small canvas first, so night shading covers only the plane, not a box around it
+    const W = Math.ceil(92 * k), H = Math.ceil(46 * k);
+    if (planeCv.width !== W || planeCv.height !== H) { planeCv.width = W; planeCv.height = H; }
+    const c = planeCv.getContext('2d');
+    c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, W, H); c.scale(k, k); c.translate(8, 24);
     const night = mode.tod === 'night';
-    g.fillStyle = '#d64535';
-    g.beginPath(); g.moveTo(62, -4); g.lineTo(70, -19); g.lineTo(77, -18); g.lineTo(75, -3); g.closePath(); g.fill();   // tail fin
-    g.fillRect(60, -2, 19, 3.5);                                                                                           // tailplane
-    g.beginPath(); g.moveTo(4, -6); g.lineTo(60, -4); g.lineTo(76, -2); g.lineTo(60, 4.5); g.lineTo(6, 7);
-    g.quadraticCurveTo(-1, 1, 4, -6); g.closePath(); g.fill();                                                             // fuselage
-    g.fillStyle = '#fbf6ea'; g.fillRect(48, -4.6, 3, 9);                                                                   // stripe
-    g.strokeStyle = '#5a4a3a'; g.lineWidth = 1.4;
-    g.beginPath(); for (const sx of [17, 37]) { g.moveTo(sx, -15); g.lineTo(sx, 6); } g.moveTo(17, -15); g.lineTo(37, 6); g.moveTo(37, -15); g.lineTo(17, 6);
-    g.moveTo(15, 7); g.lineTo(19, 14); g.moveTo(25, 6); g.lineTo(19, 14); g.stroke();                                      // struts and wires
-    g.fillStyle = '#f2c230'; g.fillRect(9, -19, 37, 4.5); g.fillRect(13, 5, 29, 3.5);                                      // wings
-    g.fillStyle = '#2b2b2b'; g.beginPath(); g.arc(19, 15, 3.6, 0, 7); g.fill();                                            // wheel
-    g.beginPath(); g.arc(3, 0, 6.2, 0, 7); g.fill();                                                                       // engine cowling
-    g.fillStyle = '#8a5a3a'; g.beginPath(); g.arc(30, -9.5, 4.2, Math.PI, 0); g.fill(); g.fillRect(25.8, -9.5, 8.4, 2);   // pilot's cap
-    g.fillStyle = '#e8b991'; g.beginPath(); g.arc(30, -8, 3.2, 0, Math.PI); g.fill();
-    g.fillStyle = '#a9d2ef'; g.fillRect(26.5, -10, 3, 1.6);                                                                // goggles
+    c.fillStyle = '#d64535';
+    c.beginPath(); c.moveTo(62, -4); c.lineTo(70, -19); c.lineTo(77, -18); c.lineTo(75, -3); c.closePath(); c.fill();   // tail fin
+    c.fillRect(60, -2, 19, 3.5);                                                                                           // tailplane
+    c.beginPath(); c.moveTo(4, -6); c.lineTo(60, -4); c.lineTo(76, -2); c.lineTo(60, 4.5); c.lineTo(6, 7);
+    c.quadraticCurveTo(-1, 1, 4, -6); c.closePath(); c.fill();                                                             // fuselage
+    c.fillStyle = '#fbf6ea'; c.fillRect(48, -4.6, 3, 9);                                                                   // stripe
+    c.strokeStyle = '#5a4a3a'; c.lineWidth = 1.4;
+    c.beginPath(); for (const sx of [17, 37]) { c.moveTo(sx, -15); c.lineTo(sx, 6); } c.moveTo(17, -15); c.lineTo(37, 6); c.moveTo(37, -15); c.lineTo(17, 6);
+    c.moveTo(15, 7); c.lineTo(19, 14); c.moveTo(25, 6); c.lineTo(19, 14); c.stroke();                                      // struts and wires
+    c.fillStyle = '#f2c230'; c.fillRect(9, -19, 37, 4.5); c.fillRect(13, 5, 29, 3.5);                                      // wings
+    c.fillStyle = '#2b2b2b'; c.beginPath(); c.arc(19, 15, 3.6, 0, 7); c.fill();                                            // wheel
+    c.beginPath(); c.arc(3, 0, 6.2, 0, 7); c.fill();                                                                       // engine cowling
+    c.fillStyle = '#8a5a3a'; c.beginPath(); c.arc(30, -9.5, 4.2, Math.PI, 0); c.fill(); c.fillRect(25.8, -9.5, 8.4, 2);   // pilot's cap
+    c.fillStyle = '#e8b991'; c.beginPath(); c.arc(30, -8, 3.2, 0, Math.PI); c.fill();
+    c.fillStyle = '#a9d2ef'; c.fillRect(26.5, -10, 3, 1.6);                                                                // goggles
     const spin = Math.abs(Math.sin(t * 40));                                                                               // propeller
-    g.fillStyle = 'rgba(200,200,200,.28)'; g.beginPath(); g.ellipse(-3, 0, 2, 14, 0, 0, 7); g.fill();
-    g.fillStyle = '#3a3a3a'; g.beginPath(); g.ellipse(-3, 0, 1.4, 13 * spin + 1, 0, 0, 7); g.fill();
-    if (night) {   // a little red and green navigation light on each wingtip, and the plane in shadow
-      g.fillStyle = 'rgba(10,18,40,.45)'; g.fillRect(-6, -22, 86, 40);
-      g.fillStyle = '#ff4a4a'; g.beginPath(); g.arc(9, -17, 1.8, 0, 7); g.fill();
-      g.fillStyle = '#4aff7a'; g.beginPath(); g.arc(46, -17, 1.8, 0, 7); g.fill();
+    c.fillStyle = 'rgba(200,200,200,.28)'; c.beginPath(); c.ellipse(-3, 0, 2, 14, 0, 0, 7); c.fill();
+    c.fillStyle = '#3a3a3a'; c.beginPath(); c.ellipse(-3, 0, 1.4, 13 * spin + 1, 0, 0, 7); c.fill();
+    if (night) {   // the plane in shadow (only where it's drawn), then a red and a green light on the wingtips
+      c.globalCompositeOperation = 'source-atop'; c.fillStyle = 'rgba(10,18,40,.45)'; c.fillRect(-8, -24, 92, 46);
+      c.globalCompositeOperation = 'source-over';
+      c.fillStyle = '#ff4a4a'; c.beginPath(); c.arc(9, -17, 1.8, 0, 7); c.fill();
+      c.fillStyle = '#4aff7a'; c.beginPath(); c.arc(46, -17, 1.8, 0, 7); c.fill();
     }
-    g.restore();
+    g.save(); g.translate(p.x, y); g.rotate(-pitch); g.drawImage(planeCv, -8 * k, -24 * k); g.restore();
   }
 
   let birds = false, flock = [], nextFlock = 0;
