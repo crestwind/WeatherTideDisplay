@@ -239,7 +239,7 @@ None appear with **Background animation** set to **Off**.
 | **Nessie** | Ocean (not in heavy rain or storms) | The Loch Ness monster rises out of the sea and says *"I need about tree fiddy"*, then sinks back down | |
 | **Bigfoot** | Forest (not in heavy rain or storms) | Strides along the far edge of the clearing in front of the pines, stops and turns to stare at you (his eyes shine at night), then walks on. The camper watches him go | *"Did anyone else see that?"* |
 | **Bear** | Forest, when he's out by the fire | A black bear wanders in, sniffs round his log and his bag of marshmallows, and wanders off. The camper jumps up, runs to his tent and dives in headfirst, watches the bear from the doorway, then crawls back out and walks back to his log | *"Is it gone?"* |
-| **Raccoon** | Forest, when he's out by the fire | Creeps in, grabs his bag of marshmallows and scurries off with it (a new bag turns up a minute and a half later) | *"Hey! Those were mine!"* |
+| **Raccoon** | Forest, when he's out by the fire | Creeps in, grabs his bag of marshmallows off the end of his log and scurries off with it; a few seconds later he reaches over and sets a new bag down | *"Hey! Those were mine!"* |
 
 ### Minor random events
 
@@ -254,7 +254,7 @@ None appear with **Background animation** set to **Off**.
 | **Scuba diver** | Ocean | Not in high wind, heavy rain or storms | Every 1½ to 4 minutes |
 | **Motor yacht** | Ocean | Daytime on clear and partly cloudy days | Every 2 to 5 minutes |
 | **Geese and crows** | Forest | Daytime, flying-event weather | A V of geese (or two to four crows) every 40 seconds to 2 minutes |
-| **Bats** | Forest | Night, flying-event weather | Two to four bats flitting over the treetops, every 40 seconds to 2 minutes (no birds at night) |
+| **Bats** | Forest | Night, flying-event weather | Two to four bats flitting about above the trees and now and then swooping down behind them, every 40 seconds to 2 minutes (no birds at night) |
 | **Hot air balloon** | Forest | Daytime, not in bad weather | Lifts up from behind the trees, drifts across the open sky and rises out of sight, every 3 to 6 minutes |
 | **Deer** | Forest | Not in bad weather | Every 2 to 5 minutes |
 | **Rabbit** | Forest | Not in bad weather | Every 1 to 3 minutes |

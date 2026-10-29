@@ -2107,18 +2107,18 @@ const Sky = (() => {
     const month = new Date().getMonth(), warm = !W || (imp() ? W.current.temperature_2m : W.current.temperature_2m * 9 / 5 + 32) >= 58;
     // (on the test site and with ?fireflies they come any time of year, so they can be seen)
     run('flies', calm && (f.night || f.golden) && (f.fliesAnyTime || month >= 4 && month <= 8 && warm), 120, 240, () => ({ dur: 45,
-      pts: Array.from({ length: Math.round(34 * Math.max(sx, .6)) }, () => ({ x: rnd(0, Wd * (wide ? .46 : 1)), y: rnd(f.top + 10 * sy, f.gy + 40 * sy), ph: rnd(0, 6.3), sp: rnd(.6, 1.4), dx: rnd(0, 6.3) })) }));
+      pts: Array.from({ length: Math.round(22 * Math.max(sx, .6)) }, () => ({ x: rnd(0, Wd), y: rnd(f.top + 10 * sy, f.gy + 40 * sy), ph: rnd(0, 6.3), sp: rnd(.6, 1.4), dx: rnd(0, 6.3) })) }));
     // a hot air balloon lifting up from behind the trees, drifting across the open sky and rising out of sight, on calm days
     run('balloon', calm && !f.night && flyOK(), 180, 360, () => ({ dur: 70, xs: Wd * (wide ? rnd(.22, .27) : rnd(.15, .4)), xe: Wd * (wide ? rnd(.4, .44) : rnd(.6, .85)),
       cols: [['#d8432f', '#f2c230', '#2f6db5'], ['#2f9e6b', '#f2efe6', '#d8432f'], ['#7a3fb0', '#f29a30', '#f2c230']][Math.floor(Math.random() * 3)] }));
     // by day a V of geese or a few crows crossing the sky; at night bats flitting about instead
     if (f.flock) {
       const fl = f.flock; fl.t += dt;
-      for (const b of fl.list) { b.x += fl.vx * dt; b.ph += b.fq * dt; b.y += Math.sin(t * b.wf + b.wp) * b.wa * dt; }
+      for (const b of fl.list) { b.x += fl.vx * dt; b.ph += b.fq * dt; if (fl.kind !== 'bats') b.y += Math.sin(t * b.wf + b.wp) * b.wa * dt; }
       if (fl.list.every(b => fl.vx > 0 ? b.x > Wd + 60 : b.x < -60) || (fl.kind === 'bats') !== f.night) { f.flock = null; N.birds = gap(40, 120); }
     } else if (flyOK() && t > N.birds) {
       const kind = f.night ? 'bats' : Math.random() < .6 ? 'geese' : 'crows', geese = kind === 'geese', bats = kind === 'bats';
-      const dir = Math.random() < .5 ? 1 : -1, y0 = bats ? f.top - rnd(50, 150) * sy : Hd * rnd(.08, .3), k = sy * (geese ? 1 : bats ? 1.4 : .9);   // (bats flit just over the treetops)
+      const dir = Math.random() < .5 ? 1 : -1, y0 = bats ? f.top - rnd(200, 290) * sy : Hd * rnd(.08, .3), k = sy * (geese ? 1 : bats ? 1.4 : .9);   // (bats flit about above the trees, now and then swooping down behind them)
       const n = geese ? (Math.random() < .5 ? 7 : 9) : 2 + Math.floor(Math.random() * 3), list = [];
       for (let i = 0; i < n; i++) {
         const row = Math.ceil(i / 2), side = i % 2 ? 1 : -1;   // geese: the leader in front, the others trailing back in two lines
@@ -2163,8 +2163,10 @@ const Sky = (() => {
     if (f.snowy) { g.fillStyle = C.snow; g.beginPath(); g.roundRect(-36, -21, 22, 4, 2); g.roundRect(24, -21, 9, 4, 2); g.fill(); }
     g.restore();
     const coon = ev && ev.kind === 'raccoon';
-    if (lit && !(coon && ev.p > .5) && t > f.bagBack) drawBag(f, lx - 50 * s, f.gy, 1);   // (after the raccoon takes it, a new one turns up later)
-    if (coon && ev.p > .5) f.bagBack = t + 90;
+    // his bag of marshmallows on the end of the log; when the raccoon grabs it, he puts a new one there a few seconds later
+    if (coon && ev.p > .5 && !ev.took) { ev.took = true; f.bagBack = t + 4; }
+    f.placing = lit && !hiding && !running && !coming && t > f.bagBack - 1 && t < f.bagBack ? 1 - (f.bagBack - t) : -1;
+    if (lit && t >= f.bagBack - .3) drawBag(f, lx - 30 * s, f.gy - 18 * s, 1);   // (from the moment he sets it down)
     if (running) {   // up off the log, a quick dash to the tent, and a dive through the door
       const u = (bp - .03) / .08, go = Math.max(0, (u - .12) / .88);
       drawCamperOnFoot(f, t, lrp(lx, tx + 6 * k, ease(go)), lrp(f.gy, tb, ease(go)), lrp(s, k, go), -1, go > 0 ? t * 16 : 0, true, Math.max(0, (u - .72) / .28), 1);
@@ -2298,6 +2300,12 @@ const Sky = (() => {
     const sh = [5, -53], el = [lerp(sh[0], H[0], .55), lerp(sh[1], H[1], .55) + 5];
     g.beginPath(); g.moveTo(...sh); g.quadraticCurveTo(...el, ...H); g.stroke();
     g.fillStyle = C.skin; g.beginPath(); g.arc(...H, 3.4, 0, 7); g.arc(H[0] + (T[0] - H[0]) / dl * 8, H[1] + (T[1] - H[1]) / dl * 8, 3.2, 0, 7); g.fill();
+    if (f.placing >= 0) {   // reaching over with his other hand to set a new bag of marshmallows on the log beside him
+      const u = f.placing, out = u < .7 ? ease(u / .7) : 1 - ease((u - .7) / .3), hand = [lerp(-4, -30, out), lerp(-40, -38, out)];
+      if (u < .7) { g.save(); g.translate(hand[0], hand[1] + 18); g.scale(1 / s, 1 / s); drawBag(f, 0, 0, 1); g.restore(); }   // (the bag hangs from his hand until it's down)
+      g.strokeStyle = C.jacket; g.lineWidth = 6.5; g.beginPath(); g.moveTo(-1, -52); g.quadraticCurveTo(lerp(-6, -18, out), -44, ...hand); g.stroke();
+      g.fillStyle = C.skin; g.beginPath(); g.arc(...hand, 3.3, 0, 7); g.fill();
+    }
     g.translate(6, -69); drawCamperHead(f, t, f.look ?? .55, 1, e.st === 'eat' && e.t > .6);
     g.restore();
   }
@@ -2362,7 +2370,8 @@ const Sky = (() => {
     const fl = f.flock, k = fl.k, d = Math.sign(fl.vx), dim = f.night || f.golden;
     for (const b of fl.list) {
       const w = Math.sin(b.ph);   // wingbeat: 1 up, -1 down
-      g.save(); g.translate(b.x, b.y); g.scale(d * k, k); g.lineCap = 'round';
+      const by = fl.kind === 'bats' ? b.y + Math.max(0, Math.sin(t * b.wf * .35 + b.wp)) ** 4 * 260 * Hd / 1080 + Math.sin(t * b.wf * 2 + b.wp) * 9 * Hd / 1080 : b.y;
+      g.save(); g.translate(b.x, by); g.scale(d * k, k); g.lineCap = 'round';
       if (fl.kind === 'bats') {   // a bat seen from below: pointed ears, wings spread both ways with a scalloped edge, beating fast
         const p = new Path2D();
         p.ellipse(0, .5, 2.4, 3.6, 0, 0, 7); p.arc(0, -3, 2.2, 0, 7);
@@ -2471,8 +2480,9 @@ const Sky = (() => {
     const dr = f.deer, k = f.s * .75, y = f.top + 58 * Hd / 1080, x0 = -70 * k;
     let x, d = 1, gait = 0, hu = 1;
     if (dr.t < 4) { x = lrp(x0, dr.x1, ease(dr.t / 4)); gait = t * 7; }
-    else if (dr.t < 9.25) { x = dr.x1; hu = dr.t < 4.5 ? 1 - (dr.t - 4) * 2 : dr.t < 6.4 ? 0 : Math.min(1, (dr.t - 6.4) * 2.5); }
-    else { d = -1; x = lrp(dr.x1, x0, Math.max(0, dr.t - 9.5) / 3.5); gait = t * 11; }
+    else if (dr.t < 9) { x = dr.x1; hu = dr.t < 4.5 ? 1 - (dr.t - 4) * 2 : dr.t < 6.4 ? 0 : Math.min(1, (dr.t - 6.4) * 2.5); }
+    else if (dr.t < 9.7) { x = dr.x1; d = Math.cos(Math.PI * (dr.t - 9) / .7); gait = t * 7; }   // turning round on the spot (side on, then end on, then the other side)
+    else { d = -1; x = lrp(dr.x1, x0, (dr.t - 9.7) / 3.3); gait = t * 11; }
     const one = (ox, oy, sz, kind, lag) => {
       g.save(); g.translate(x - d * ox * k, y + oy * k); g.scale(d * k * sz, k * sz); deerShape(f.C, gait + lag, Math.max(0, Math.min(1, hu)), kind); g.restore();
     };
@@ -2580,7 +2590,7 @@ const Sky = (() => {
     g.restore(); g.restore();
   }
   function coonPos(f, e, lx) {   // creeps in from the left to the bag, grabs it, and scurries off with it
-    const p = e.p, x0 = -40 * f.s, xb = lx - 72 * f.s;
+    const p = e.p, x0 = -40 * f.s, xb = lx - 54 * f.s;   // (the bag sits on the end of his log)
     if (p < .42) return [lrp(x0, xb, ease(p / .42)), 1, true, false];
     if (p < .55) return [xb, 1, false, p > .5];
     return [lrp(xb, x0, (p - .55) / .45), -1, true, true];
