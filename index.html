@@ -1982,13 +1982,17 @@ const Sky = (() => {
       s: Math.min(Hd / 1080, Wd / 700) * (portrait ? 1 : 1.25),
       fx: Wd * (portrait ? .62 : .36), gy: Hd * (portrait ? .74 : .72),   // the campfire, and the ground line at the campsite
       sparks: [], smoke: [], nextSpark: 0, nextSmoke: 0,
-      eat: { st: 'roast', t: 0, dur: rnd(6, 10), toast: 0, has: true } };
+      eat: { st: 'roast', t: 0, dur: rnd(6, 10), toast: 0, has: true },
+      wind: sc.swirl ? .09 : sc.tornado ? .08 : sc.wind ? .05 : sc.storm ? .03 : 0 };   // how hard the wind bends the trees
     f.bg = forestBackdrop(f, tint);
     return f;
   }
   // the trees, the forest floor and the clearing don't move, so they're drawn once into their own canvas
+  // (three canvases: the far trees, ground and clearing, which never move; and the middle and near rows of pines,
+  // which sway in high wind and storms)
   function forestBackdrop(f, tint) {
-    const [c, x] = mk(Wd, Hd), sx = Wd / 1920, sy = Hd / 1080, { kind } = mode;
+    const [c, x0] = mk(Wd, Hd), [cm, xm] = mk(Wd, Hd), [cn, xn] = mk(Wd, Hd), sx = Wd / 1920, sy = Hd / 1080, { kind } = mode;
+    let x = x0;
     const greyed = sc.tone === 'dark' || sc.tone === 'storm' || sc.tone === 'overcast' || sc.tone === 'grey' || kind === 'fog';
     const P = f.night ? { far: '#1e2c3e', mid: '#131f2a', near: '#0a1118', g0: '#17221c', g1: '#0a110d', clr: '#2e2a22' }
       : f.golden ? { far: '#8c6c7c', mid: '#4b4049', near: '#29252e', g0: '#5c5038', g1: '#2c2a22', clr: '#8c6a4a' }
@@ -2011,8 +2015,10 @@ const Sky = (() => {
     const gr = x.createLinearGradient(0, f.top, 0, Hd);
     gr.addColorStop(0, P.g0); gr.addColorStop(1, P.g1);
     x.fillStyle = gr; x.fillRect(0, f.top, Wd, Hd - f.top);
+    x = xm;
     for (let px = -20 * sx; px < Wd + 40 * sx; px += rnd(22, 40) * sx) pine(px, f.top + rnd(10, 22) * sy, rnd(90, 165) * sy, P.mid, f.snowy);
-    if (kind === 'fog' || greyed) { x.fillStyle = f.night ? 'rgba(40,50,64,.25)' : 'rgba(210,218,222,.22)'; x.fillRect(0, 0, Wd, f.gy); }   // mist between the rows
+    f.mist = kind === 'fog' || greyed ? (f.night ? 'rgba(40,50,64,.25)' : 'rgba(210,218,222,.22)') : null;   // mist between the rows
+    x = x0;
     // a few patches and tufts on the forest floor
     for (let i = 0; i < 70 * sx; i++) {
       const px = rnd(0, Wd), py = rnd(f.top + 30 * sy, Hd), r = rnd(12, 40) * sx;
@@ -2023,9 +2029,17 @@ const Sky = (() => {
     cl.addColorStop(0, P.clr); cl.addColorStop(.55, P.clr); cl.addColorStop(1, `rgba(${clr},0)`);   // fading out without a dark rim
     x.save(); x.translate(0, f.gy); x.scale(1, .2); x.translate(0, -f.gy); x.fillStyle = cl; x.fillRect(f.fx - 360 * s, f.gy - 300 * s, 600 * s, 600 * s); x.restore();
     // big near pines at the left edge and on the right (mostly behind the forecast boxes on a wide screen)
+    x = xn;
     const near = Hd > Wd ? [.02, .96] : [.015, .085, .52, .6, .7, .8, .9, .98];
     for (const u of near) pine(u * Wd + rnd(-15, 15) * sx, f.gy + rnd(60, 140) * sy, rnd(330, 460) * sy, P.near, f.snowy);
+    f.mid = cm; f.near = cn; f.midBase = f.top + 16 * sy; f.nearBase = f.gy + 100 * sy;
     return c;
+  }
+  // How far the trees and tent lean in the wind at time t (0 when it's calm): a gusty lean downwind with a flutter on
+  // top, more in hurricanes and tornadoes; ph staggers the layers so they don't move as one.
+  function forestLean(f, t, ph) {
+    if (!f.wind) return 0;
+    return (sc.cloudDir || 1) * f.wind * ((.55 + .45 * Math.sin(t * .7 + ph)) * (.7 + .3 * Math.sin(t * 1.9 + ph * 2)) + .12 * Math.sin(t * 3.3 + ph * 3));
   }
   function forestTick(dt, t) {
     const f = forest, s = f.s, e = f.eat, lit = !f.inside;
@@ -2050,6 +2064,14 @@ const Sky = (() => {
   function drawForest(ts) {
     const f = forest, t = ts / 1000, s = f.s, C = f.C, lit = !f.inside;
     g.drawImage(f.bg, 0, 0);
+    // the middle and near rows of pines, each bent over from its base when the wind blows (the near ones more)
+    const layer = (img, base, lean) => {
+      if (!lean) { g.drawImage(img, 0, 0); return; }
+      g.save(); g.transform(1, 0, -lean, 1, lean * base, 0); g.drawImage(img, 0, 0); g.restore();
+    };
+    layer(f.mid, f.midBase, forestLean(f, t, 0) * .6);
+    if (f.mist) { g.fillStyle = f.mist; g.fillRect(0, 0, Wd, f.gy); }
+    layer(f.near, f.nearBase, forestLean(f, t, 1.7));
     const tx = f.fx - 215 * s, tb = f.gy - 34 * s, k = s * .9;   // the tent, set back on the left
     drawTent(f, t, tx, tb, k);
     // the log he sits on, then him, then the fire in front
@@ -2082,6 +2104,7 @@ const Sky = (() => {
   function drawTent(f, t, tx, tb, k) {   // an A-frame tent seen from the front left, its door facing us
     const C = f.C, glow = f.inside && f.night;
     g.save(); g.translate(tx, tb); g.scale(k, k);
+    if (f.wind) g.transform(1, 0, -(forestLean(f, t, .9) * .5 + (sc.cloudDir || 1) * f.wind * .6 * Math.sin(t * 9.7) * Math.sin(t * 2.3)), 1, 0, 0);   // the fabric pushed over and flapping
     g.strokeStyle = 'rgba(40,30,20,.6)'; g.lineWidth = .8; g.beginPath();   // guy ropes to their pegs
     g.moveTo(0, -102); g.lineTo(-92, 4); g.moveTo(56, -110); g.lineTo(150, -2); g.stroke();
     g.fillStyle = C.tentSide; g.beginPath(); g.moveTo(0, -100); g.lineTo(56, -108); g.lineTo(124, -8); g.lineTo(62, 0); g.closePath(); g.fill();
@@ -2092,18 +2115,33 @@ const Sky = (() => {
     }
     // the door, its flaps tied back; lit up by his lantern at night when he's inside
     const door = new Path2D('M0 -84 L-30 0 L30 0 Z');
+    let doorFill = C.door;
     if (glow) {
       const gd = g.createLinearGradient(0, -84, 0, 0); gd.addColorStop(0, '#ffcf7a'); gd.addColorStop(1, '#e8902e');
-      g.fillStyle = gd;
-    } else g.fillStyle = C.door;
-    g.fill(door);
+      doorFill = gd;
+    }
+    g.fillStyle = doorFill; g.fill(door);
     g.fillStyle = C.trim; g.beginPath(); g.moveTo(0, -84); g.lineTo(-30, 0); g.lineTo(-40, 0); g.lineTo(-5, -78); g.closePath(); g.fill();
     g.beginPath(); g.moveTo(0, -84); g.lineTo(30, 0); g.lineTo(40, 0); g.lineTo(5, -78); g.closePath(); g.fill();
     g.strokeStyle = C.door; g.lineWidth = 2; g.beginPath(); g.moveTo(0, -100); g.lineTo(0, -110); g.moveTo(56, -108); g.lineTo(56, -117); g.stroke();   // pole tips
-    if (f.inside) {   // his head poking out of the door: he looks one way, then the other, and now and then ducks back in
-      const look = Math.sin(t * .45) * 1.2, duck = Math.max(0, Math.sin(t * .17) - .7) / .3;
+    if (f.inside) {
+      // He sits just inside the doorway: shoulders in his plaid jacket, one hand holding the flap, looking out one way
+      // and then the other. Now and then he sits back into the tent and fades into its shadow (or its lantern light).
+      const look = Math.max(-1, Math.min(1, Math.sin(t * .45) * 1.2)), back = Math.max(0, Math.sin(t * .17) - .6) / .4;
       g.save(); g.clip(door);
-      g.translate(0, -12 + duck * 26); drawCamperHead(f, t, Math.max(-1, Math.min(1, look)), 1.4, false);
+      g.save(); g.translate(0, -3 * back); g.scale(1 - .12 * back, 1 - .12 * back);
+      const body = new Path2D('M-24 2 Q-24 -15 -11 -19 L11 -19 Q24 -15 24 2 Z');
+      g.fillStyle = C.jacket; g.fill(body);
+      g.save(); g.clip(body); g.strokeStyle = C.plaid; g.globalAlpha = .55; g.lineWidth = 2.2; g.beginPath();
+      for (let y = -17; y < 2; y += 8) { g.moveTo(-26, y); g.lineTo(26, y); }
+      for (let x = -20; x < 24; x += 7) { g.moveTo(x, -22); g.lineTo(x, 4); }
+      g.stroke(); g.restore();
+      g.strokeStyle = C.jacket; g.lineWidth = 6.5; g.lineCap = 'round';   // his arm up to the edge of the door
+      g.beginPath(); g.moveTo(-18, -12); g.quadraticCurveTo(-22, -24, -15, -38); g.stroke();
+      g.fillStyle = C.skin; g.beginPath(); g.arc(-15, -40, 3.6, 0, 7); g.fill();
+      g.translate(0, -31); drawCamperHead(f, t, look, 1.25, false);
+      g.restore();
+      if (back > 0) { g.globalAlpha = .85 * back; g.fillStyle = doorFill; g.fill(door); }
       g.restore();
     }
     g.restore();
