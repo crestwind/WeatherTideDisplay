@@ -3218,10 +3218,10 @@ const Sounds = (() => {
       const g2 = ctx.createGain(), node = ctx.createBufferSource();
       node.buffer = buf; node.loop = true; node.connect(g2).connect(ctx.destination);
       // MP3s carry a sliver of silence at each end; loop between the first and last real sound so there's no gap
-      const d = buf.getChannelData(0), n = d.length, lim = Math.min(n >> 1, buf.sampleRate * .3);
-      let a = 0, z = n - 1;
+      const d = buf.getChannelData(0), len = d.length, lim = Math.min(len >> 1, buf.sampleRate * .3);
+      let a = 0, z = len - 1;
       while (a < lim && Math.abs(d[a]) < 1e-4) a++;
-      while (z > n - lim && Math.abs(d[z]) < 1e-4) z--;
+      while (z > len - lim && Math.abs(d[z]) < 1e-4) z--;
       node.loopStart = a / buf.sampleRate; node.loopEnd = (z + 1) / buf.sampleRate;
       g2.gain.setValueAtTime(0, ctx.currentTime); g2.gain.linearRampToValueAtTime(vol(), ctx.currentTime + 1.5);
       node.start(0, node.loopStart); src = node; gain = g2; current = s.id; msg('');
