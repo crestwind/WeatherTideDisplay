@@ -2215,7 +2215,8 @@ const Sky = (() => {
     }
     if (ev && ev.kind === 'ranger' && ev.p > .6 && ev.p < .76) {   // the ranger's answer
       const r = rangerPos(f, ev);
-      drawSpeech('Keep it that way!', r.x - 4 * s * r.d, f.gy - 8 * s - 52 * s, Math.min(1, (ev.p - .6) / .015, (.76 - ev.p) / .015));
+      drawSpeech('Keep it that way!', r.x + 4 * s * r.d, f.gy - 8 * s - 92 * s,   // (from the top of his head, under the hat)
+         Math.min(1, (ev.p - .6) / .015, (.76 - ev.p) / .015));
     }
   }
   // peek: null when he's out by the fire; otherwise he's in the doorway, looking around (0) or watching one way (±1)
