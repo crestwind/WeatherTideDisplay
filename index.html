@@ -182,14 +182,37 @@
   .empty { margin: auto; color: var(--dim); font-size: 1.15rem; text-align: center; max-width: 26rem; line-height: 1.4; }
 
   /* ---------- settings ---------- */
-  #gear, #fsBtn {
+  #gear, #fsBtn, #sndBtn {
     position: fixed; right: 1.2rem; bottom: 1.2rem; width: 3rem; height: 3rem; border-radius: 50%; z-index: 6;
     border: 1px solid var(--line); background: var(--card); color: #fff; cursor: pointer; transition: opacity .6s;
     display: grid; place-items: center;
   }
   #fsBtn { right: 4.8rem; }
-  #gear svg, #fsBtn svg { width: 1.5rem; height: 1.5rem; }
-  body.idle #gear, body.idle #fsBtn { opacity: 0; }
+  #sndBtn { right: 8.4rem; }
+  #sndBtn.on { border-color: var(--water); color: var(--water); }   /* a sound is playing */
+  #gear svg, #fsBtn svg, #sndBtn svg { width: 1.5rem; height: 1.5rem; }
+  body.idle #gear, body.idle #fsBtn, body.idle #sndBtn { opacity: 0; }
+  /* the Sounds panel, above the corner buttons */
+  #sndPanel {
+    position: fixed; right: 1.2rem; bottom: 5rem; z-index: 9; width: min(21rem, calc(100vw - 2.4rem)); text-shadow: none;
+    background: #141c28; border: 1px solid var(--line); border-radius: 1.1rem; padding: 1rem 1.1rem; box-shadow: 0 1rem 3rem rgba(0,0,0,.5);
+  }
+  #sndPanel[hidden] { display: none; }
+  #sndPanel h4 { font-size: 1.1rem; font-weight: 600; margin-bottom: .7rem; display: flex; justify-content: space-between; align-items: center; }
+  #sndPanel h4 button { font: inherit; font-size: 1.3rem; line-height: 1; background: none; border: 0; color: var(--dim); cursor: pointer; }
+  #sndList { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+  #sndList button {
+    font: inherit; font-size: 1rem; text-align: left; color: #fff; cursor: pointer; padding: .55rem .7rem; border-radius: .6rem;
+    background: rgba(255,255,255,.06); border: 1px solid transparent; display: flex; gap: .45rem; align-items: center;
+  }
+  #sndList button:hover:not(:disabled) { background: rgba(255,255,255,.12); }
+  #sndList button.on { border-color: var(--water); background: rgba(143,211,255,.14); }
+  #sndList button:disabled { cursor: default; color: var(--faint); }
+  #sndList small { display: block; font-size: .72rem; color: var(--faint); }
+  .sndrow { display: flex; align-items: center; gap: .8rem; margin-top: .9rem; font-size: .95rem; color: var(--dim); }
+  #sndVol { flex: 1; accent-color: var(--water); }
+  #sndStop { font: inherit; font-size: .95rem; padding: .35rem .9rem; border-radius: .5rem; cursor: pointer; border: 1px solid rgba(255,255,255,.22); background: transparent; color: #fff; }
+  #sndMsg { margin-top: .6rem; font-size: .85rem; color: var(--faint); min-height: 1em; }
   .buttons .left { margin-right: auto; }
   .modal { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: grid; place-items: center; z-index: 10; }
   .modal[hidden] { display: none; }
@@ -389,6 +412,15 @@
 <canvas id="glass"></canvas>
 <div id="vbar" aria-hidden="true"><div id="vthumb"></div></div>
 
+<button id="sndBtn" aria-label="Sounds" title="Sounds">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor" stroke-width="1.5"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+</button>
+<div id="sndPanel" hidden>
+  <h4>Sounds <button type="button" id="sndClose" aria-label="Close">×</button></h4>
+  <div id="sndList"></div>
+  <div class="sndrow"><span>Volume</span><input type="range" id="sndVol" min="0" max="100" value="60" aria-label="Volume"><button type="button" id="sndStop">Stop</button></div>
+  <div id="sndMsg"></div>
+</div>
 <button id="fsBtn" aria-label="Full screen" title="Full screen (F)"></button>
 <button id="gear" aria-label="Settings" title="Settings (S)">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
@@ -2648,6 +2680,79 @@ addEventListener('keydown', e => {
   else if (k === 'f') toggleFullscreen();
   else if (k === 'r') { toast('Refreshing…'); refreshWeather(); refreshSea(); refreshAlerts(); refreshDeclarations(); }
 });
+
+// Ambient sounds (rain, fireplace, …): the list is in sounds.json, the audio files in the sounds folder. A sound
+// only starts when someone taps it (browsers don't allow sites to play sound by themselves, and the TV stays quiet),
+// loops without a gap (played through Web Audio from a decoded buffer), and fades in and out. Sounds whose file
+// hasn't been added yet show as "coming soon". The volume is remembered on the device.
+const Sounds = (() => {
+  const FALLBACK = [
+    { id: 'rain', name: 'Rain', icon: '🌧️', file: 'sounds/rain.mp3' },
+    { id: 'fireplace', name: 'Fireplace', icon: '🔥', file: 'sounds/fireplace.mp3' },
+    { id: 'ocean', name: 'Ocean waves', icon: '🌊', file: 'sounds/ocean.mp3' },
+    { id: 'thunder', name: 'Thunderstorm', icon: '⛈️', file: 'sounds/thunderstorm.mp3' },
+    { id: 'wind', name: 'Wind', icon: '🌬️', file: 'sounds/wind.mp3' },
+    { id: 'night', name: 'Forest night', icon: '🦗', file: 'sounds/forest-night.mp3' },
+  ];
+  let list = null, ready = {}, ctx = null, gain = null, src = null, current = null, loading = 0;
+  const panel = $('#sndPanel'), btn = $('#sndBtn'), msg = t => { $('#sndMsg').textContent = t || ''; };
+  const VKEY = 'tw-sound-volume', vol = () => +$('#sndVol').value / 100;
+  try { const v = localStorage.getItem(VKEY); if (v != null) $('#sndVol').value = v; } catch (e) {}
+
+  async function loadList() {
+    if (list) return list;
+    try { const r = await fetch('sounds.json', { cache: 'no-store' }); if (r.ok) list = (await r.json()).sounds; } catch (e) {}
+    list = Array.isArray(list) && list.length ? list : FALLBACK;
+    // which files have been added: a quick check without downloading them
+    await Promise.all(list.map(async s => { try { ready[s.id] = (await fetch(s.file, { method: 'HEAD', cache: 'no-store' })).ok; } catch (e) { ready[s.id] = false; } }));
+    return list;
+  }
+  function render() {
+    $('#sndList').innerHTML = '';
+    for (const s of list) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.disabled = !ready[s.id]; b.classList.toggle('on', current === s.id);
+      b.innerHTML = `<span aria-hidden="true">${esc(s.icon || '🎵')}</span><span>${esc(s.name)}${ready[s.id] ? '' : '<small>coming soon</small>'}</span>`;
+      b.onclick = () => current === s.id ? stop() : play(s);
+      $('#sndList').appendChild(b);
+    }
+    btn.classList.toggle('on', !!current);
+  }
+  async function play(s) {
+    const n = ++loading;
+    msg('Loading ' + s.name.toLowerCase() + '…');
+    try {
+      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+      if (ctx.state === 'suspended') await ctx.resume();
+      const data = await (await fetch(s.file)).arrayBuffer(), buf = await ctx.decodeAudioData(data);
+      if (n !== loading) return;   // they picked something else while this was loading
+      fadeOut();
+      const g2 = ctx.createGain(), node = ctx.createBufferSource();
+      node.buffer = buf; node.loop = true; node.connect(g2).connect(ctx.destination);
+      g2.gain.setValueAtTime(0, ctx.currentTime); g2.gain.linearRampToValueAtTime(vol(), ctx.currentTime + 1.5);
+      node.start(); src = node; gain = g2; current = s.id; msg('');
+    } catch (e) { console.warn(e); if (n === loading) msg('Couldn\'t play that sound.'); }
+    render();
+  }
+  function fadeOut() {   // fade the playing sound out over a second, then stop it
+    if (!src) return;
+    const s = src, g2 = gain, now = ctx.currentTime;
+    g2.gain.cancelScheduledValues(now); g2.gain.setValueAtTime(g2.gain.value, now); g2.gain.linearRampToValueAtTime(0, now + 1);
+    s.stop(now + 1.05); src = gain = null;
+  }
+  function stop() { ++loading; fadeOut(); current = null; msg(''); render(); }
+  $('#sndVol').oninput = () => {
+    if (gain) gain.gain.setTargetAtTime(vol(), ctx.currentTime, .05);
+    try { localStorage.setItem(VKEY, $('#sndVol').value); } catch (e) {}
+  };
+  $('#sndStop').onclick = stop;
+  $('#sndClose').onclick = () => { panel.hidden = true; };
+  btn.onclick = async () => {
+    if (!panel.hidden) { panel.hidden = true; return; }
+    panel.hidden = false; await loadList(); render();
+  };
+  return { stop };
+})();
 
 // Hide the cursor and settings button when the mouse is idle.
 let idleT = 0;

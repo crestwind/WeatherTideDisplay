@@ -67,6 +67,24 @@ Tidal Weather can sit on a phone, tablet or computer like an app, with its blue 
 
 On iPhone and iPad the home screen app keeps its own settings, separate from Safari, so set the location once more the first time it opens.
 
+### Sounds
+
+The **speaker** button in the bottom-right corner (next to full screen and settings) opens the Sounds panel: tap a sound to play it, tap it again or press **Stop** to stop, and use the slider for volume. One sound plays at a time, looping seamlessly with a gentle fade in and out. Nothing ever plays until someone taps a sound, so the TV stays quiet. The volume is remembered on each device.
+
+#### Adding sounds
+
+The list of sounds is in **sounds.json**; the audio files go in the **sounds** folder. A sound whose file isn't there yet shows "coming soon". To add one from any device:
+
+1. Go to **github.com/crestwind/WeatherTideDisplay**, open the **sounds** folder, and click **Add file → Upload files**.
+2. Upload the audio file, named exactly as in sounds.json: `rain.mp3`, `fireplace.mp3`, `ocean.mp3`, `thunderstorm.mp3`, `wind.mp3` or `forest-night.mp3`.
+3. Click **Commit changes**. tidalweather.com updates within a couple of minutes.
+
+Tips for the files:
+
+- **MP3** works everywhere. Aim for 1 to 3 minutes and under 5 MB each, and pick recordings made to loop (they start and end smoothly) so the repeat isn't noticeable.
+- Use sounds you're allowed to share on a website, for example ones marked **CC0 / public domain** on Freesound.org, or from Pixabay's free sound effects.
+- To rename a sound, change its icon, or add a new one, edit **sounds.json** (each entry has an `id`, a `name`, an `icon` emoji and a `file`), or just ask Claude.
+
 ### Keeping the TV on
 
 Set the TV computer's power settings so the screen never turns off or goes to sleep. The display can't control this from a web page.
