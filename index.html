@@ -1741,7 +1741,7 @@ const Sky = (() => {
     if (!line && t > talk.next && !SHOWCASE) line = chooseThought();   // no regular thoughts in showcase mode
     if (line) { talk.line = line; talk.isCatch = isCatch; talk.start = t; talk.dur = Math.min(12, 6 + line.length / 10); }
   }
-  // A thought bubble: a scalloped white cloud of text, with three little circles trailing down to his head.
+  // His thought bubble: a speech bubble like Nessie's (rounded box, pointed tail to his head), wrapping long lines.
   function drawThought(t, hx, hy) {
     const k = Math.max(.75, sea.bs), a = Math.min(1, (t - talk.start) / .4, (talk.start + talk.dur - t) / .5);
     if (a <= 0) return;
@@ -1753,32 +1753,16 @@ const Sky = (() => {
     let cur = '';
     for (const w of words) { const test = cur ? cur + ' ' + w : w; if (g.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; } else cur = test; }
     if (cur) lines.push(cur);
-    const tw = Math.max(...lines.map(l => g.measureText(l).width)), lh = fs * 1.25, pw = 16 * k, ph = 11 * k;
+    const tw = Math.max(...lines.map(l => g.measureText(l).width)), lh = fs * 1.25, pw = 14 * k, ph = 10 * k;
     const bw = tw + pw * 2, bh = lines.length * lh + ph * 2;
-    let bx = Math.min(Math.max(hx - bw * .35, lo), hi - bw), by = hy - 58 * k - bh;
+    let bx = Math.min(Math.max(hx - bw * .35, lo), hi - bw), by = hy - 46 * k - bh;
     g.save(); g.globalAlpha = a;
+    // a speech bubble, the same as Nessie's: a rounded box with a pointed tail down to his head
     g.fillStyle = 'rgba(255,255,255,.96)'; g.shadowColor = 'rgba(0,0,0,.25)'; g.shadowBlur = 10 * k;
-    // the cloud: a few big, overlapping puffs around a rounded middle, drawn as one shape (so the shadow is one outline)
-    const r = Math.min(bh / 2, 18 * k), cloud = new Path2D();
-    cloud.roundRect(bx, by, bw, bh, r);
-    const nTop = Math.max(2, Math.round(bw / (bh * 1.25))), rTop = Math.max(bh * .5, bw / nTop * .55);
-    for (let i = 0; i < nTop; i++) {   // big puffs along the top, alternating a little in size
-      const x = bx + bw * (i + .5) / nTop, rr = rTop * (i % 2 ? .82 : 1);
-      cloud.moveTo(x + rr, by + bh * .3); cloud.arc(x, by + bh * .3, rr, 0, 7);
-    }
-    const nBot = Math.max(1, nTop - 1), rBot = rTop * .72;
-    for (let i = 0; i < nBot; i++) {   // fewer, smaller puffs underneath
-      const x = bx + bw * (i + 1) / (nBot + 1);
-      cloud.moveTo(x + rBot, by + bh * .78); cloud.arc(x, by + bh * .78, rBot, 0, 7);
-    }
-    for (const sx of [bx + bh * .15, bx + bw - bh * .15]) { cloud.moveTo(sx + bh * .55, by + bh * .55); cloud.arc(sx, by + bh * .55, bh * .55, 0, 7); }   // round ends
-    g.fill(cloud, 'nonzero');
+    const tx = Math.min(Math.max(hx - 9 * k, bx + 12 * k), bx + bw - 30 * k);   // where the tail leaves the box
+    g.beginPath(); g.roundRect(bx, by, bw, bh, 12 * k); g.fill();
+    g.beginPath(); g.moveTo(tx, by + bh - 2); g.lineTo(hx, hy - 12 * k); g.lineTo(tx + 18 * k, by + bh - 2); g.closePath(); g.fill();
     g.shadowBlur = 0;
-    // three little circles down to his head
-    const tx = Math.min(Math.max(hx + 6 * k, bx + r), bx + bw - r);
-    for (const [f, rr] of [[.25, 7], [.55, 5], [.82, 3.4]]) {
-      g.beginPath(); g.arc(tx + (hx - tx) * f, by + bh + (hy - 8 * k - by - bh) * f, rr * k, 0, 7); g.fill();
-    }
     g.fillStyle = '#1f3a5a'; g.textBaseline = 'middle'; g.font = font;
     lines.forEach((l, i) => g.fillText(l, bx + pw + (tw - g.measureText(l).width) / 2, by + ph + lh * (i + .5)));
     g.restore();
