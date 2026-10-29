@@ -250,7 +250,7 @@ None appear with **Background animation** set to **Off**.
 
 ### Trying them out
 
-Add one of these to the end of the website address to see an event straight away: `?event=giant`, `?event=mermaid`, `?event=ufo`, `?event=eagle`, `?event=nessie`, `?event=biplane` (or `?plane`), `?heli`, `?jet`. The mermaid, UFO and Nessie need the Ocean style, so add `&display=ocean` too, for example `tidalweather.com/?display=ocean&event=nessie`.
+Add one of these to the end of the website address to see an event straight away: `?event=giant`, `?event=mermaid`, `?event=ufo`, `?event=eagle`, `?event=nessie`, `?event=biplane` (or `?plane`), `?heli`, `?jet`. All the major events except the biplane need the Ocean style, so add `&display=ocean` too, for example `tidalweather.com/?display=ocean&event=nessie`.
 
 ## Alerts
 
