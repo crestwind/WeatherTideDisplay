@@ -239,7 +239,7 @@ None appear with **Background animation** set to **Off**.
 | **Nessie** | Ocean (not in heavy rain or storms) | The Loch Ness monster rises out of the sea and says *"I need about tree fiddy"*, then sinks back down | |
 | **Bigfoot** | Forest (not in heavy rain or storms) | Strides along the far edge of the clearing in front of the pines, stops and turns to stare at you (his eyes shine at night), then walks on. The camper watches him go | *"Did anyone else see that?"* |
 | **Bear** | Forest, when he's out by the fire | A black bear wanders in, sniffs round his log and his bag of marshmallows, and wanders off. The camper jumps up, runs to his tent and dives in headfirst, watches the bear from the doorway, then crawls back out and walks back to his log | *"Is it gone?"* |
-| **Raccoon** | Forest, when he's out by the fire | Creeps in, grabs his bag of marshmallows off the end of his log and scurries off with it; a few seconds later he reaches over and sets a new bag down | *"Hey! Those were mine!"* |
+| **Raccoon** | Forest, when he's out by the fire | Creeps in, grabs his bag of marshmallows off the end of his log and scurries off with it; once he's had his say about it, he reaches over and sets a new bag down | *"Hey! Those were mine!"* |
 
 ### Minor random events
 
@@ -272,7 +272,7 @@ None appear with **Background animation** set to **Off**.
 
 **Motor yacht:** a white motor yacht cruises along the far sea behind the fishing boat, leaving a white wake, and takes about half a minute to cross.
 
-**Forest animals:** a doe (often with her spotted fawn out in front, and sometimes a buck with antlers just behind) walks out of the trees, grazes, looks up at you and trots back; a rabbit hops across behind the log, stopping once to nibble; a red squirrel runs up the dead tree on the right of the clearing, flicks its tail on a branch and runs off; at night an owl glides onto the top of the dead tree, blinks, turns its head and flies away; fireflies blink as they drift over the clearing. "Bad weather" here means any rain, storms, high wind or heavy snow, when the camper is in his tent.
+**Forest animals:** a doe (often with her spotted fawn out in front, and sometimes a buck with antlers just behind) walks out of the trees, grazes, looks up at you, then wanders off into the forest behind; a rabbit hops across behind the log, stopping once to nibble; a red squirrel runs up the dead tree on the right of the clearing, flicks its tail on a branch and runs off; at night an owl glides onto the top of the dead tree, blinks, turns its head and flies away; fireflies blink as they drift over the clearing. "Bad weather" here means any rain, storms, high wind or heavy snow, when the camper is in his tent.
 
 ### Trying them out
 

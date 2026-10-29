@@ -2164,7 +2164,9 @@ const Sky = (() => {
     g.restore();
     const coon = ev && ev.kind === 'raccoon';
     // his bag of marshmallows on the end of the log; when the raccoon grabs it, he puts a new one there a few seconds later
-    if (coon && ev.p > .5 && !ev.took) { ev.took = true; f.bagBack = t + 4; }
+    // (he waits until the raccoon's gone and he's finished saying something about it, then a few seconds more)
+    if (coon && ev.p > .5 && !ev.took) { ev.took = true; f.bagBack = Infinity; f.bagWait = true; }
+    if (f.bagWait && !coon && !talk.line) { f.bagWait = false; f.bagBack = t + 3; }
     f.placing = lit && !hiding && !running && !coming && t > f.bagBack - 1 && t < f.bagBack ? 1 - (f.bagBack - t) : -1;
     if (lit && t >= f.bagBack - .3) drawBag(f, lx - 30 * s, f.gy - 18 * s, 1);   // (from the moment he sets it down)
     if (running) {   // up off the log, a quick dash to the tent, and a dive through the door
@@ -2476,15 +2478,19 @@ const Sky = (() => {
     g.fillStyle = '#111'; g.beginPath(); g.arc(7.8, -7.6 + gait, .8, 0, 7); g.fill();
     g.restore();
   }
-  function drawDeer(f, t) {   // steps out of the trees, grazes, looks up at us, then turns and trots back
-    const dr = f.deer, k = f.s * .75, y = f.top + 58 * Hd / 1080, x0 = -70 * k;
-    let x, d = 1, gait = 0, hu = 1;
+  // steps out of the trees, grazes, looks up at us, then carries on walking, away into the forest behind, getting
+  // smaller and fading into the trees
+  function drawDeer(f, t) {
+    const dr = f.deer, k = f.s * .75, y0 = f.top + 58 * Hd / 1080, x0 = -70 * k;
+    let x, y = y0, gait = 0, hu = 1, far = 1, a = 1;
     if (dr.t < 4) { x = lrp(x0, dr.x1, ease(dr.t / 4)); gait = t * 7; }
     else if (dr.t < 9) { x = dr.x1; hu = dr.t < 4.5 ? 1 - (dr.t - 4) * 2 : dr.t < 6.4 ? 0 : Math.min(1, (dr.t - 6.4) * 2.5); }
-    else if (dr.t < 9.7) { x = dr.x1; d = Math.cos(Math.PI * (dr.t - 9) / .7); gait = t * 7; }   // turning round on the spot (side on, then end on, then the other side)
-    else { d = -1; x = lrp(dr.x1, x0, (dr.t - 9.7) / 3.3); gait = t * 11; }
+    else {
+      const u = Math.min(1, (dr.t - 9) / 4);
+      x = dr.x1 + u * 80 * k; y = lrp(y0, f.top + 16 * Hd / 1080, ease(u)); far = 1 - .35 * u; a = 1 - Math.max(0, (u - .45) / .55); gait = t * 6;
+    }
     const one = (ox, oy, sz, kind, lag) => {
-      g.save(); g.translate(x - d * ox * k, y + oy * k); g.scale(d * k * sz, k * sz); deerShape(f.C, gait + lag, Math.max(0, Math.min(1, hu)), kind); g.restore();
+      g.save(); g.globalAlpha = a; g.translate(x + ox * -k * far, y + oy * k * far); g.scale(k * sz * far, k * sz * far); deerShape(f.C, gait + lag, Math.max(0, Math.min(1, hu)), kind); g.restore();
     };
     // back to front: the buck (sometimes) a little behind her, the doe, and her fawn (often) out in front
     if (dr.buck) one(38, -6, 1.12, 'buck', 2.1);
