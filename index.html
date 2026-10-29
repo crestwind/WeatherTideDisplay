@@ -2035,7 +2035,7 @@ const Sky = (() => {
     x.fillStyle = gr; x.fillRect(0, f.top, Wd, Hd - f.top);
     x = xm;
     for (let px = -20 * sx; px < Wd + 40 * sx; px += rnd(22, 40) * sx) pine(px, f.top + rnd(10, 22) * sy, rnd(90, 165) * sy, P.mid, f.snowy, P.trunk);
-    f.mist = kind === 'fog' || greyed ? (f.night ? 'rgba(40,50,64,.25)' : 'rgba(210,218,222,.22)') : null;   // mist between the rows
+    f.mist = kind === 'fog' || greyed ? (f.night ? [40, 50, 64, .25] : [210, 218, 222, .22]) : null;   // mist among the trees
     x = x0;
     // a few patches and tufts on the forest floor
     for (let i = 0; i < 70 * sx; i++) {
@@ -2143,7 +2143,11 @@ const Sky = (() => {
     };
     layer(f.mid, f.midBase, forestLean(f, t, 0) * .6);
     if (ev && ev.kind === 'bigfoot') drawBigfoot(f, ev, t);   // in front of the middle row, behind everything else
-    if (f.mist) { g.fillStyle = f.mist; g.fillRect(0, 0, Wd, f.gy); }
+    if (f.mist) {   // (thinning out just below the treeline, so there's no hard edge on the ground)
+      const [r, gg, b, a] = f.mist, sy = Hd / 1080, mg = g.createLinearGradient(0, f.top + 10 * sy, 0, f.top + 90 * sy);
+      mg.addColorStop(0, `rgba(${r},${gg},${b},${a})`); mg.addColorStop(1, `rgba(${r},${gg},${b},0)`);
+      g.fillStyle = mg; g.fillRect(0, 0, Wd, f.top + 90 * sy);
+    }
     drawSnag(f, t);
     if (f.deer) drawDeer(f, t);
     const tx = f.fx - 215 * s, tb = f.gy - 34 * s, k = s * .9, lx = f.fx - 100 * s;   // the tent, set back on the left; his log
