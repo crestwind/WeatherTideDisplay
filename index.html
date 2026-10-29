@@ -1705,7 +1705,7 @@ const Sky = (() => {
     return pickLine(groups);
   }
   function talkTick(t) {
-    if (!sea || plane) { if (talk.line && plane) talk.line = ''; return; }   // never over the plane
+    if (!sea || plane) { if (plane) { talk.line = ''; talk.react = null; } return; }   // never over the plane
     // When the background changes (the weather or the time of day), reset the timer: drop whatever he was thinking
     // and say something about the new scene in a few seconds, then carry on at the usual pace.
     const scene = mode.kind + '|' + mode.tod;
@@ -1715,16 +1715,24 @@ const Sky = (() => {
       if (!first) { talk.line = ''; talk.react = null; talk.next = t + (/hurricane|tornado/.test(mode.kind) ? 3 : rnd(4, 8)); }
     }
     if (talk.line) {
-      if (t - talk.start > talk.dur) { talk.line = ''; talk.next = t + (sea.pose === 'hold' && /hurricane|tornado/.test(mode.kind) ? rnd(50, 80) : rnd(120, 240)); }
+      talk.react = null;   // busy thinking: let that catch go by rather than comment on it late
+      if (t - talk.start > talk.dur) {
+        talk.line = '';
+        // only his regular thoughts restart the 2-4 minute timer; after a catch comment, a regular thought that's
+        // due waits a few seconds so the two bubbles don't run straight into each other
+        if (talk.isCatch) talk.next = Math.max(talk.next, t + 5);
+        else talk.next = t + (sea.pose === 'hold' && /hurricane|tornado/.test(mode.kind) ? rnd(50, 80) : rnd(120, 240));
+      }
       return;
     }
-    let line = '';
-    if (talk.react) {   // just landed something: always grumble about a boot, cheer about half the fish
+    let line = '', isCatch = false;
+    if (talk.react) {   // just landed something: always grumble about a boot, cheer about 1 fish in 7
       const c = talk.react; talk.react = null;
-      if (c === 'boot') line = pickLine([['boot', 1]]); else if (Math.random() < .5) line = pickLine([['catch', 1]], c.name);
+      if (c === 'boot') line = pickLine([['boot', 1]]); else if (Math.random() < .15) line = pickLine([['catch', 1]], c.name);
+      isCatch = !!line;
     }
     if (!line && t > talk.next) line = chooseThought();
-    if (line) { talk.line = line; talk.start = t; talk.dur = Math.min(12, 6 + line.length / 10); }
+    if (line) { talk.line = line; talk.isCatch = isCatch; talk.start = t; talk.dur = Math.min(12, 6 + line.length / 10); }
   }
   // A thought bubble: a scalloped white cloud of text, with three little circles trailing down to his head.
   function drawThought(t, hx, hy) {
