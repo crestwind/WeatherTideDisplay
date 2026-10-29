@@ -43,10 +43,10 @@ jobs:
       - name: Mark the test site
         if: github.repository != 'crestwind/WeatherTideDisplay'
         run: |
-          # keep it out of search engines, and show a small TEST SITE tag at the top
-          sed -i 's|<title>|<meta name="robots" content="noindex, nofollow">\n<title>|' _site/index.html
-          sed -i 's|</body>|<div style="position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99;background:#c0392b;color:#fff;font:600 12px sans-serif;letter-spacing:.08em;padding:2px 12px;border-radius:0 0 6px 6px">TEST SITE</div>\n</body>|' _site/index.html
-          grep -q 'name="robots"' _site/index.html && grep -q 'TEST SITE' _site/index.html
+          # keep it out of search engines, switch on showcase mode (random events back to back), and show a small tag at the top
+          sed -i 's|<title>|<meta name="robots" content="noindex, nofollow">\n<script>window.TW_SHOWCASE = true;</script>\n<title>|' _site/index.html
+          sed -i 's|</body>|<div style="position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99;background:#c0392b;color:#fff;font:600 12px sans-serif;letter-spacing:.08em;padding:2px 12px;border-radius:0 0 6px 6px">TEST SITE · SHOWCASE</div>\n</body>|' _site/index.html
+          grep -q 'name="robots"' _site/index.html && grep -q 'TW_SHOWCASE = true' _site/index.html && grep -q 'TEST SITE' _site/index.html
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

@@ -252,6 +252,8 @@ None appear with **Background animation** set to **Off**.
 
 Add one of these to the end of the website address to see an event straight away: `?event=giant`, `?event=mermaid`, `?event=ufo`, `?event=eagle`, `?event=nessie`, `?event=biplane` (or `?plane`), `?heli`, `?jet`. All the major events except the biplane need the Ocean style, so add `&display=ocean` too, for example `tidalweather.com/?display=ocean&event=nessie`.
 
+**Showcase mode** plays them all quickly: major events back to back about 3 seconds apart, cycling through every one that fits the scene, minor events every few seconds, and the fisherman's regular thoughts paused (his reactions to events still show). **The test site is always in showcase mode** (its tag says TEST SITE · SHOWCASE), so new events can be seen straight away; add `?showcase=0` there to get the real timing. On any site, `?showcase` switches it on. tidalweather.com itself always uses the normal timing.
+
 ## Alerts
 
 ### Weather alerts
