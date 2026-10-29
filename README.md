@@ -203,24 +203,32 @@ These effects appear on top of everything else, as if they were on the TV screen
 
 ## Random events
 
-Random events are the occasional visitors that pass through the scene at random times, so the display never looks quite the same twice. None of them appear in smart mirror mode or with **Background animation** set to **Off**.
+Random events are the occasional visitors that pass through the scene at random times, so the display never looks quite the same twice. There are two kinds:
 
-There are two kinds:
-
-- **Major random events** happen **one at a time**, every 2½ to 3½ minutes. **Every other one is the biplane**, starting about 30 seconds after the page opens, so its banner gets seen often; the ones in between are picked at random from those that suit the scene, never the same as the previous in-between one (if the biplane can't fly in the weather, another event takes its turn). They wait for a thought the fisherman is already having to finish; he stays quiet during the event, and any thought that comes due while it's on is skipped. Some events end with him saying something.
+- **Major random events** happen **one at a time**. Some end with the fisherman saying something.
 - **Minor random events** happen whenever, each on its own timer, alongside each other and alongside major events.
 
-**Flying events** (seagulls, the biplane, the helicopters, the jet, the eagle and the UFO) show up in every weather and at every time of day except **high wind, thunderstorms, hurricanes, tornadoes, heavy rain and heavy snow**.
+Which ones you get depends on the display style:
+
+| Display style | Random events |
+|---|---|
+| **Ocean** | All of them. A major event every **2½ to 3½ minutes**, and **every other one is the biplane** (the first about 30 seconds after the page opens), so its banner gets seen often. The ones in between are picked at random from those that suit the scene, never the same as the previous in-between one. They wait for a thought the fisherman is already having to finish; he stays quiet during the event, and any thought that comes due while it's on is skipped. |
+| **Normal** | Minor events, plus **the biplane every 5 minutes** (the first about 30 seconds after the page opens). No other major events. |
+| **Smart mirror** | None. |
+
+None appear with **Background animation** set to **Off**.
+
+**The biplane flies in any weather**, bobbing in wind and getting bumped about in storms. The other **flying events** (seagulls, helicopters, jet, eagle and UFO) show up in every weather and at every time of day except **high wind, thunderstorms, hurricanes, tornadoes, heavy rain and heavy snow**. In a hurricane, when nothing else fits, the biplane is the only major event.
 
 ### Major random events
 
 | Event | Where | What happens | Fisherman |
 |---|---|---|---|
 | **Biplane with banner** | Normal and Ocean | Crosses the sky towing a banner (see [Changing the banner message](#changing-the-banner-message)) | |
-| **Giant** | Normal and Ocean (not in a hurricane or tornado) | Peeks in from the left edge, fingers curled round the screen, looks around, and ducks back out | *"Did you hear something?"* |
+| **Giant** | Ocean (not in a hurricane or tornado) | Peeks in from the left edge, fingers curled round the screen, looks around, and ducks back out | *"Did you hear something?"* |
 | **Mermaid** | Ocean, while he's fishing | Pops up at the stern, flings three of his fish back into the sea, waves, and dives with a flick of her tail | *"Where did my fish go?"* |
 | **UFO** | Ocean, while he's fishing | Swoops in, beams three fish up out of the boat with a tractor beam, and zips away | *"No one is going to believe me."* |
-| **Eagle with the flag** | Normal and Ocean | A bald eagle flies across carrying an American flag | Stands and salutes until it's gone |
+| **Eagle with the flag** | Ocean | A bald eagle flies across carrying an American flag | Stands and salutes until it's gone |
 | **Nessie** | Ocean (not in heavy rain or storms) | The Loch Ness monster rises out of the sea and asks *"Can I borrow tree-fiddy?"*, then sinks back down | |
 
 ### Minor random events

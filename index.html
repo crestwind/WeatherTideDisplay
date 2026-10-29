@@ -1986,11 +1986,11 @@ const Sky = (() => {
     if (S.display === 'mirror') return false;
     const fishing = !!sea && sea.pose === 'fish';
     switch (kind) {
-      case 'biplane': return flyOK() && !!window.TW_BANNER;
-      case 'giant': return !/hurricane|tornado/.test(mode.kind);
+      case 'biplane': return !!window.TW_BANNER;                 // the biplane flies in any weather, in both styles
+      case 'giant': return !!sea && !/hurricane|tornado/.test(mode.kind);   // the other majors: Ocean style only
       case 'mermaid': return fishing;
       case 'ufo': return flyOK() && fishing;
-      case 'eagle': return flyOK();
+      case 'eagle': return !!sea && flyOK();
       case 'nessie': return !!sea && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind);
     }
     return false;
@@ -2014,7 +2014,8 @@ const Sky = (() => {
       const over = e.kind === 'biplane' ? !plane : e.p >= 1;
       if (!over && eligible(e.kind)) return;   // still going (it stops early if the weather turns against it)
       if (e.kind === 'biplane') plane = null;
-      stage.ev = null; stage.last = e.kind; stage.next = t + rnd(150, 210);   // the next one in 2½ to 3½ minutes
+      // Ocean style: the next one in 2½ to 3½ minutes. Normal style (biplane only): the next biplane 5 minutes after this one started.
+      stage.ev = null; stage.last = e.kind; stage.next = sea ? t + rnd(150, 210) : Math.max(t + 30, e.t0 + 300);
       if (e.kind !== 'biplane') stage.lastOther = e.kind;
       if (over && e.say && sea) { talk.line = e.say; talk.isCatch = true; talk.start = t; talk.dur = 6; }   // his reaction
       else talk.next = Math.max(talk.next, t + 8);
@@ -2027,7 +2028,7 @@ const Sky = (() => {
     if (!kind || !MAJORS.includes(kind) || !eligible(kind)) {
       const pool = MAJORS.filter(k => k !== 'biplane' && k !== stage.lastOther && eligible(k));
       // (only if nothing else can happen in this weather does the last one repeat)
-      kind = pool[Math.floor(Math.random() * pool.length)] || (eligible(stage.lastOther) ? stage.lastOther : '');
+      kind = pool[Math.floor(Math.random() * pool.length)] || (eligible(stage.lastOther) ? stage.lastOther : '') || (eligible('biplane') ? 'biplane' : '');
     }
     stage.first = false;
     stage.ev = kind ? startMajor(kind, t) : null;
