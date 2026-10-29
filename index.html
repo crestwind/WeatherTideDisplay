@@ -2228,7 +2228,7 @@ const Sky = (() => {
   function drawMajorFront(t, yBoat) {
     const e = stage.ev;
     if (e.kind === 'ufo') drawUFO(e, t, yBoat);
-    if (e.kind === 'nessie' && e.hx != null && e.p > .26 && e.p < .78) drawSpeech('Can I borrow tree-fiddy?', e.hx, e.hy, Math.min(1, (e.p - .26) * 30, (.78 - e.p) * 30));
+    if (e.kind === 'nessie' && e.hx != null && e.p > .26 && e.p < .78) drawSpeech('I need about tree fiddy', e.hx, e.hy, Math.min(1, (e.p - .26) * 30, (.78 - e.p) * 30));
   }
   function drawUFO(e, t, yBoat) {
     const p = e.p, k = sea.bs, tx = sea.bx - 6 * k, ty = yBoat - 24 * k;

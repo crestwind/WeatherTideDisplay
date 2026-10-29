@@ -230,7 +230,7 @@ None appear with **Background animation** set to **Off**.
 | **Mermaid** | Ocean, while he's fishing | Pops up at the stern, flings three of his fish back into the sea, waves, and dives with a flick of her tail | *"Where did my fish go?"* |
 | **UFO** | Ocean, while he's fishing | Swoops in, beams three fish up out of the boat with a tractor beam, and zips away | *"No one is going to believe me."* |
 | **Eagle with the flag** | Ocean | A bald eagle flies across carrying an American flag | Stands and salutes until it's gone |
-| **Nessie** | Ocean (not in heavy rain or storms) | The Loch Ness monster rises out of the sea and asks *"Can I borrow tree-fiddy?"*, then sinks back down | |
+| **Nessie** | Ocean (not in heavy rain or storms) | The Loch Ness monster rises out of the sea and says *"I need about tree fiddy"*, then sinks back down | |
 
 ### Minor random events
 
