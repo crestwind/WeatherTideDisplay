@@ -1735,11 +1735,22 @@ const Sky = (() => {
     let bx = Math.min(Math.max(hx - bw * .35, lo), hi - bw), by = hy - 58 * k - bh;
     g.save(); g.globalAlpha = a;
     g.fillStyle = 'rgba(255,255,255,.96)'; g.shadowColor = 'rgba(0,0,0,.25)'; g.shadowBlur = 10 * k;
-    // the cloud: a rounded box with bumps around the edge
-    const r = Math.min(bh / 2, 18 * k);
-    g.beginPath(); g.roundRect(bx, by, bw, bh, r); g.fill();
+    // the cloud: a few big, overlapping puffs around a rounded middle, drawn as one shape (so the shadow is one outline)
+    const r = Math.min(bh / 2, 18 * k), cloud = new Path2D();
+    cloud.roundRect(bx, by, bw, bh, r);
+    const nTop = Math.max(2, Math.round(bw / (bh * 1.25))), rTop = Math.max(bh * .5, bw / nTop * .55);
+    for (let i = 0; i < nTop; i++) {   // big puffs along the top, alternating a little in size
+      const x = bx + bw * (i + .5) / nTop, rr = rTop * (i % 2 ? .82 : 1);
+      cloud.moveTo(x + rr, by + bh * .3); cloud.arc(x, by + bh * .3, rr, 0, 7);
+    }
+    const nBot = Math.max(1, nTop - 1), rBot = rTop * .72;
+    for (let i = 0; i < nBot; i++) {   // fewer, smaller puffs underneath
+      const x = bx + bw * (i + 1) / (nBot + 1);
+      cloud.moveTo(x + rBot, by + bh * .78); cloud.arc(x, by + bh * .78, rBot, 0, 7);
+    }
+    for (const sx of [bx + bh * .15, bx + bw - bh * .15]) { cloud.moveTo(sx + bh * .55, by + bh * .55); cloud.arc(sx, by + bh * .55, bh * .55, 0, 7); }   // round ends
+    g.fill(cloud, 'nonzero');
     g.shadowBlur = 0;
-    for (let x = bx + r; x < bx + bw - r * .6; x += r * 1.15) { g.beginPath(); g.arc(x, by + r * .25, r * .62, 0, 7); g.arc(x + r * .55, by + bh - r * .25, r * .62, 0, 7); g.fill(); }
     // three little circles down to his head
     const tx = Math.min(Math.max(hx + 6 * k, bx + r), bx + bw - r);
     for (const [f, rr] of [[.25, 7], [.55, 5], [.82, 3.4]]) {
