@@ -1987,7 +1987,8 @@ const Sky = (() => {
       stone: '#8b8a86', stoneDark: '#5e5d5a', stick: '#5e4128', snow: '#f4f7fa', char: '#2b2420',
       deer: '#a4723f', belly: '#eadfcd', bear: '#2a211c', snout: '#b08a64', coon: '#8a857e', coonDark: '#2b2826', coonFace: '#ddd8d0',
       rabbit: '#8f7b66', owl: '#7a6654', owlFace: '#c4b094', squirrel: '#9a5a2e', snag: '#6e5d4d', bag: '#f4f1ea', bagBand: '#4a7fc0',
-      big: '#3d2c21', bigFace: '#6a5444', buck: '#8a5c34', antler: '#e2d4b4' })) C[k] = tc(h);
+      big: '#3d2c21', bigFace: '#6a5444', buck: '#8a5c34', antler: '#e2d4b4', skunk: '#17171b', stripe: '#f2f2f0',
+      ranger: '#b9a46c', rangerPants: '#4a5a3a', rangerHat: '#8a6a3a', badge: '#e8c34a' })) C[k] = tc(h);
     const f = { top: Hd * (portrait ? .55 : .58), night, golden, snowy, inside, kind, C,
       s: Math.min(Hd / 1080, Wd / 700) * (portrait ? 1 : 1.25),
       fx: Wd * (portrait ? .62 : .36), gy: Hd * (portrait ? .74 : .72),   // the campfire, and the ground line at the campsite
@@ -2131,7 +2132,7 @@ const Sky = (() => {
   }
   function drawForest(ts) {
     const f = forest, t = ts / 1000, s = f.s, C = f.C, lit = !f.inside;
-    const ev = stage.ev && ['bigfoot', 'bear', 'raccoon'].includes(stage.ev.kind) ? stage.ev : null;
+    const ev = stage.ev && ['bigfoot', 'bear', 'raccoon', 'skunk', 'ranger'].includes(stage.ev.kind) ? stage.ev : null;
     if (f.balloon) drawBalloon(f, t);   // in the sky, behind the trees
     if (f.flock) drawForestBirds(f, t);
     g.drawImage(f.bg, 0, 0);
@@ -2151,10 +2152,21 @@ const Sky = (() => {
     const bp = ev && ev.kind === 'bear' ? ev.p : -1;
     const running = bp >= .03 && bp < .11, coming = bp >= .86 && bp < .96, hiding = bp >= .11 && bp < .86;
     const bearX = ev && ev.kind === 'bear' ? bearPos(f, ev, lx)[0] : 0;
-    f.look = !ev || ev.p < .08 || ev.p > .9 ? .55 : ev.kind === 'bigfoot' ? (bigfootX(f, ev) < lx ? -.85 : .85) : ev.kind === 'raccoon' && ev.p > .25 ? -.9 : .55;
+    f.look = .55; f.feetUp = 0; f.thumbs = 0;
+    if (ev && ev.p > .08 && ev.p < .9) {
+      if (ev.kind === 'bigfoot') f.look = bigfootX(f, ev) < lx ? -.85 : .85;
+      else if (ev.kind === 'raccoon' && ev.p > .25) f.look = -.9;
+      else if (ev.kind === 'skunk') { f.look = skunkPos(f, ev, lx)[0] < lx + 6 * s ? -.9 : .9; f.feetUp = Math.max(0, Math.min(1, (ev.p - .2) / .08, (.86 - ev.p) / .08)); }   // feet up off the ground
+      else if (ev.kind === 'ranger' && ev.p > .3) { f.look = .9; f.thumbs = Math.max(0, Math.min(1, (ev.p - .42) / .04, (.7 - ev.p) / .04)); }
+    }
+    // in the middle of the skunk's and the ranger's visits he says something (the reaction lines come after events)
+    if (ev && !ev.said && (ev.kind === 'skunk' && ev.p > .3 || ev.kind === 'ranger' && ev.p > .42)) {
+      ev.said = true; talk.line = ev.kind === 'skunk' ? 'Nobody move…' : "Fire's under control, ranger!"; talk.isCatch = true; talk.start = t; talk.dur = 3.2;
+    }
     drawTent(f, t, tx, tb, k, lit && !hiding ? null : hiding ? (bearX > tx ? 1 : -1) : 0);
     if (f.rabbit) drawRabbit(f, t);
     if (ev && ev.kind === 'bear') drawBear(f, ev, t, lx);
+    if (ev && ev.kind === 'ranger') { const r = rangerPos(f, ev); drawRanger(f, t, r.x, f.gy - 8 * s, s, r.d, r.gait, r.tip, r.a); }
     // the log he sits on, his bag of marshmallows, then him, then the fire in front
     g.save(); g.translate(lx, f.gy); g.scale(s, s);
     g.fillStyle = C.log; g.beginPath(); g.roundRect(-38, -19, 72, 18, 8); g.fill();
@@ -2178,6 +2190,7 @@ const Sky = (() => {
     } else if (lit && !hiding) drawCamper(f, t, lx);
     if (coon) drawRaccoon(f, ev, t, lx);
     drawCampfire(f, t);
+    if (ev && ev.kind === 'skunk') drawSkunk(f, ev, t, lx);   // in front of the log and the fire
     // the fire's warm glow over the clearing, the camper and the tent
     if (lit) {
       const a = (f.night ? .42 : f.golden ? .26 : .12) * (.9 + .1 * Math.sin(t * 11) * Math.sin(t * 7.3));
@@ -2199,6 +2212,10 @@ const Sky = (() => {
     if (talk.line) {   // his speech bubble, from his head by the fire or in the tent door
       const inTent = !lit || hiding;
       drawThought(t, inTent ? tx : lx + 6 * s, inTent ? tb - 40 * k : f.gy - 78 * s);
+    }
+    if (ev && ev.kind === 'ranger' && ev.p > .6 && ev.p < .76) {   // the ranger's answer
+      const r = rangerPos(f, ev);
+      drawSpeech('Keep it that way!', r.x - 4 * s * r.d, f.gy - 8 * s - 52 * s, Math.min(1, (ev.p - .6) / .015, (.76 - ev.p) / .015));
     }
   }
   // peek: null when he's out by the fire; otherwise he's in the doorway, looking around (0) or watching one way (±1)
@@ -2276,8 +2293,9 @@ const Sky = (() => {
     const C = f.C, e = f.eat, s = f.s;
     g.save(); g.translate(lx, f.gy); g.scale(s, s); g.lineCap = g.lineJoin = 'round';
     // legs: thigh forward, shin down to his boots on the ground
-    g.strokeStyle = C.jeans; g.lineWidth = 9; g.beginPath(); g.moveTo(-2, -22); g.lineTo(23, -30); g.lineTo(31, -5); g.stroke();
-    g.fillStyle = C.boot; g.beginPath(); g.ellipse(35, -3.5, 8.5, 4.2, 0, 0, 7); g.fill();
+    const fu = f.feetUp || 0, foot = [lrp(31, 29, fu), lrp(-5, -30, fu)];   // (feet lifted right up when the skunk's about)
+    g.strokeStyle = C.jeans; g.lineWidth = 9; g.beginPath(); g.moveTo(-2, -22); g.lineTo(lrp(23, 19, fu), lrp(-30, -42, fu)); g.lineTo(...foot); g.stroke();
+    g.fillStyle = C.boot; g.beginPath(); g.ellipse(foot[0] + 4, foot[1] + 1.5, 8.5, 4.2, -fu * .5, 0, 7); g.fill();
     // body in a plaid jacket, leaning a little towards the fire
     const body = new Path2D('M-9 -19 L11 -19 Q14 -40 12 -57 Q3 -63 -6 -58 Q-11 -40 -9 -19 Z');
     g.fillStyle = C.jacket; g.fill(body);
@@ -2302,6 +2320,12 @@ const Sky = (() => {
     const sh = [5, -53], el = [lerp(sh[0], H[0], .55), lerp(sh[1], H[1], .55) + 5];
     g.beginPath(); g.moveTo(...sh); g.quadraticCurveTo(...el, ...H); g.stroke();
     g.fillStyle = C.skin; g.beginPath(); g.arc(...H, 3.4, 0, 7); g.arc(H[0] + (T[0] - H[0]) / dl * 8, H[1] + (T[1] - H[1]) / dl * 8, 3.2, 0, 7); g.fill();
+    if (f.thumbs > 0) {   // a thumbs up for the ranger with his free hand
+      const th = f.thumbs, hand = [lerp(-4, 18, th), lerp(-40, -66, th)];
+      g.strokeStyle = C.jacket; g.lineWidth = 6.5; g.beginPath(); g.moveTo(-1, -52); g.quadraticCurveTo(lerp(-6, 10, th), lerp(-44, -50, th), ...hand); g.stroke();
+      g.fillStyle = C.skin; g.beginPath(); g.arc(...hand, 3.4, 0, 7); g.fill();
+      g.fillRect(hand[0] - 1, hand[1] - 7 * th, 2.2, 5 * th);   // the thumb
+    }
     if (f.placing >= 0) {   // reaching over with his other hand to set a new bag of marshmallows on the log beside him
       const u = f.placing, out = u < .7 ? ease(u / .7) : 1 - ease((u - .7) / .3), hand = [lerp(-4, -30, out), lerp(-40, -38, out)];
       if (u < .7) { g.save(); g.translate(hand[0], hand[1] + 18); g.scale(1 / s, 1 / s); drawBag(f, 0, 0, 1); g.restore(); }   // (the bag hangs from his hand until it's down)
@@ -2620,6 +2644,70 @@ const Sky = (() => {
     if (has) { g.fillStyle = C.bag; g.beginPath(); g.roundRect(12, 2, 9, 11, 2); g.fill(); g.fillStyle = C.bagBand; g.fillRect(12, 6, 9, 3); }   // the stolen bag
     g.restore(); g.restore();
   }
+  function skunkPos(f, e, lx) {   // waddles in from the right, stops by his feet to sniff about, and waddles off to the left
+    const p = e.p, s = f.s, x0 = Wd * (Wd > Hd ? .5 : 1.1), xs = lx + 44 * s;
+    if (p < .35) return [lrp(x0, xs, ease(p / .35)), -1, true];
+    if (p < .6) return [xs, -1, false];
+    return [lrp(xs, -80 * s, (p - .6) / .4), -1, true];
+  }
+  function drawSkunk(f, e, t, lx) {   // black with a white stripe down its back and its bushy tail, which goes up when it stops
+    const [x, d, moving] = skunkPos(f, e, lx), k = f.s * .85, C = f.C, y = f.gy + 14 * f.s;
+    const gait = moving ? t * 9 : 0, sniff = moving ? 0 : .2 + Math.sin(t * 9) * .08, up = moving ? .25 : 1;
+    g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(x, y, 17 * k, 3 * k, 0, 0, 7); g.fill();
+    g.save(); g.translate(x, y + Math.abs(Math.sin(gait)) * -1.2 * k); g.scale(d * k, k); g.lineCap = 'round';
+    g.save(); g.translate(-13, -11); g.rotate(-.35 - up * .95);   // the tail
+    g.fillStyle = C.skunk; g.beginPath(); g.ellipse(-11, 0, 13, 6.5, 0, 0, 7); g.fill();
+    g.fillStyle = C.stripe; g.beginPath(); g.ellipse(-11, -1.5, 10, 2.2, 0, 0, 7); g.fill();
+    g.restore();
+    g.strokeStyle = C.skunk; g.lineWidth = 3.2;
+    for (const [hx, ph] of [[9, 0], [6, Math.PI], [-9, Math.PI], [-12, 0]]) { const sw = gait ? Math.sin(gait + ph) * 3.5 : 0; g.beginPath(); g.moveTo(hx, -7); g.lineTo(hx + sw, 0); g.stroke(); }
+    g.fillStyle = C.skunk; g.beginPath(); g.ellipse(-1, -9, 15, 8, 0, 0, 7); g.fill();
+    g.fillStyle = C.stripe; g.beginPath(); g.ellipse(-2, -15, 12, 2.4, -.05, 0, 7); g.fill();   // white stripe along its back
+    g.save(); g.translate(12, -10); g.rotate(sniff);
+    g.fillStyle = C.skunk; g.beginPath(); g.ellipse(4, 0, 6.5, 5, 0, 0, 7); g.fill(); g.beginPath(); g.arc(0, -4.5, 2, 0, 7); g.fill();   // head, ear
+    g.fillStyle = C.stripe; g.beginPath(); g.ellipse(5, -3.2, 4.5, 1.1, .15, 0, 7); g.fill();   // the stripe down its nose
+    g.fillStyle = '#e8b0b0'; g.beginPath(); g.arc(10.5, 1, 1.1, 0, 7); g.fill();
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(6, -.8, .6, 0, 7); g.fill();
+    g.restore(); g.restore();
+  }
+  // The park ranger: walks in from the left, stops on the far side of the fire and looks it over, answers the
+  // camper's thumbs up, tips his hat, and walks off to the right.
+  function rangerPos(f, e) {
+    const p = e.p, s = f.s, xs = f.fx + 46 * s, x0 = -60 * s, x1 = Wd * (Wd > Hd ? .5 : 1.1);
+    if (p < .35) return { x: lrp(x0, xs, ease(p / .35)), d: 1, gait: e.p * e.dur * 8, tip: 0, a: 1 };
+    if (p < .82) return { x: xs, d: -1, gait: 0, tip: Math.max(0, Math.min(1, (p - .74) / .02, (.8 - p) / .02)), a: 1 };
+    const u = (p - .82) / .18;
+    return { x: lrp(xs, x1, u), d: 1, gait: e.p * e.dur * 8, tip: 0, a: Wd > Hd ? 1 - Math.max(0, (u - .5) / .5) : 1 };
+  }
+  function drawRanger(f, t, x, y, k, dir, gait, tip, alpha) {   // khaki shirt with a badge, green trousers, campaign hat
+    const C = f.C, sw = gait ? Math.sin(gait) : 0, bob = gait ? Math.abs(Math.cos(gait)) * 1.5 : 0;
+    g.save(); g.globalAlpha = alpha; g.translate(x, y - bob * k); g.scale(dir * k, k); g.lineCap = g.lineJoin = 'round';
+    g.strokeStyle = C.rangerPants; g.lineWidth = 8;
+    for (const sg of [1, -1]) {
+      const fx = sg * sw * 10; g.beginPath(); g.moveTo(0, -38); g.lineTo(fx * .5 + 3, -19); g.lineTo(fx, -2); g.stroke();
+      g.fillStyle = C.boot; g.beginPath(); g.ellipse(fx + 3, -1.5, 6.5, 3.2, 0, 0, 7); g.fill();
+    }
+    g.translate(0, -38);
+    g.fillStyle = C.ranger; g.fill(new Path2D('M-8 2 L10 2 Q12 -18 10 -34 Q2 -39 -6 -35 Q-10 -18 -8 2 Z'));
+    g.fillStyle = C.rangerPants; g.fillRect(-8.5, -1, 19, 3);                                                           // belt
+    g.fillStyle = C.badge; g.beginPath(); g.arc(6, -24, 1.8, 0, 7); g.fill();                                          // badge
+    g.strokeStyle = C.ranger; g.lineWidth = 6;
+    if (gait) for (const sg of [-1, 1]) { const hx = sg * sw * 9 + 3; g.beginPath(); g.moveTo(2, -30); g.lineTo(hx, -8); g.stroke(); g.fillStyle = C.skin; g.beginPath(); g.arc(hx, -8, 3, 0, 7); g.fill(); }
+    else {   // standing: one hand on his hip, the other down, or up to his hat brim
+      g.beginPath(); g.moveTo(-2, -30); g.lineTo(-11, -17); g.lineTo(-6, -6); g.stroke();
+      const hand = tip ? [lrp(4, 10, tip), lrp(-8, -46, tip)] : [4, -8];
+      g.beginPath(); g.moveTo(4, -30); g.quadraticCurveTo(lrp(6, 14, tip), lrp(-20, -36, tip), ...hand); g.stroke();
+      g.fillStyle = C.skin; g.beginPath(); g.arc(...hand, 3, 0, 7); g.fill();
+    }
+    g.fillStyle = C.skin; g.beginPath(); g.arc(4, -45, 8.5, 0, 7); g.fill();                                            // head
+    g.fillStyle = '#1b1b1b'; g.beginPath(); g.arc(8, -46, 1.1, 0, 7); g.fill();
+    g.fillStyle = C.beard; g.fillRect(6, -41.5, 5, 1.6);                                                                // moustache
+    g.save(); g.translate(4, -50); g.rotate(-tip * .3); g.translate(0, -tip * 2);                                       // the hat, tipped
+    g.fillStyle = C.rangerHat; g.beginPath(); g.ellipse(0, 0, 15, 3, 0, 0, 7); g.fill();
+    g.beginPath(); g.moveTo(-7, -1); g.lineTo(-4, -11); g.lineTo(0, -8); g.lineTo(4, -11); g.lineTo(7, -1); g.closePath(); g.fill();   // pinched crown
+    g.fillStyle = '#5a4424'; g.fillRect(-7, -3, 14, 2);
+    g.restore(); g.restore();
+  }
   function drawFireflies(f, t) {   // blinking green-gold lights drifting over the clearing
     const fl = f.flies, a0 = Math.max(0, Math.min(1, fl.t / 4, (fl.dur - fl.t) / 4)), sy = Hd / 1080, r = 9 * sy;
     g.save(); g.globalCompositeOperation = 'lighter';
@@ -2651,7 +2739,7 @@ const Sky = (() => {
   const flyOK = () => !BAD_SKY.includes(mode.kind);
   const forced = (location.search.match(/[?&]event=(\w+)/) || [])[1] || (/[?&]plane\b/.test(location.search) ? 'biplane' : '');
   const stage = { ev: null, next: performance.now() / 1000 + (forced || SHOWCASE ? 2 : 30), last: '', lastOther: '', first: true };
-  const MAJORS = ['biplane', 'giant', 'mermaid', 'ufo', 'eagle', 'nessie', 'bigfoot', 'bear', 'raccoon'];   // (the last three: Forest style)
+  const MAJORS = ['biplane', 'giant', 'mermaid', 'ufo', 'eagle', 'nessie', 'bigfoot', 'bear', 'raccoon', 'skunk', 'ranger'];   // (the last five: Forest style)
   const saluting = () => !!(stage.ev && stage.ev.kind === 'eagle' && sea && (sea.pose === 'fish' || sea.pose === 'mug'));
   const ease = u => { u = Math.min(1, Math.max(0, u)); return u * u * (3 - 2 * u); };
   const randFish = () => FISH[Math.floor(Math.random() * FISH.length)];
@@ -2666,7 +2754,7 @@ const Sky = (() => {
       case 'eagle': return !!sea && flyOK();
       case 'nessie': return !!sea && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind);
       case 'bigfoot': return !!forest && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind);
-      case 'bear': case 'raccoon': return !!forest && !forest.inside;   // he has to be out by the fire
+      case 'bear': case 'raccoon': case 'skunk': case 'ranger': return !!forest && !forest.inside;   // he has to be out by the fire
     }
     return false;
   }
@@ -2681,6 +2769,8 @@ const Sky = (() => {
     else if (kind === 'bigfoot') { e.dur = 15; e.say = 'Did anyone else see that?'; }
     else if (kind === 'bear') { e.dur = 18; e.say = 'Is it gone?'; }
     else if (kind === 'raccoon') { e.dur = 13; e.say = 'Hey! Those were mine!'; }
+    else if (kind === 'skunk') { e.dur = 16; e.say = 'Phew. That was close.'; }
+    else if (kind === 'ranger') e.dur = 18;
     return e;
   }
   function eventsTick(t) {
@@ -3036,10 +3126,10 @@ const Sky = (() => {
   }
   function drawSpeech(text, hx, hy, a) {   // a speech bubble (rounded box with a pointed tail) above and right of a head
     if (a <= 0) return;
-    const k = Math.max(.75, sea.bs), fs = Math.max(14, Math.round(17 * k));
+    const k = Math.max(.75, sea ? sea.bs : forest.s), fs = Math.max(14, Math.round(17 * k));
     g.save(); g.globalAlpha = a; g.font = `600 ${fs}px "Segoe UI", Inter, Roboto, Arial, sans-serif`;
     const tw = g.measureText(text).width, pw = 14 * k, bw = tw + pw * 2, bh = fs + 20 * k;
-    const bx = Math.min(Math.max(hx + 14 * k, 8), Wd - bw - 8), by = hy - 46 * k - bh;
+    const bx = Math.min(Math.max(hx + 14 * k, 8), (forest && Wd > Hd ? Wd * .455 : Wd - 8) - bw), by = hy - 46 * k - bh;   // (in the Forest, clear of the forecast boxes)
     g.fillStyle = 'rgba(255,255,255,.96)'; g.shadowColor = 'rgba(0,0,0,.25)'; g.shadowBlur = 10 * k;
     g.beginPath(); g.roundRect(bx, by, bw, bh, 12 * k); g.fill();
     g.beginPath(); g.moveTo(bx + 16 * k, by + bh - 2); g.lineTo(hx + 6 * k, hy - 12 * k); g.lineTo(bx + 34 * k, by + bh - 2); g.closePath(); g.fill();

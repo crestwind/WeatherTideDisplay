@@ -219,7 +219,7 @@ Which ones you get depends on the display style:
 | Display style | Random events |
 |---|---|
 | **Ocean** | All of them. A major event every **2½ to 3½ minutes**, and **every other one is the biplane** (the first about 30 seconds after the page opens), so its banner gets seen often. The ones in between are picked at random from those that suit the scene, never the same as the previous in-between one. They wait for a thought the fisherman is already having to finish; he stays quiet during the event, and any thought that comes due while it's on is skipped. |
-| **Forest** | Its own set: the **biplane**, **Bigfoot**, the **bear** and the **raccoon** as major events (same timing as the Ocean style: one every 2½ to 3½ minutes, every other one the biplane), and its own minor events: **geese and crows** by day and **bats** at night instead of seagulls, a **hot air balloon**, **deer**, **rabbits**, a **squirrel**, an **owl** at night, **fireflies** on warm summer evenings, and the **shooting stars**. |
+| **Forest** | Its own set: the **biplane**, **Bigfoot**, the **bear**, the **raccoon**, the **skunk** and the **park ranger** as major events (same timing as the Ocean style: one every 2½ to 3½ minutes, every other one the biplane), and its own minor events: **geese and crows** by day and **bats** at night instead of seagulls, a **hot air balloon**, **deer**, **rabbits**, a **squirrel**, an **owl** at night, **fireflies** on warm summer evenings, and the **shooting stars**. |
 | **Sky** | Kept calm and professional: only **the biplane every 5 minutes** (the first about 30 seconds after the page opens), the **seagulls** and the **shooting stars**. |
 | **Smart mirror** | None. |
 
@@ -240,6 +240,8 @@ None appear with **Background animation** set to **Off**.
 | **Bigfoot** | Forest (not in heavy rain or storms) | Strides along the far edge of the clearing in front of the pines, stops and turns to stare at you (his eyes shine at night), then walks on. The camper watches him go | *"Did anyone else see that?"* |
 | **Bear** | Forest, when he's out by the fire | A black bear wanders in, sniffs round his log and his bag of marshmallows, and wanders off. The camper jumps up, runs to his tent and dives in headfirst, watches the bear from the doorway, then crawls back out and walks back to his log | *"Is it gone?"* |
 | **Raccoon** | Forest, when he's out by the fire | Creeps in, grabs his bag of marshmallows off the end of his log and scurries off with it; once he's had his say about it, he reaches over and sets a new bag down | *"Hey! Those were mine!"* |
+| **Skunk** | Forest, when he's out by the fire | Waddles in past the fire and stops by his feet to sniff about, tail up, then waddles off into the trees. He lifts his feet right up off the ground and says *"Nobody move…"* | *"Phew. That was close."* |
+| **Park ranger** | Forest, when he's out by the fire | A ranger in a campaign hat walks in and looks over the fire. The camper gives him a thumbs up: *"Fire's under control, ranger!"* The ranger answers *"Keep it that way!"*, tips his hat and walks off | |
 
 ### Minor random events
 
