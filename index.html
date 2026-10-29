@@ -512,6 +512,7 @@
 <script src="version.js"></script>
 <!-- what the fisherman thinks, in the Ocean style (edit this file to change his lines) -->
 <script src="fisherman-lines.js"></script>
+<script src="camper-lines.js"></script>
 <script>
 'use strict';
 const $ = s => document.querySelector(s);
@@ -1683,9 +1684,10 @@ const Sky = (() => {
     if (f.st === 'land') talk.react = f.catch;   // he might say something about it
   }
 
-  // The fisherman's thought bubbles (Ocean style): every 2-4 minutes (about every minute in a hurricane or tornado)
-  // he thinks a line from fisherman-lines.js that suits the weather, time of day and temperature, and now and then
-  // says something about his catch. He stays quiet while the biplane is passing. Lives outside build(), so a scene
+  // The fisherman's thought bubbles (Ocean style), and the camper's (Forest style, from camper-lines.js): every 2-4
+  // minutes (about every minute in a hurricane or tornado) he says a line from fisherman-lines.js that suits the
+  // weather, time of day and temperature, and now and then says something about his catch (the camper: about his
+  // marshmallow). He stays quiet during a major random event. Lives outside build(), so a scene
   // change doesn't reset it. ?talk in the address makes him start straight away.
   const talk = { next: performance.now() / 1000 + (/[?&]talk/.test(location.search) ? 3 : 25), line: '', start: 0, dur: 9, recent: [], react: null, kind: null };
   function fillIn(s, extra) {
@@ -1695,7 +1697,7 @@ const Sky = (() => {
       .replace(/\{day\}/g, new Date().toLocaleDateString('en-US', { weekday: 'long' })).replace(/\{fish\}/g, extra || 'fish');
   }
   function pickLine(groups, extra) {
-    const L = window.TW_LINES || {}, pool = [];
+    const L = (forest ? window.TW_CAMP_LINES : window.TW_LINES) || {}, pool = [];
     for (const [g, weight] of groups) for (const s of (L[g] || [])) for (let i = 0; i < weight; i++) pool.push(s);
     let fresh = pool.filter(s => !talk.recent.includes(s));
     if (!fresh.length) fresh = pool;
@@ -1712,15 +1714,19 @@ const Sky = (() => {
     const tod = mode.tod === 'night' ? 'night' : h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
     groups.push([tod, 1]);
     if (W) { const f = imp() ? W.current.temperature_2m : W.current.temperature_2m * 9 / 5 + 32; if (f >= 85) groups.push(['hot', 2]); if (f <= 35) groups.push(['cold', 2]); }
-    if (sea.pose !== 'hold') groups.push(['any', 1]);       // in heavy rain and thunderstorms, only weather lines
-    if (sea.pose === 'fish') groups.push(['fishing', 1]);
+    if (!holding()) groups.push(['any', 1]);       // in heavy rain and thunderstorms, only weather lines
+    if (sea && sea.pose === 'fish') groups.push(['fishing', 1]);
+    if (forest) groups.push([forest.inside ? 'tent' : 'camping', 1]);
     return pickLine(groups);
   }
+  // in heavy rain, thunderstorms and hurricanes he's holding on (or in the tent), so he only talks about the weather
+  const holding = () => sea ? sea.pose === 'hold' : !!(sc.swirl || sc.storm || mode.kind === 'heavy');
   function talkTick(t) {
-    if (!sea || stage.ev) {   // quiet during a major random event
+    const who = sea || forest;
+    if (!who || stage.ev) {   // quiet during a major random event
       talk.react = null;
       // a thought that comes due during a major random event is skipped: start his timer over instead
-      if (sea && stage.ev && t > talk.next) talk.next = t + (/hurricane|tornado/.test(mode.kind) ? rnd(50, 80) : rnd(120, 240));
+      if (who && stage.ev && t > talk.next) talk.next = t + (/hurricane|tornado/.test(mode.kind) ? rnd(50, 80) : rnd(120, 240));
       return;
     }
     // When the background changes (the weather or the time of day), reset the timer: drop whatever he was thinking
@@ -1738,14 +1744,14 @@ const Sky = (() => {
         // only his regular thoughts restart the 2-4 minute timer; after a catch comment, a regular thought that's
         // due waits a few seconds so the two bubbles don't run straight into each other
         if (talk.isCatch) talk.next = Math.max(talk.next, t + 5);
-        else talk.next = t + (sea.pose === 'hold' && /hurricane|tornado/.test(mode.kind) ? rnd(50, 80) : rnd(120, 240));
+        else talk.next = t + (holding() &&/hurricane|tornado/.test(mode.kind) ? rnd(50, 80) : rnd(120, 240));
       }
       return;
     }
     let line = '', isCatch = false;
     if (talk.react) {   // just landed something: always grumble about a boot, cheer about 1 fish in 7
       const c = talk.react; talk.react = null;
-      if (c === 'boot') line = pickLine([['boot', 1]]); else if (Math.random() < .15) line = pickLine([['catch', 1]], c.name);
+      if (c === 'boot') line = pickLine([['boot', 1]]); else if (c === 'snack') line = pickLine([['snack', 1]]); else if (Math.random() < .15) line = pickLine([['catch', 1]], c.name);
       isCatch = !!line;
     }
     if (!line && t > talk.next && !SHOWCASE) line = chooseThought();   // no regular thoughts in showcase mode
@@ -1753,12 +1759,13 @@ const Sky = (() => {
   }
   // His thought bubble: a speech bubble like Nessie's (rounded box, pointed tail to his head), wrapping long lines.
   function drawThought(t, hx, hy) {
-    const k = Math.max(.75, sea.bs), a = Math.min(1, (t - talk.start) / .4, (talk.start + talk.dur - t) / .5);
+    const k = Math.max(.75, sea ? sea.bs : forest.s), a = Math.min(1, (t - talk.start) / .4, (talk.start + talk.dur - t) / .5);
     if (a <= 0) return;
     const fs = Math.max(14, Math.round(17 * k)), font = `600 ${fs}px "Segoe UI", Inter, Roboto, Arial, sans-serif`;
     g.font = font;
-    // where it can go: above the boat, clear of the town name on the left and the forecast boxes on the right
-    const wide = Wd > Hd, lo = wide ? Wd * .31 : Wd * .48, hi = wide ? Wd * .455 : Wd * .97, maxW = Math.max(120, Math.min(hi - lo - 24 * k, 300 * k));
+    // where it can go: above the boat (or the campsite), clear of the town name on the left and the forecast boxes on
+    // the right
+    const wide = Wd > Hd, lo = wide ? Wd * (forest ? .17 : .31) : Wd * (forest ? .05 : .48), hi = wide ? Wd * .455 : Wd * .97, maxW = Math.max(120, Math.min(hi - lo - 24 * k, 300 * k));
     const words = talk.line.split(' '), lines = [];
     let cur = '';
     for (const w of words) { const test = cur ? cur + ' ' + w : w; if (g.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; } else cur = test; }
@@ -1977,13 +1984,22 @@ const Sky = (() => {
     const C = {};
     for (const [k, h] of Object.entries({ tent: '#e8833a', tentSide: '#bf6528', trim: '#f2cf6b', door: '#2a1a10', jacket: '#b3392e', plaid: '#5a1a16',
       jeans: '#3b5a85', boot: '#4a2f1d', skin: '#e9b48e', beard: '#6b4326', hat: '#2f5d3a', pom: '#e8e2d0', log: '#7a5232', logEnd: '#c49a68',
-      stone: '#8b8a86', stoneDark: '#5e5d5a', stick: '#5e4128', snow: '#f4f7fa', char: '#2b2420' })) C[k] = tc(h);
+      stone: '#8b8a86', stoneDark: '#5e5d5a', stick: '#5e4128', snow: '#f4f7fa', char: '#2b2420',
+      deer: '#a4723f', belly: '#eadfcd', bear: '#2a211c', snout: '#b08a64', coon: '#8a857e', coonDark: '#2b2826', coonFace: '#ddd8d0',
+      rabbit: '#8f7b66', owl: '#7a6654', owlFace: '#c4b094', squirrel: '#9a5a2e', snag: '#6e5d4d', bag: '#f4f1ea', bagBand: '#4a7fc0',
+      big: '#3d2c21', bigFace: '#6a5444' })) C[k] = tc(h);
     const f = { top: Hd * (portrait ? .55 : .58), night, golden, snowy, inside, kind, C,
       s: Math.min(Hd / 1080, Wd / 700) * (portrait ? 1 : 1.25),
       fx: Wd * (portrait ? .62 : .36), gy: Hd * (portrait ? .74 : .72),   // the campfire, and the ground line at the campsite
       sparks: [], smoke: [], nextSpark: 0, nextSmoke: 0,
       eat: { st: 'roast', t: 0, dur: rnd(6, 10), toast: 0, has: true },
       wind: sc.swirl ? .09 : sc.tornado ? .08 : sc.wind ? .05 : sc.storm ? .03 : 0 };   // how hard the wind bends the trees
+    // the Forest's own minor random events, each on its own timer (?deer, ?rabbit, ?owl, ?fireflies, ?squirrel and
+    // ?geese bring one in a few seconds)
+    const now = performance.now() / 1000, first = (n, lo, hi) => now + (SHOWCASE || new RegExp('[?&]' + n + '\\b').test(location.search) ? rnd(2, 5) : rnd(lo, hi));
+    f.next = { deer: first('deer', 60, 150), rabbit: first('rabbit', 30, 90), owl: first('owl', 30, 100), flies: first('fireflies', 20, 60), squirrel: first('squirrel', 40, 120), birds: first('geese', 8, 25) };
+    f.deer = f.rabbit = f.owl = f.flies = f.squirrel = f.flock = null; f.bagBack = 0;
+    f.snag = { x: Wd * (portrait ? .9 : .445), y: f.top + 46 * Hd / 1080, h: 125 * Hd / 1080 };   // a dead tree on the right of the clearing
     f.bg = forestBackdrop(f, tint);
     return f;
   }
@@ -2047,7 +2063,10 @@ const Sky = (() => {
     e.t += dt;
     if (e.st === 'roast') { e.toast = Math.min(1, e.t / e.dur); if (e.t > e.dur) { e.st = 'lift'; e.t = 0; } }
     else if (e.st === 'lift' && e.t > 1) { e.st = 'eat'; e.t = 0; }
-    else if (e.st === 'eat') { if (e.t > .6) e.has = false; if (e.t > 2) { e.st = 'lower'; e.t = 0; e.has = true; e.toast = 0; } }
+    else if (e.st === 'eat') {
+      if (e.t > .6) e.has = false;
+      if (e.t > 2) { e.st = 'lower'; e.t = 0; e.has = true; e.toast = 0; if (Math.random() < .25) talk.react = 'snack'; }   // now and then he says how good it was
+    }
     else if (e.st === 'lower' && e.t > 1) { e.st = 'roast'; e.t = 0; e.dur = rnd(7, 12); }
     // sparks and smoke from the fire (just a thin wisp when it's out, and none in a downpour)
     const fy = f.gy - 14 * s, drift = (sc.cloudDir || 1) * 12 * s;
@@ -2060,9 +2079,53 @@ const Sky = (() => {
     f.sparks = f.sparks.filter(p => p.life < p.dur);
     for (const p of f.smoke) { p.life += dt; p.y -= 26 * s * dt; p.x += (drift + Math.sin(t * .6 + p.dur) * 6 * s) * dt; p.r += 7 * s * dt; }
     f.smoke = f.smoke.filter(p => p.life < p.dur);
+    forestMinorsTick(f, dt, t);
+  }
+  // ----- the Forest's minor random events -----
+  // A deer (sometimes with her fawn) steps out of the trees, grazes, looks up at us and trots back; a rabbit hops
+  // across the clearing, stopping once to nibble; a squirrel runs up the dead tree, flicks its tail and runs off; at
+  // night an owl glides onto the dead tree, blinks and turns its head, and flies away; on warm summer evenings
+  // fireflies drift over the clearing; and geese fly over in a V, or a few crows. Animals keep away in bad weather.
+  function forestMinorsTick(f, dt, t) {
+    const N = f.next, calm = !f.inside, gap = (lo, hi) => t + (SHOWCASE ? rnd(3, 8) : rnd(lo, hi)), wide = Wd > Hd, sx = Wd / 1920, sy = Hd / 1080;
+    const run = (key, ok, lo, hi, make) => {   // advance one, or start it when it's due and the weather suits it
+      const m = f[key];
+      if (m) { m.t += dt; if (m.t > m.dur || !ok) { f[key] = null; N[key] = gap(lo, hi); } }
+      else if (ok && t > N[key]) f[key] = Object.assign({ t: 0 }, make());
+    };
+    run('deer', calm, 120, 300, () => ({ dur: 13, fawn: Math.random() < .45, x1: Wd * (wide ? rnd(.1, .2) : rnd(.15, .35)) }));
+    run('rabbit', calm, 60, 180, () => ({ dur: 99, x: -20 * sx, hp: 0, sit: 0, sat: false, px: Wd * (wide ? rnd(.06, .14) : rnd(.2, .4)), end: Wd * (wide ? .47 : 1.03) }));
+    if (f.rabbit) {   // hop, hop, stop to nibble once, hop on
+      const r = f.rabbit, step = 34 * f.s;
+      if (r.sit > 0) r.sit -= dt;
+      else { r.hp += dt / .42; if (r.hp >= 1) { r.hp = 0; r.x += step; if (!r.sat && r.x > r.px) { r.sat = true; r.sit = 2.6; } } }
+      if (r.x > r.end) r.t = r.dur + 1;
+    }
+    run('squirrel', calm && !f.night, 90, 240, () => ({ dur: 10 }));
+    run('owl', calm && f.night, 120, 240, () => ({ dur: 13 }));
+    const month = new Date().getMonth(), warm = !W || (imp() ? W.current.temperature_2m : W.current.temperature_2m * 9 / 5 + 32) >= 58;
+    run('flies', calm && (f.night || f.golden) && month >= 4 && month <= 8 && warm, 120, 240, () => ({ dur: 45,
+      pts: Array.from({ length: Math.round(34 * Math.max(sx, .6)) }, () => ({ x: rnd(0, Wd * (wide ? .46 : 1)), y: rnd(f.top + 10 * sy, f.gy + 40 * sy), ph: rnd(0, 6.3), sp: rnd(.6, 1.4), dx: rnd(0, 6.3) })) }));
+    // birds: a V of geese or a few crows crossing the sky
+    if (f.flock) {
+      const fl = f.flock; fl.t += dt;
+      for (const b of fl.list) { b.x += fl.vx * dt; b.ph += b.fq * dt; b.y += Math.sin(t * b.wf + b.wp) * b.wa * dt; }
+      if (fl.list.every(b => fl.vx > 0 ? b.x > Wd + 60 : b.x < -60)) { f.flock = null; N.birds = gap(40, 120); }
+    } else if (flyOK() && t > N.birds) {
+      const geese = Math.random() < .6, dir = Math.random() < .5 ? 1 : -1, y0 = Hd * rnd(.08, .3), k = sy * (geese ? 1 : .9);
+      const n = geese ? (Math.random() < .5 ? 7 : 9) : 2 + Math.floor(Math.random() * 3), list = [];
+      for (let i = 0; i < n; i++) {
+        const row = Math.ceil(i / 2), side = i % 2 ? 1 : -1;   // geese: the leader in front, the others trailing back in two lines
+        list.push(geese ? { x: (dir > 0 ? -40 : Wd + 40) - dir * row * 30 * k, y: y0 + side * row * 17 * k, ph: rnd(0, 6.3), fq: 6.5, wa: 2 * k, wf: .8, wp: rnd(0, 6.3) }
+          : { x: (dir > 0 ? -40 : Wd + 40) - dir * rnd(0, 140) * k, y: y0 + rnd(-40, 40) * k, ph: rnd(0, 6.3), fq: rnd(9, 12), wa: 14 * k, wf: rnd(1.5, 2.5), wp: rnd(0, 6.3) });
+      }
+      f.flock = { geese, list, k, t: 0, vx: dir * (geese ? 85 : 110) * Math.max(.6, Math.min(sx, 1.2)) };
+    }
   }
   function drawForest(ts) {
     const f = forest, t = ts / 1000, s = f.s, C = f.C, lit = !f.inside;
+    const ev = stage.ev && ['bigfoot', 'bear', 'raccoon'].includes(stage.ev.kind) ? stage.ev : null;
+    if (f.flock) drawForestBirds(f, t);   // in the sky, behind the trees
     g.drawImage(f.bg, 0, 0);
     // the middle and near rows of pines, each bent over from its base when the wind blows (the near ones more)
     const layer = (img, base, lean) => {
@@ -2070,19 +2133,31 @@ const Sky = (() => {
       g.save(); g.transform(1, 0, -lean, 1, lean * base, 0); g.drawImage(img, 0, 0); g.restore();
     };
     layer(f.mid, f.midBase, forestLean(f, t, 0) * .6);
+    if (ev && ev.kind === 'bigfoot') drawBigfoot(f, ev, t);   // in front of the middle row, behind everything else
     if (f.mist) { g.fillStyle = f.mist; g.fillRect(0, 0, Wd, f.gy); }
+    drawSnag(f, t);
     layer(f.near, f.nearBase, forestLean(f, t, 1.7));
-    const tx = f.fx - 215 * s, tb = f.gy - 34 * s, k = s * .9;   // the tent, set back on the left
-    drawTent(f, t, tx, tb, k);
-    // the log he sits on, then him, then the fire in front
-    const lx = f.fx - 100 * s;
+    if (f.deer) drawDeer(f, t);
+    const tx = f.fx - 215 * s, tb = f.gy - 34 * s, k = s * .9, lx = f.fx - 100 * s;   // the tent, set back on the left; his log
+    // He hides in the tent while the bear's about, and keeps an eye on Bigfoot and the raccoon.
+    const hiding = !!(ev && ev.kind === 'bear' && ev.p > .06 && ev.p < .93);
+    const bearX = ev && ev.kind === 'bear' ? bearPos(f, ev, lx)[0] : 0;
+    f.look = !ev || ev.p < .08 || ev.p > .9 ? .55 : ev.kind === 'bigfoot' ? (bigfootX(f, ev) < lx ? -.85 : .85) : ev.kind === 'raccoon' && ev.p > .25 ? -.9 : .55;
+    drawTent(f, t, tx, tb, k, lit && !hiding ? null : hiding ? (bearX > tx ? 1 : -1) : 0);
+    if (f.rabbit) drawRabbit(f, t);
+    if (ev && ev.kind === 'bear') drawBear(f, ev, t, lx);
+    // the log he sits on, his bag of marshmallows, then him, then the fire in front
     g.save(); g.translate(lx, f.gy); g.scale(s, s);
     g.fillStyle = C.log; g.beginPath(); g.roundRect(-38, -19, 72, 18, 8); g.fill();
     g.fillStyle = C.logEnd; g.beginPath(); g.ellipse(33, -10, 5, 9, 0, 0, 7); g.fill();
     g.strokeStyle = C.log; g.lineWidth = .8; g.beginPath(); g.ellipse(33, -10, 2.5, 5, 0, 0, 7); g.stroke();
     if (f.snowy) { g.fillStyle = C.snow; g.beginPath(); g.roundRect(-36, -21, 22, 4, 2); g.roundRect(24, -21, 9, 4, 2); g.fill(); }
     g.restore();
-    if (lit) drawCamper(f, t, lx);
+    const coon = ev && ev.kind === 'raccoon';
+    if (lit && !(coon && ev.p > .5) && t > f.bagBack) drawBag(f, lx - 50 * s, f.gy, 1);   // (after the raccoon takes it, a new one turns up later)
+    if (coon && ev.p > .5) f.bagBack = t + 90;
+    if (lit && !hiding) drawCamper(f, t, lx);
+    if (coon) drawRaccoon(f, ev, t, lx);
     drawCampfire(f, t);
     // the fire's warm glow over the clearing, the camper and the tent
     if (lit) {
@@ -2100,8 +2175,14 @@ const Sky = (() => {
       const u = p.life / p.dur;
       g.fillStyle = `rgba(255,${Math.round(200 - 90 * u)},80,${1 - u})`; g.beginPath(); g.arc(p.x, p.y, 1.6 * s * (1 - u * .5), 0, 7); g.fill();
     }
+    if (f.flies) drawFireflies(f, t);
+    if (talk.line) {   // his speech bubble, from his head by the fire or in the tent door
+      const inTent = !lit || hiding;
+      drawThought(t, inTent ? tx : lx + 6 * s, inTent ? tb - 40 * k : f.gy - 78 * s);
+    }
   }
-  function drawTent(f, t, tx, tb, k) {   // an A-frame tent seen from the front left, its door facing us
+  // peek: null when he's out by the fire; otherwise he's in the doorway, looking around (0) or watching one way (±1)
+  function drawTent(f, t, tx, tb, k, peek) {   // an A-frame tent seen from the front left, its door facing us
     const C = f.C, glow = f.inside && f.night;
     g.save(); g.translate(tx, tb); g.scale(k, k);
     if (f.wind) g.transform(1, 0, -(forestLean(f, t, .9) * .5 + (sc.cloudDir || 1) * f.wind * .6 * Math.sin(t * 9.7) * Math.sin(t * 2.3)), 1, 0, 0);   // the fabric pushed over and flapping
@@ -2124,10 +2205,12 @@ const Sky = (() => {
     g.fillStyle = C.trim; g.beginPath(); g.moveTo(0, -84); g.lineTo(-30, 0); g.lineTo(-40, 0); g.lineTo(-5, -78); g.closePath(); g.fill();
     g.beginPath(); g.moveTo(0, -84); g.lineTo(30, 0); g.lineTo(40, 0); g.lineTo(5, -78); g.closePath(); g.fill();
     g.strokeStyle = C.door; g.lineWidth = 2; g.beginPath(); g.moveTo(0, -100); g.lineTo(0, -110); g.moveTo(56, -108); g.lineTo(56, -117); g.stroke();   // pole tips
-    if (f.inside) {
+    if (peek != null) {
       // He sits just inside the doorway: shoulders in his plaid jacket, one hand holding the flap, looking out one way
       // and then the other. Now and then he sits back into the tent and fades into its shadow (or its lantern light).
-      const look = Math.max(-1, Math.min(1, Math.sin(t * .45) * 1.2)), back = Math.max(0, Math.sin(t * .17) - .6) / .4;
+      // Hiding from the bear, he keeps his eyes on it, edging forward and back.
+      const look = peek ? peek : Math.max(-1, Math.min(1, Math.sin(t * .45) * 1.2));
+      const back = peek ? .25 + .2 * Math.sin(t * 2.6) : Math.max(0, Math.sin(t * .17) - .6) / .4;
       g.save(); g.clip(door);
       g.save(); g.translate(0, -3 * back); g.scale(1 - .12 * back, 1 - .12 * back);
       const body = new Path2D('M-24 2 Q-24 -15 -11 -19 L11 -19 Q24 -15 24 2 Z');
@@ -2199,7 +2282,7 @@ const Sky = (() => {
     const sh = [5, -53], el = [lerp(sh[0], H[0], .55), lerp(sh[1], H[1], .55) + 5];
     g.beginPath(); g.moveTo(...sh); g.quadraticCurveTo(...el, ...H); g.stroke();
     g.fillStyle = C.skin; g.beginPath(); g.arc(...H, 3.4, 0, 7); g.arc(H[0] + (T[0] - H[0]) / dl * 8, H[1] + (T[1] - H[1]) / dl * 8, 3.2, 0, 7); g.fill();
-    g.translate(6, -69); drawCamperHead(f, t, .55, 1, e.st === 'eat' && e.t > .6);
+    g.translate(6, -69); drawCamperHead(f, t, f.look ?? .55, 1, e.st === 'eat' && e.t > .6);
     g.restore();
   }
   function drawCampfire(f, t) {
@@ -2228,6 +2311,224 @@ const Sky = (() => {
     g.restore();
   }
 
+  // ----- the Forest's animals and visitors -----
+  const lrp = (a, b, u) => a + (b - a) * u;
+  function drawForestBirds(f, t) {   // geese in a V (brown-grey, black neck, white chinstrap), or a few crows
+    const fl = f.flock, k = fl.k, d = Math.sign(fl.vx), dim = f.night || f.golden;
+    for (const b of fl.list) {
+      const w = Math.sin(b.ph);   // wingbeat: 1 up, -1 down
+      g.save(); g.translate(b.x, b.y); g.scale(d * k, k); g.lineCap = 'round';
+      if (fl.geese) {
+        const body = f.night ? '#2c3038' : f.golden ? '#3a2a30' : '#6e6355', black = f.night ? '#15181d' : '#1d1d1f';
+        g.fillStyle = body; g.beginPath(); g.ellipse(0, 0, 11, 4.2, 0, 0, 7); g.fill();
+        g.strokeStyle = black; g.lineWidth = 2.4; g.beginPath(); g.moveTo(8, -1); g.quadraticCurveTo(14, -3, 18, -3); g.stroke();   // neck
+        g.fillStyle = black; g.beginPath(); g.ellipse(19.5, -3, 3, 2, 0, 0, 7); g.fill();
+        if (!dim) { g.fillStyle = '#f2f0ea'; g.beginPath(); g.ellipse(18.8, -2.3, 1.3, 1, 0, 0, 7); g.fill(); }   // chinstrap
+        g.fillStyle = black; g.beginPath(); g.moveTo(-10, -1); g.lineTo(-15, 0); g.lineTo(-10, 1.5); g.fill();         // tail
+        g.fillStyle = body; g.beginPath(); g.moveTo(4, -1); g.quadraticCurveTo(-2, -1 - 10 * w, -8, -16 * w); g.lineTo(-11, -14 * w); g.quadraticCurveTo(-4, -2, -4, 0); g.closePath(); g.fill();
+      } else {
+        g.fillStyle = f.night ? '#0e1014' : '#141416';
+        g.beginPath(); g.ellipse(0, 0, 8, 3.2, 0, 0, 7); g.fill(); g.beginPath(); g.arc(8, -1, 2.6, 0, 7); g.fill();
+        g.beginPath(); g.moveTo(10, -1.5); g.lineTo(13.5, -.5); g.lineTo(10, .5); g.fill();                              // beak
+        g.beginPath(); g.moveTo(-7, -1); g.lineTo(-13, -3); g.lineTo(-13, 3); g.lineTo(-7, 1); g.fill();                  // fanned tail
+        g.beginPath(); g.moveTo(3, -1); g.quadraticCurveTo(-1, -6 - 8 * w, -6, -14 * w); g.lineTo(-9, -12 * w); g.quadraticCurveTo(-3, -1, -3, 0); g.closePath(); g.fill();
+      }
+      g.restore();
+    }
+  }
+  function drawSnag(f, t) {   // the dead tree: a broken grey trunk with a few bare branches, used by the owl and the squirrel
+    const n = f.snag, C = f.C, sy = Hd / 1080, h = n.h, w = 9 * sy;
+    g.fillStyle = C.snag; g.beginPath(); g.moveTo(n.x - w, n.y); g.lineTo(n.x - w * .55, n.y - h); g.lineTo(n.x - w * .1, n.y - h - 9 * sy);
+    g.lineTo(n.x + w * .3, n.y - h + 3 * sy); g.lineTo(n.x + w * .55, n.y - h - 5 * sy); g.lineTo(n.x + w, n.y); g.closePath(); g.fill();
+    g.strokeStyle = C.snag; g.lineCap = 'round'; g.lineWidth = 3.4 * sy; g.beginPath();
+    g.moveTo(n.x - w * .6, n.y - h * .62); g.lineTo(n.x - 34 * sy, n.y - h * .8); g.moveTo(n.x + w * .6, n.y - h * .42); g.lineTo(n.x + 30 * sy, n.y - h * .55); g.stroke();
+    g.lineWidth = 2 * sy; g.beginPath(); g.moveTo(n.x - 22 * sy, n.y - h * .74); g.lineTo(n.x - 26 * sy, n.y - h * .88); g.stroke();
+    if (f.snowy) { g.fillStyle = C.snow; g.beginPath(); g.ellipse(n.x - w * .1, n.y - h - 3 * sy, w * .7, 2.5 * sy, 0, 0, 7); g.fill(); }
+    if (f.owl) drawOwl(f, t);
+    if (f.squirrel) drawSquirrel(f, t);
+  }
+  function drawOwl(f, t) {   // glides in to the top of the dead tree, blinks and turns its head, and flies off
+    const o = f.owl, n = f.snag, sy = Hd / 1080, k = sy * 1.6, C = f.C, px = n.x, py = n.y - n.h + 2 * sy;
+    let x = px, y = py, fly = false;
+    if (o.t < 1.6) { const u = ease(o.t / 1.6); x = lrp(Wd * (Wd > Hd ? .52 : 1.05), px, u); y = lrp(py - 130 * sy, py, u); fly = true; }
+    else if (o.t > 11.4) { const u = ease((o.t - 11.4) / 1.6); x = lrp(px, px - 340 * sy, u); y = lrp(py, py - 180 * sy, u); fly = true; }
+    const look = fly ? 0 : Math.sin((o.t - 1.6) * .8) * (o.t > 5 && o.t < 7 ? 1.4 : 1), lk = Math.max(-1, Math.min(1, look));
+    g.save(); g.translate(x, y); g.scale(k, k); g.fillStyle = C.owl;
+    if (fly) { const w = Math.sin(t * 7); for (const sd of [-1, 1]) { g.beginPath(); g.moveTo(0, -14); g.quadraticCurveTo(sd * 12, -24 - 8 * w, sd * 25, -14 - 11 * w); g.quadraticCurveTo(sd * 12, -10, 0, -8); g.fill(); } }
+    g.beginPath(); g.ellipse(0, -11, 8, 11, 0, 0, 7); g.fill();                                                        // body
+    g.beginPath(); g.moveTo(-6 + lk * 2, -22); g.lineTo(-5 + lk * 2, -28); g.lineTo(-2 + lk * 2, -23); g.moveTo(6 + lk * 2, -22); g.lineTo(5 + lk * 2, -28); g.lineTo(2 + lk * 2, -23); g.fill();   // ear tufts
+    g.fillStyle = C.owlFace; g.beginPath(); g.ellipse(lk * 2.5, -17, 6.5 * (1 - .25 * Math.abs(lk)), 5.5, 0, 0, 7); g.fill();   // facial disc
+    g.fillStyle = 'rgba(255,255,255,.18)'; for (const [a, b] of [[-3, -8], [2, -6], [-1, -3], [3, -10]]) { g.fillRect(a, b, 2, .8); }   // speckles
+    const blink = !fly && (o.t % 3.1) < .16;
+    for (const ex of [-2.6, 2.6]) {
+      const cx = lk * 2.5 + ex * (1 - .3 * Math.abs(lk));
+      if (blink) { g.strokeStyle = '#3a3026'; g.lineWidth = .8; g.beginPath(); g.moveTo(cx - 1.8, -17.5); g.lineTo(cx + 1.8, -17.5); g.stroke(); }
+      else { g.fillStyle = '#ffcf3a'; g.beginPath(); g.arc(cx, -17.5, 2.1, 0, 7); g.fill(); g.fillStyle = '#111'; g.beginPath(); g.arc(cx, -17.5, 1, 0, 7); g.fill(); }
+    }
+    g.fillStyle = '#3a3026'; g.beginPath(); g.moveTo(lk * 2.5 - 1, -15.5); g.lineTo(lk * 2.5 + 1, -15.5); g.lineTo(lk * 2.5, -13); g.fill();   // beak
+    g.restore();
+  }
+  function drawSquirrel(f, t) {   // runs over to the dead tree, up to a branch, flicks its tail, and back down and off
+    const q = f.squirrel, n = f.snag, sy = Hd / 1080, k = sy * 1.35, C = f.C;
+    const base = [n.x + 4 * sy, n.y], up = [n.x + 4 * sy, n.y - n.h * .5], perch = [n.x + 20 * sy, n.y - n.h * .5 - 3 * sy], far = [n.x + 160 * sy, n.y + 4 * sy];
+    const seg = (a, b, u) => [lrp(a[0], b[0], u), lrp(a[1], b[1], u)];
+    let p, rot = 0, d = 1, run = true;
+    if (q.t < 1.4) { p = seg(far, base, q.t / 1.4); d = -1; }
+    else if (q.t < 3) { p = seg(base, up, (q.t - 1.4) / 1.6); rot = -Math.PI / 2; }
+    else if (q.t < 3.5) p = seg(up, perch, (q.t - 3) / .5);
+    else if (q.t < 6.6) { p = perch; run = false; d = -1; }
+    else if (q.t < 7.1) { p = seg(perch, up, (q.t - 6.6) / .5); d = -1; }
+    else if (q.t < 8.5) { p = seg(up, base, (q.t - 7.1) / 1.4); rot = Math.PI / 2; }
+    else p = seg(base, far, (q.t - 8.5) / 1.5);
+    const gait = run ? Math.sin(q.t * 22) * .8 : 0, flick = run ? 0 : Math.max(0, Math.sin(q.t * 5)) ** 4;
+    g.save(); g.translate(...p); g.rotate(rot); g.scale(d * k, k); g.fillStyle = C.squirrel;
+    g.beginPath(); g.ellipse(-8, -9 - flick * 2, 4.2, 8.5, -.35 + flick * .4, 0, 7); g.fill();     // bushy tail
+    g.beginPath(); g.ellipse(0, -4 + gait, 7, 4, -.1, 0, 7); g.fill();
+    g.beginPath(); g.arc(6.5, -7 + gait, 3.2, 0, 7); g.fill();
+    g.beginPath(); g.moveTo(5.5, -9.5 + gait); g.lineTo(6.5, -12.5 + gait); g.lineTo(8, -9.5 + gait); g.fill();   // ear
+    g.fillStyle = C.belly; g.globalAlpha = .7; g.beginPath(); g.ellipse(1, -2.2 + gait, 4, 1.5, 0, 0, 7); g.fill(); g.globalAlpha = 1;
+    g.fillStyle = '#111'; g.beginPath(); g.arc(7.8, -7.6 + gait, .8, 0, 7); g.fill();
+    g.restore();
+  }
+  function drawDeer(f, t) {   // steps out of the trees, grazes, looks up at us, then turns and trots back
+    const dr = f.deer, k = f.s * .75, y = f.top + 58 * Hd / 1080, x0 = -70 * k;
+    let x, d = 1, gait = 0, hu = 1;
+    if (dr.t < 4) { x = lrp(x0, dr.x1, ease(dr.t / 4)); gait = t * 7; }
+    else if (dr.t < 9.25) { x = dr.x1; hu = dr.t < 4.5 ? 1 - (dr.t - 4) * 2 : dr.t < 6.4 ? 0 : Math.min(1, (dr.t - 6.4) * 2.5); }
+    else { d = -1; x = lrp(dr.x1, x0, Math.max(0, dr.t - 9.5) / 3.5); gait = t * 11; }
+    const one = (ox, sz, fawn, lag) => {
+      g.save(); g.translate(x - d * ox * k, y); g.scale(d * k * sz, k * sz); deerShape(f.C, gait + lag, Math.max(0, Math.min(1, hu)), fawn); g.restore();
+    };
+    if (dr.fawn) one(46, .62, true, 1.3);
+    one(0, 1, false, 0);
+  }
+  function deerShape(C, gait, hu, fawn) {   // a white-tailed deer from the side, facing right; hu: 1 head up, 0 grazing
+    g.strokeStyle = C.deer; g.lineWidth = fawn ? 2.8 : 3.2; g.lineCap = 'round';
+    for (const [hx, ph] of [[14, 0], [10, Math.PI], [-14, Math.PI], [-18, 0]]) {
+      const sw = gait ? Math.sin(gait + ph) * 6 : 0;
+      g.beginPath(); g.moveTo(hx, -34); g.lineTo(hx + sw * .4, -16); g.lineTo(hx + sw, 0); g.stroke();
+    }
+    g.fillStyle = C.deer; g.beginPath(); g.ellipse(-2, -40, 22, 10.5, 0, 0, 7); g.fill();
+    g.fillStyle = C.belly; g.beginPath(); g.ellipse(-2, -32.5, 15, 3, 0, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(-24, -45, 3, 5.5, .4, 0, 7); g.fill();                                                // white tail
+    if (fawn) { g.fillStyle = 'rgba(255,255,255,.75)'; for (const [a, b] of [[-12, -45], [-5, -47], [2, -46], [-8, -41], [0, -42], [-16, -42]]) { g.beginPath(); g.arc(a, b, 1.4, 0, 7); g.fill(); } }
+    const hx = lrp(25, 27, hu), hy = lrp(-10, -64, hu), ang = lrp(.9, -.2, hu);
+    g.strokeStyle = C.deer; g.lineWidth = 9; g.beginPath(); g.moveTo(14, -44); g.lineTo(hx - 3, hy + 3); g.stroke();   // neck
+    g.save(); g.translate(hx, hy); g.rotate(ang); g.fillStyle = C.deer;
+    g.beginPath(); g.ellipse(3, 0, 8.5, 4.6, 0, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(-3, -7, 2.4, 5, -.5, 0, 7); g.fill(); g.beginPath(); g.ellipse(1, -7.5, 2.4, 5, .2, 0, 7); g.fill();   // ears
+    g.fillStyle = '#1b1b1b'; g.beginPath(); g.arc(11, .5, 1.6, 0, 7); g.arc(3, -1.3, 1.1, 0, 7); g.fill();   // nose, eye
+    g.restore();
+  }
+  function drawRabbit(f, t) {   // hops across behind the log, stretching mid-hop; nibbles when it stops
+    const r = f.rabbit, s = f.s, k = s * .8, y = f.gy - 18 * s, hop = r.sit > 0 ? 0 : r.hp, st = Math.sin(Math.PI * hop);
+    const x = r.x + 34 * s * hop, lift = st * 12 * s, nib = r.sit > 0 ? Math.sin(t * 14) * .6 : 0, C = f.C;
+    g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x, y, 8 * k, 2 * k, 0, 0, 7); g.fill();
+    g.save(); g.translate(x, y - lift); g.scale(k, k); g.fillStyle = C.rabbit;
+    g.beginPath(); g.ellipse(0, -7, 8 + st * 2, 6 - st, -st * .2, 0, 7); g.fill();
+    g.beginPath(); g.arc(7 + st, -11 + nib * .3, 4.2, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(5.5 + st, -19, 1.6, 5.5, -.25 - st * .3, 0, 7); g.fill(); g.beginPath(); g.ellipse(8 + st, -19.5, 1.6, 5.5, .1 - st * .3, 0, 7); g.fill();
+    g.fillStyle = C.belly; g.beginPath(); g.arc(-8, -7, 2.8, 0, 7); g.fill();                                       // cotton tail
+    g.fillStyle = '#1b1b1b'; g.beginPath(); g.arc(8.6 + st, -11.8, .9, 0, 7); g.fill();
+    g.restore();
+  }
+  function drawBag(f, x, y, sz) {   // his bag of marshmallows
+    const C = f.C; g.save(); g.translate(x, y); g.scale(f.s * sz, f.s * sz);
+    g.fillStyle = C.bag; g.beginPath(); g.moveTo(-7, 0); g.lineTo(-6, -15); g.lineTo(-4, -17); g.lineTo(4, -17); g.lineTo(6, -15); g.lineTo(7, 0); g.closePath(); g.fill();
+    g.fillStyle = C.bagBand; g.fillRect(-6.5, -10, 13, 4); g.fillRect(-4, -19, 8, 2.2);
+    g.restore();
+  }
+  // ----- the Forest's major random events: Bigfoot, the bear and the raccoon -----
+  function bigfootX(f, e) {   // walks in from the left, stops to look at us (like in that famous film), and walks on
+    const p = e.p, u = p < .42 ? p / .42 * .45 : p < .6 ? .45 : .45 + (p - .6) / .4 * .55;
+    return lrp(-60 * Hd / 1080, Wd * (Wd > Hd ? .5 : 1.08), u);
+  }
+  function drawBigfoot(f, e, t) {   // along the far edge of the clearing, in front of the middle row of pines
+    const x = bigfootX(f, e), y = f.top + 38 * Hd / 1080, k = f.s * .62, C = f.C, p = e.p;
+    const sw = p < .42 || p > .6 ? Math.sin(t * 3.4) : 0, turn = p >= .42 && p <= .6 ? Math.min(1, (p - .42) / .04, (.6 - p) / .04) : 0;
+    g.save(); g.translate(x, y); g.scale(k, k); g.lineCap = 'round'; g.strokeStyle = g.fillStyle = C.big;
+    // (walking he's side on, legs and long arms swinging; when he stops and turns to us he stands square, feet apart,
+    // arms hanging out from his sides)
+    g.lineWidth = 15;
+    for (const sg of [1, -1]) {
+      const fx = sg * (sw * 16 + turn * 9); g.beginPath(); g.moveTo(sg * turn * 7, -52); g.quadraticCurveTo(fx * .5 + 6 * (1 - turn), -26, fx, -3); g.stroke();
+      g.beginPath(); g.ellipse(fx + 4 * (1 - turn), -2, 8, 3.2, 0, 0, 7); g.fill();
+    }
+    g.beginPath(); g.ellipse(3, -80, 20 + turn * 5, 32, .12 * (1 - turn), 0, 7); g.fill();                            // body
+    g.beginPath(); g.ellipse(5, -99, 18 + turn * 8, 11, 0, 0, 7); g.fill();                                           // hulking shoulders
+    g.lineWidth = 11;
+    for (const sg of [1, -1]) {   // long arms
+      const ax = 6 + sg * turn * 20; g.beginPath(); g.moveTo(ax, -100); g.quadraticCurveTo(ax + sg * turn * 6 + (10 - sg * sw * 8) * (1 - turn), -74, ax + sg * turn * 4 - sg * sw * 18, -44); g.stroke();
+    }
+    const hx = lrp(12, 5, turn);
+    g.beginPath(); g.ellipse(hx, -112, 10, 11, 0, 0, 7); g.fill();                                                    // head
+    g.beginPath(); g.moveTo(hx - 8, -118); g.lineTo(hx - 3, -128); g.lineTo(hx + 4, -120); g.fill();               // pointed crown
+    if (turn > 0) {   // turning to look at us
+      g.globalAlpha = turn; g.fillStyle = C.bigFace; g.beginPath(); g.ellipse(hx + 1, -110, 6.5, 7, 0, 0, 7); g.fill();
+      g.fillStyle = f.night ? '#ffb347' : '#111'; g.beginPath(); g.arc(hx - 1.3, -112, 1.4, 0, 7); g.arc(hx + 3.3, -112, 1.4, 0, 7); g.fill();   // (eye-shine at night)
+      g.globalAlpha = 1;
+    }
+    g.restore();
+  }
+  function bearPos(f, e, lx) {   // walks in from the right, sniffs round his log and the marshmallows, and walks off
+    const p = e.p, x0 = Wd * (Wd > Hd ? .5 : 1.12), xs = lx - 6 * f.s;
+    if (p < .38) return [lrp(x0, xs, ease(p / .38)), -1, true];
+    if (p < .62) return [xs, -1, false];
+    return [lrp(xs, x0, ease((p - .62) / .38)), 1, true];
+  }
+  function drawBear(f, e, t, lx) {   // a black bear, behind the log
+    const [x, d, moving] = bearPos(f, e, lx), k = f.s, C = f.C, y = f.gy - 26 * f.s;
+    const gait = moving ? t * 6 : 0, sniff = moving ? 0 : .45 + Math.sin(t * 5) * .08;
+    g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(x, y, 40 * k, 6 * k, 0, 0, 7); g.fill();
+    g.save(); g.translate(x, y); g.scale(d * k, k); g.strokeStyle = g.fillStyle = C.bear; g.lineCap = 'round'; g.lineWidth = 11;
+    for (const [hx, ph] of [[22, 0], [-20, Math.PI], [16, Math.PI], [-26, 0]]) { const sw = gait ? Math.sin(gait + ph) * 7 : 0; g.beginPath(); g.moveTo(hx, -26); g.lineTo(hx + sw, -2); g.stroke(); }
+    g.beginPath(); g.ellipse(-2, -34, 34, 20, 0, 0, 7); g.fill();
+    g.beginPath(); g.ellipse(16, -44, 16, 14, 0, 0, 7); g.fill();                                                     // shoulder hump
+    g.save(); g.translate(30, -40); g.rotate(sniff);
+    g.beginPath(); g.ellipse(10, 0, 13, 11, 0, 0, 7); g.fill();
+    g.beginPath(); g.arc(4, -10, 4.5, 0, 7); g.arc(12, -11, 4.5, 0, 7); g.fill();                                   // ears
+    g.fillStyle = C.snout; g.beginPath(); g.ellipse(23, 3, 8, 5.5, .15, 0, 7); g.fill();
+    g.fillStyle = '#111'; g.beginPath(); g.arc(30, 2, 2.4, 0, 7); g.arc(15, -3, 1.4, 0, 7); g.fill();               // nose, eye
+    g.restore(); g.restore();
+  }
+  function coonPos(f, e, lx) {   // creeps in from the left to the bag, grabs it, and scurries off with it
+    const p = e.p, x0 = -40 * f.s, xb = lx - 72 * f.s;
+    if (p < .42) return [lrp(x0, xb, ease(p / .42)), 1, true, false];
+    if (p < .55) return [xb, 1, false, p > .5];
+    return [lrp(xb, x0, (p - .55) / .45), -1, true, true];
+  }
+  function drawRaccoon(f, e, t, lx) {
+    const [x, d, moving, has] = coonPos(f, e, lx), k = f.s * .9, C = f.C, y = f.gy + 2 * f.s;
+    const gait = moving ? t * (has ? 18 : 10) : 0, dip = moving ? 0 : Math.max(0, Math.sin((e.p - .42) / .13 * Math.PI));
+    g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(x, y, 18 * k, 3 * k, 0, 0, 7); g.fill();
+    g.save(); g.translate(x, y); g.scale(d * k, k); g.lineCap = 'round';
+    for (let i = 5; i >= 0; i--) { g.fillStyle = i % 2 ? C.coonDark : C.coon; g.beginPath(); g.ellipse(-16 - i * 3.6, -12 - i * 1.2 + Math.sin(t * 6 + i) * .6, 3.4, 4, -.3, 0, 7); g.fill(); }   // ringed tail
+    g.strokeStyle = C.coonDark; g.lineWidth = 3.2;
+    for (const [hx, ph] of [[9, 0], [6, Math.PI], [-9, Math.PI], [-12, 0]]) { const sw = gait ? Math.sin(gait + ph) * 4 : 0; g.beginPath(); g.moveTo(hx, -8); g.lineTo(hx + sw, 0); g.stroke(); }
+    g.fillStyle = C.coon; g.beginPath(); g.ellipse(-2, -12, 15, 8, 0, 0, 7); g.fill();
+    g.save(); g.translate(12, -14); g.rotate(dip * .6);
+    g.beginPath(); g.moveTo(0, -4); g.lineTo(1, -10); g.lineTo(4.5, -5); g.fill();                                   // ear
+    g.beginPath(); g.ellipse(4, 0, 7, 6, 0, 0, 7); g.fill();
+    g.fillStyle = C.coonFace; g.beginPath(); g.moveTo(6, -3); g.lineTo(15, 2); g.lineTo(5, 4); g.closePath(); g.fill();   // pale snout
+    g.fillStyle = C.coonDark; g.beginPath(); g.ellipse(5, -1.4, 6.2, 2.3, .15, 0, 7); g.fill();                     // black mask
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(6.8, -1.6, .9, 0, 7); g.fill();
+    g.fillStyle = '#111'; g.beginPath(); g.arc(15, 2, 1.3, 0, 7); g.fill();
+    if (has) { g.fillStyle = C.bag; g.beginPath(); g.roundRect(12, 2, 9, 11, 2); g.fill(); g.fillStyle = C.bagBand; g.fillRect(12, 6, 9, 3); }   // the stolen bag
+    g.restore(); g.restore();
+  }
+  function drawFireflies(f, t) {   // blinking green-gold lights drifting over the clearing
+    const fl = f.flies, a0 = Math.max(0, Math.min(1, fl.t / 4, (fl.dur - fl.t) / 4)), sy = Hd / 1080, r = 9 * sy;
+    g.save(); g.globalCompositeOperation = 'lighter';
+    for (const p of fl.pts) {
+      const b = Math.max(0, Math.sin(t * p.sp * 1.6 + p.ph)) ** 3 * a0;
+      if (b < .02) continue;
+      const x = p.x + Math.sin(t * .3 + p.dx) * 30 * sy, y = p.y + Math.sin(t * .45 + p.ph) * 14 * sy;
+      const gl = g.createRadialGradient(x, y, 0, x, y, r); gl.addColorStop(0, `rgba(220,255,120,${b})`); gl.addColorStop(1, 'rgba(220,255,120,0)');
+      g.fillStyle = gl; g.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    g.restore();
+  }
+
   /* ---------- Random events ---------- */
   // Major random events happen one at a time and never while the fisherman is thinking: the biplane, the giant, the
   // mermaid, the UFO, the eagle with the flag, and Nessie. A director starts one every 2½-5 minutes (the biplane first,
@@ -2246,7 +2547,7 @@ const Sky = (() => {
   const flyOK = () => !BAD_SKY.includes(mode.kind);
   const forced = (location.search.match(/[?&]event=(\w+)/) || [])[1] || (/[?&]plane\b/.test(location.search) ? 'biplane' : '');
   const stage = { ev: null, next: performance.now() / 1000 + (forced || SHOWCASE ? 2 : 30), last: '', lastOther: '', first: true };
-  const MAJORS = ['biplane', 'giant', 'mermaid', 'ufo', 'eagle', 'nessie'];
+  const MAJORS = ['biplane', 'giant', 'mermaid', 'ufo', 'eagle', 'nessie', 'bigfoot', 'bear', 'raccoon'];   // (the last three: Forest style)
   const saluting = () => !!(stage.ev && stage.ev.kind === 'eagle' && sea && (sea.pose === 'fish' || sea.pose === 'mug'));
   const ease = u => { u = Math.min(1, Math.max(0, u)); return u * u * (3 - 2 * u); };
   const randFish = () => FISH[Math.floor(Math.random() * FISH.length)];
@@ -2260,6 +2561,8 @@ const Sky = (() => {
       case 'ufo': return flyOK() && fishing;
       case 'eagle': return !!sea && flyOK();
       case 'nessie': return !!sea && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind);
+      case 'bigfoot': return !!forest && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind);
+      case 'bear': case 'raccoon': return !!forest && !forest.inside;   // he has to be out by the fire
     }
     return false;
   }
@@ -2271,6 +2574,9 @@ const Sky = (() => {
     else if (kind === 'ufo') { e.dur = 11; e.say = 'No one is going to believe me.'; e.fish = [randFish(), randFish(), randFish()]; }
     else if (kind === 'eagle') { e.dir = Math.random() < .5 ? 1 : -1; e.k = Hd / 1080 * (Hd > Wd ? 1 : 1.55); e.dur = (Wd + 520 * e.k) / (160 * Math.max(.6, Math.min(Wd / 1920, 1.2))); }
     else if (kind === 'nessie') e.dur = 12;
+    else if (kind === 'bigfoot') { e.dur = 15; e.say = 'Did anyone else see that?'; }
+    else if (kind === 'bear') { e.dur = 18; e.say = 'Is it gone?'; }
+    else if (kind === 'raccoon') { e.dur = 13; e.say = 'Hey! Those were mine!'; }
     return e;
   }
   function eventsTick(t) {
@@ -2282,10 +2588,10 @@ const Sky = (() => {
       const over = e.kind === 'biplane' ? !plane : e.p >= 1;
       if (!over && eligible(e.kind)) return;   // still going (it stops early if the weather turns against it)
       if (e.kind === 'biplane') plane = null;
-      // Ocean style: the next one in 2½ to 3½ minutes. Normal style (biplane only): the next biplane 5 minutes after this one started.
-      stage.ev = null; stage.last = e.kind; stage.next = SHOWCASE ? t + 3 : sea ? t + rnd(150, 210) : Math.max(t + 30, e.t0 + 300);
+      // Ocean and Forest styles: the next one in 2½ to 3½ minutes. Sky style (biplane only): the next biplane 5 minutes after this one started.
+      stage.ev = null; stage.last = e.kind; stage.next = SHOWCASE ? t + 3 : sea || forest ? t + rnd(150, 210) : Math.max(t + 30, e.t0 + 300);
       if (e.kind !== 'biplane') stage.lastOther = e.kind;
-      if (over && e.say && sea) { talk.line = e.say; talk.isCatch = true; talk.start = t; talk.dur = 6; }   // his reaction
+      if (over && e.say && (sea || forest)) { talk.line = e.say; talk.isCatch = true; talk.start = t; talk.dur = 6; }   // his reaction
       else talk.next = Math.max(talk.next, t + 8);
       return;
     }
@@ -2925,7 +3231,7 @@ const Sky = (() => {
     }
     flakes = []; for (let i = 0; i < Math.round((sc.snow || 0) * k * area); i++) { const r = rnd(1.2, 3.8) * sy * (sc.size || 1); flakes.push({ x: rnd(0, Wd), y: rnd(0, Hd), r, v: (20 + r * 18) * sy * (sc.fall || 1), ph: rnd(0, 6.3) }); }
     meteor = null; nextMeteor = performance.now() / 1000 + rnd(6, 25);
-    birds = !BAD_SKY.includes(kind); flock = [];   // a flying random event: any weather but high wind and bad storms
+    birds = !BAD_SKY.includes(kind) && S.display !== 'forest'; flock = [];   // a flying random event: any weather but high wind and bad storms (the Forest has its own birds)
     nextFlock = performance.now() / 1000 + rnd(4, 12);   // first gulls soon after the scene starts
     stars = []; if (night && (kind === 'clear' || kind === 'partly' || kind === 'windy')) for (let i = 0; i < 170 * area; i++) stars.push({ x: rnd(0, Wd), y: rnd(0, .75) * Hd, r: rnd(.6, 1.9), ph: rnd(0, 6.3), sp: rnd(.4, 1.8) });
     fogs = [];
@@ -3032,7 +3338,7 @@ const Sky = (() => {
     eventsTick(t);
     if (tornado) for (const d of [...tornado.debris, ...tornado.spray]) d.a += d.sp * dt;   // whirling round the base
     if (sea && sea.pose === 'fish') { if (!saluting()) fishingTick(dt); jumpTick(dt); }   // he stops to salute the flag
-    if (sea) talkTick(t);
+    if (sea || forest) talkTick(t);
     if (sea && sea.dolphinsOk) podTick(dt);
     if (sea) { diverTick(dt); yachtTick(dt); }
     if (forest) forestTick(dt, t);

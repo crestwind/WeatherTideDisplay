@@ -46,11 +46,11 @@ Settings (location, units and so on) are saved in the browser that shows the dis
 
 To set up a TV without typing in the settings panel, put the location in the address, e.g. `https://tidalweather.com/?lat=38.935&lon=-74.906&name=Cape%20May`. As long as the TV opens that address (bookmark it, or set it as the browser's home page), the location is always right, even if the browser's settings are cleared. To store it in the browser instead, open settings and press **Save**.
 
-### The fisherman's thoughts
+### The fisherman's and the camper's thoughts
 
-In the Ocean style, a thought bubble pops up over the fisherman every 2 to 4 minutes for a few seconds. He picks a line that suits the weather (sunny, rain, snow, fog, wind, storms…), the time of day and the temperature, and now and then comments on his catch. In a hurricane or tornado he only gives safety advice, about once a minute. He never repeats a line too soon, and stays quiet while the biplane passes. Add `?talk` to the address to make him start straight away.
+In the Ocean style, a speech bubble pops up over the fisherman every 2 to 4 minutes for a few seconds; in the Forest style, over the camper (by the fire, or in his tent door). He picks a line that suits the weather (sunny, rain, snow, fog, wind, storms…), the time of day and the temperature, and now and then comments on his catch (the camper: on his marshmallow). In a hurricane or tornado he only gives safety advice, about once a minute. He never repeats a line too soon, and stays quiet during a major random event, then reacts to it. Add `?talk` to the address to make him start straight away.
 
-All his lines are in **fisherman-lines.js**, grouped by situation (`clear`, `rain`, `snow`, `hurricane`, `tornado`, `morning`, `night`, `hot`, `cold`, `catch`, `boot` and so on). To change them, open the file on GitHub, click the **pencil** icon, and edit the lines in quotes: keep the quotes and the comma at the end of each line. These words get filled in for you: `{temp}`, `{high}`, `{low}`, `{town}`, `{day}`, and in catch lines `{fish}`.
+The fisherman's lines are in **fisherman-lines.js**, grouped by situation (`clear`, `rain`, `snow`, `hurricane`, `tornado`, `morning`, `night`, `hot`, `cold`, `catch`, `boot` and so on). The camper's are in **camper-lines.js**: the same weather groups, with camping and hiking lines in place of the fishing ones (`camping` by the fire, `tent` when he's sheltering, and `snack` after a marshmallow). To change either, open the file on GitHub, click the **pencil** icon, and edit the lines in quotes: keep the quotes and the comma at the end of each line. These words get filled in for you: `{temp}`, `{high}`, `{low}`, `{town}`, `{day}`, and in the fisherman's catch lines `{fish}`.
 
 ### Changing the banner messages
 
@@ -219,6 +219,7 @@ Which ones you get depends on the display style:
 | Display style | Random events |
 |---|---|
 | **Ocean** | All of them. A major event every **2½ to 3½ minutes**, and **every other one is the biplane** (the first about 30 seconds after the page opens), so its banner gets seen often. The ones in between are picked at random from those that suit the scene, never the same as the previous in-between one. They wait for a thought the fisherman is already having to finish; he stays quiet during the event, and any thought that comes due while it's on is skipped. |
+| **Forest** | Its own set: the **biplane**, **Bigfoot**, the **bear** and the **raccoon** as major events (same timing as the Ocean style: one every 2½ to 3½ minutes, every other one the biplane), and its own minor events: **geese and crows** instead of seagulls, **deer**, **rabbits**, a **squirrel**, an **owl** at night, **fireflies** on warm summer evenings, and the **shooting stars**. |
 | **Sky** | Kept calm and professional: only **the biplane every 5 minutes** (the first about 30 seconds after the page opens), the **seagulls** and the **shooting stars**. |
 | **Smart mirror** | None. |
 
@@ -230,12 +231,15 @@ None appear with **Background animation** set to **Off**.
 
 | Event | Where | What happens | Fisherman |
 |---|---|---|---|
-| **Biplane with banner** | Sky and Ocean | Crosses the sky towing a banner, showing the next message each time (see [Changing the banner messages](#changing-the-banner-messages)) | |
+| **Biplane with banner** | Sky, Ocean and Forest | Crosses the sky towing a banner, showing the next message each time (see [Changing the banner messages](#changing-the-banner-messages)) | |
 | **Giant** | Switched off for now while he's redesigned | Peeks in from the left edge, fingers curled round the screen, looks around, and ducks back out | *"Did you hear something?"* |
 | **Mermaid** | Ocean, while he's fishing | Pops up at the stern, flings three of his fish back into the sea, waves, and dives with a flick of her tail | *"Where did my fish go?"* |
 | **UFO** | Ocean, while he's fishing | Swoops in, beams three fish up out of the boat with a tractor beam, and zips away | *"No one is going to believe me."* |
 | **Eagle with the flag** | Ocean | A bald eagle flies across carrying an American flag | Stands and salutes until it's gone |
 | **Nessie** | Ocean (not in heavy rain or storms) | The Loch Ness monster rises out of the sea and says *"I need about tree fiddy"*, then sinks back down | |
+| **Bigfoot** | Forest (not in heavy rain or storms) | Strides along the far edge of the clearing in front of the pines, stops and turns to stare at you (his eyes shine at night), then walks on. The camper watches him go | *"Did anyone else see that?"* |
+| **Bear** | Forest, when he's out by the fire | A black bear wanders in, sniffs round his log and his bag of marshmallows, and wanders off. The camper dives into his tent and watches it from the doorway | *"Is it gone?"* |
+| **Raccoon** | Forest, when he's out by the fire | Creeps in, grabs his bag of marshmallows and scurries off with it (a new bag turns up a minute and a half later) | *"Hey! Those were mine!"* |
 
 ### Minor random events
 
@@ -244,11 +248,17 @@ None appear with **Background animation** set to **Off**.
 | **Seagulls** | Sky and Ocean | Flying-event weather | Every 20 seconds to a minute |
 | **Dolphins** | Ocean | Nice days: no rain or storms | A pod every 25 to 60 seconds |
 | **Jumping fish** | Ocean | Whenever the fisherman is fishing | Every 4 to 12 seconds |
-| **Shooting stars** | Sky and Ocean | Clear nights | Every 30 seconds to 2 minutes |
+| **Shooting stars** | Sky, Ocean and Forest | Clear nights | Every 30 seconds to 2 minutes |
 | **Black Hawk helicopters** | Ocean | Flying-event weather | Two or three in formation, every 3 to 7 minutes |
 | **Passenger jet** | Ocean | Flying-event weather | High up with a contrail (blinking lights at night), every 2½ to 6 minutes |
 | **Scuba diver** | Ocean | Not in high wind, heavy rain or storms | Every 1½ to 4 minutes |
 | **Motor yacht** | Ocean | Daytime on clear and partly cloudy days | Every 2 to 5 minutes |
+| **Geese and crows** | Forest | Flying-event weather | A V of geese (or two to four crows) every 40 seconds to 2 minutes |
+| **Deer** | Forest | Not in bad weather | Every 2 to 5 minutes |
+| **Rabbit** | Forest | Not in bad weather | Every 1 to 3 minutes |
+| **Squirrel** | Forest | Daytime, not in bad weather | Every 1½ to 4 minutes |
+| **Owl** | Forest | Night, not in bad weather | Every 2 to 4 minutes |
+| **Fireflies** | Forest | Evenings and nights from May to September, 58°F or warmer, not in bad weather | Every 2 to 4 minutes, for about 45 seconds |
 
 **Seagulls:** a single gull or a small group of up to five flies across, flapping with the odd glide, swooping gently up and down and tilting as they go. By day they're white with black wingtips, grey under a cloudy or wet sky, dark silhouettes at sunrise and sunset, and pale grey at night.
 
@@ -260,9 +270,11 @@ None appear with **Background animation** set to **Off**.
 
 **Motor yacht:** a white motor yacht cruises along the far sea behind the fishing boat, leaving a white wake, and takes about half a minute to cross.
 
+**Forest animals:** a doe (sometimes with her spotted fawn) walks out of the trees, grazes, looks up at you and trots back; a rabbit hops across behind the log, stopping once to nibble; a red squirrel runs up the dead tree on the right of the clearing, flicks its tail on a branch and runs off; at night an owl glides onto the top of the dead tree, blinks, turns its head and flies away; fireflies blink as they drift over the clearing. "Bad weather" here means any rain, storms, high wind or heavy snow, when the camper is in his tent.
+
 ### Trying them out
 
-Add one of these to the end of the website address to see an event straight away: `?event=mermaid`, `?event=ufo`, `?event=eagle`, `?event=nessie`, `?event=biplane` (or `?plane`), `?heli`, `?jet`, `?diver`, `?yacht`. All the major events except the biplane, and the diver and yacht, need the Ocean style, so add `&display=ocean` too, for example `tidalweather.com/?display=ocean&event=nessie`.
+Add one of these to the end of the website address to see an event straight away: `?event=mermaid`, `?event=ufo`, `?event=eagle`, `?event=nessie`, `?event=biplane` (or `?plane`), `?heli`, `?jet`, `?diver`, `?yacht`. All the major events except the biplane, and the diver and yacht, need the Ocean style, so add `&display=ocean` too, for example `tidalweather.com/?display=ocean&event=nessie`. For the Forest style use `?display=forest` with `&event=bigfoot`, `&event=bear` or `&event=raccoon`, or `&deer`, `&rabbit`, `&squirrel`, `&owl`, `&fireflies` or `&geese` (each only shows in the weather and time of day it suits).
 
 **Showcase mode** plays them all quickly: major events back to back about 3 seconds apart, cycling through every one that fits the scene, minor events every few seconds, and the fisherman's regular thoughts paused (his reactions to events still show). **The test site is always in showcase mode** (its tag says TEST SITE · SHOWCASE), so new events can be seen straight away; add `?showcase=0` there to get the real timing. On any site, `?showcase` switches it on. tidalweather.com itself always uses the normal timing.
 
