@@ -97,9 +97,18 @@ Built the display, the animated backgrounds, alerts (NWS, USGS, FEMA, NJ), the a
 - **Security check:** no secrets or personal email anywhere in the history; a Content-Security-Policy meta tag limits the page to its own files and the seven API hosts (tested: everything still loads); `<meta name="referrer" content="no-referrer">`; the picked place name in settings is now escaped; Actions limited to GitHub-owned actions; workflow token defaults to read; secret scanning and push protection are on. Personal details were removed from these notes (they remain in the earlier commits).
 - **The user does not want the work location in the TV link.** The TV just opens `tidalweather.com` and the location is set once in settings.
 
-**Where we left off:** live at https://tidalweather.com with Enforce HTTPS on. The certificate stalled for 30+ minutes although the Pages health check said "eligible"; removing and re-adding the custom domain (`-F cname=null`, then `-f cname=tidalweather.com`) got it issued within seconds. The user turned on two-factor sign-in for GitHub and Cloudflare. The domain verification in GitHub account settings was started on 2026-10-28; GitHub can take up to 24 hours, so the user clicks **Verify** again the next day.
+- **HTTPS:** the certificate stalled for 30+ minutes although the Pages health check said "eligible"; removing and re-adding the custom domain (`-F cname=null`, then `-f cname=tidalweather.com`) got it issued within seconds. Enforce HTTPS is on. The user turned on two-factor sign-in for GitHub and Cloudflare.
+- **Later the same day:** test site with showcase mode; scroll-down forecast map, weather history and monthly/yearly tides; the Ocean display style (sea, boat, fisherman, lighthouse); the fisherman's thoughts (`fisherman-lines.js`); random events (major and minor); the biplane banner (`banner.txt`); tornado scene; home-screen app icon; Sounds panel; feedback form and visitor counter (Cloudflare Worker); sources shown on each section; location search without commas; Change location link; hidden right-edge scrollbar.
 
-**Next:** nothing planned; the ocean display style was added on 2026-10-28.
+### 2026-10-29
+
+- Giant switched off for a redesign (code kept). Sky (formerly "Normal") is the default again and keeps only the biplane every 5 minutes, seagulls and shooting stars; Ocean keeps every random event.
+- Display style menu: Sky (default), Ocean, Forest / Tropical / City (disabled, "coming soon"), Smart mirror.
+- Eight ambient sounds from the user's files (see Sounds below). A variable-name clash (`n`) in the new loop-trim code stopped every sound playing until fixed; the player was then tested end to end in a real browser (served over http, reporting back to the local test server).
+- The fisherman's bubble now uses Nessie's speech-bubble style; Nessie says "I need about tree fiddy".
+- GitHub Actions moved to their Node 24 versions, trialled on the test site first.
+
+**Where we left off (2026-10-29):** everything is live on tidalweather.com and the test site is off. Next session the user wants to redesign the giant. Still open: the user clicking **Verify** for the domain (GitHub Settings → Pages), and the Forest, Tropical and City display styles.
 
 ## Ideas not done yet
 
