@@ -1336,24 +1336,24 @@ const Sky = (() => {
   // Seagulls: on clear and partly cloudy days, a gull or a small flock flies across every 20 s to 1 min.
   // They flap with the odd glide, climbing a little while flapping and sinking while gliding, swoop gently up and
   // down, and tilt to match. Wings move between up (w = 1) and down (w = -1).
-  // A biplane towing a banner (its text comes from banner.txt; see loadBanner) crosses the sky right to left about
-  // 30 s after the page opens and then every 5 minutes. It flies level in calm weather, bobs and tilts in wind, and gets
-  // bumped about in storms. The banner trails a moment behind with only a small ripple, so it stays easy to read.
-  // This state lives outside build(), so a scene change doesn't reset the schedule. ?plane in the address sends one now.
-  let plane = null, nextPlane = performance.now() / 1000 + (/[?&]plane/.test(location.search) ? 2 : 30);
+  // A biplane towing a banner (its text comes from banner.txt; see loadBanner) crosses the sky right to left. It's a
+  // major random event, so the events director (see eventsTick) decides when it flies. It flies level in calm weather
+  // and bobs a little in a breeze. The banner trails a moment behind with only a small ripple, so it stays easy to read.
+  let plane = null;
   const bannerCv = document.createElement('canvas'), planeCv = document.createElement('canvas');
   let bannerKey = '';
+  function startPlane(t) {
+    const text = window.TW_BANNER || '';
+    if (!text) return false;
+    const k = Hd / 1080 * (Hd > Wd ? .8 : 1.3);   // big enough to read the banner from across a room
+    plane = { k, t0: t, x: Wd + 30 * k, y0: Hd * (Hd > Wd ? .48 : .36), v: 120 * Math.min(Wd / 1920, 1.2) + 40, text };
+    plane.end = -(120 * k + bannerSprite(plane).width) - 40;
+    return true;
+  }
   function planeTick(t) {
-    if (plane && plane.x < plane.end) plane = null;
-    if (!plane && t > nextPlane) {
-      const text = window.TW_BANNER || '';
-      nextPlane = t + 300;
-      if (!text || S.display === 'mirror' || S.motion === 'off') return;
-      const k = Hd / 1080 * (Hd > Wd ? .8 : 1.3);   // big enough to read the banner from across a room
-      plane = { k, t0: t, x: Wd + 30 * k, y0: Hd * (Hd > Wd ? .48 : .36), v: 120 * Math.min(Wd / 1920, 1.2) + 40, text };
-      plane.end = -(120 * k + bannerSprite(plane).width) - 40;
-    }
-    if (plane) plane.x = Wd + 30 * plane.k - (t - plane.t0) * plane.v;
+    if (!plane) return;
+    plane.x = Wd + 30 * plane.k - (t - plane.t0) * plane.v;
+    if (plane.x < plane.end) plane = null;
   }
   // How far the plane is pushed up or down at time t: barely in calm air, more in wind, jolts in storms.
   function planeBob(t, k) {
@@ -1538,9 +1538,11 @@ const Sky = (() => {
     return p;
   }
   function drawBirds() {
-    const dusk = mode.tod === 'golden';   // sunlit white by day with black wingtips, dark silhouettes at sunrise and sunset
-    // solid colours, so the overlapping parts don't show; grey under an overcast sky, where white gulls fade into the clouds
-    g.fillStyle = dusk ? 'rgb(52,34,44)' : mode.kind === 'cloudy' ? 'rgb(78,86,98)' : 'rgb(246,248,252)';
+    // sunlit white by day with black wingtips, dark silhouettes at sunrise and sunset, pale grey (moonlit) at night, and
+    // grey under an overcast or wet sky, where white gulls fade into the clouds; solid colours, so overlaps don't show
+    const dusk = mode.tod === 'golden', night = mode.tod === 'night';
+    const grey = ['cloudy', 'fog', 'drizzle', 'rain', 'flurries', 'snow'].includes(mode.kind), plain = dusk || night || grey;
+    g.fillStyle = dusk ? 'rgb(52,34,44)' : night ? 'rgb(176,186,202)' : grey ? 'rgb(78,86,98)' : 'rgb(246,248,252)';
     for (const b of flock) {
       const S = 22 * b.s, d = Math.sign(b.vx);
       g.save(); g.translate(b.x, b.y); g.rotate(b.tilt * d); g.scale(d, 1);   // face the way it's flying
@@ -1550,7 +1552,7 @@ const Sky = (() => {
       g.beginPath(); g.arc(.2 * S, .015 * S, .07 * S, 0, 7); g.fill();                    // head
       g.beginPath(); g.moveTo(-.14 * S, 0); g.quadraticCurveTo(-.26 * S, .01 * S, -.34 * S, .035 * S);
       g.quadraticCurveTo(-.26 * S, .07 * S, -.14 * S, .08 * S); g.fill();                 // tapered tail
-      if (!dusk) for (const k of [-1, 1]) {   // black wingtips
+      if (!plain) for (const k of [-1, 1]) {   // black wingtips
         g.save(); g.clip(wings[(k + 1) / 2]); g.fillStyle = '#2a2d36';
         g.beginPath(); g.arc(k * S, -b.w * .5 * S, .2 * S, 0, 7); g.fill(); g.restore();
       }
@@ -1705,7 +1707,7 @@ const Sky = (() => {
     return pickLine(groups);
   }
   function talkTick(t) {
-    if (!sea || plane) { if (plane) { talk.line = ''; talk.react = null; } return; }   // never over the plane
+    if (!sea || stage.ev) { talk.react = null; return; }   // quiet during a major random event
     // When the background changes (the weather or the time of day), reset the timer: drop whatever he was thinking
     // and say something about the new scene in a few seconds, then carry on at the usual pace.
     const scene = mode.kind + '|' + mode.tod;
@@ -1866,7 +1868,15 @@ const Sky = (() => {
       else { x.fillStyle = '#8a6d3b'; x.fillRect(hx - 10, hy - 6, 20, 2.5); x.fillRect(hx - 6, hy - 12, 12, 7); }                       // bucket hat
     };
     const body = (x0, y0, x1, y1) => limb(coat, 12, [x0, y0], [x1, y1]);
-    if (sea.pose === 'mug') {
+    if (saluting()) {   // standing to attention for the flag, his rod leaning against the rail beside him
+      x.strokeStyle = '#3b2f2a'; x.lineWidth = 2; x.beginPath(); x.moveTo(20, 0); x.lineTo(62, -64); x.stroke();
+      x.strokeStyle = 'rgba(240,240,240,.7)'; x.lineWidth = .8; x.beginPath(); x.moveTo(62, -64); x.quadraticCurveTo(80, -30, 92, 31); x.stroke();
+      limb(pants, 5, [-5, 0], [-2, -18]); limb(pants, 5, [5, 0], [2, -18]);
+      body(0, -18, 0, -38); head(1, -45);
+      limb(coat, 4, [-1, -34], [-5, -24], [-4, -15]);   // left arm straight down
+      limb(coat, 4, [1, -35], [11, -40], [8, -47]);     // right hand up at the brim
+      x.fillStyle = skin; x.beginPath(); x.arc(8, -47, 2.2, 0, 7); x.fill();
+    } else if (sea.pose === 'mug') {
       x.fillStyle = '#3b7dbf'; x.fillRect(-12, -14, 22, 14); x.fillStyle = '#e8eef4'; x.fillRect(-12, -15, 22, 3);                    // cooler
       if (sea.snowy) { x.fillStyle = '#fff'; x.fillRect(-12, -17, 22, 3); }
       limb(pants, 5, [-2, -16], [10, -14], [12, 0]); body(-2, -16, -2, -36); head(-1, -43);
@@ -1931,20 +1941,360 @@ const Sky = (() => {
     g.fillStyle = base; g.fillRect(0, sea.top - 2, Wd, Hd - sea.top + 2);
     drawLighthouse(t);   // on the horizon, behind every wave
     if (tornado) drawSpray(t);
-    for (let i = 0; i <= b; i++) { drawLayer(L[i], t); drawDolphins(t, i); }
+    for (let i = 0; i <= b; i++) { drawLayer(L[i], t); drawDolphins(t, i); if (i === 1 && stage.ev && stage.ev.kind === 'nessie') drawNessie(t); }
     // the boat rides layer b, rising, falling and tilting with the wave under it
     const bl = L[b], y = waveY(bl, sea.bx, t), slope = (waveY(bl, sea.bx + 30, t) - waveY(bl, sea.bx - 30, t)) / 60;
     const roll = Math.atan(slope) * .9 + Math.sin(t * 1.3) * .015 * sea.rough + (sea.rough > 2 ? Math.sin(t * 1.9) * .05 * (sea.rough - 2) : 0);   // extra rocking in storms
     drawGlint(t, 0, y);
     const img = drawBoatSprite(t);
     g.save(); g.translate(sea.bx, y + 4 * sea.bs); g.rotate(roll); g.drawImage(img, -280 * sea.bs, -250 * sea.bs); g.restore();
+    if (stage.ev && stage.ev.kind === 'mermaid') drawMermaid(t, y);   // at the stern, behind the nearer waves
     for (let i = b + 1; i < L.length; i++) { drawLayer(L[i], t); drawDolphins(t, i); }
     if (sea.pose === 'fish') drawJumps(t);   // leaping fish, only where he's fishing
     drawGlint(t, y, Hd);
+    if (stage.ev) drawMajorFront(t, y);   // the UFO and its beam, Nessie's speech bubble
     if (talk.line) {   // his head is at about (26, -76) in the boat's own units; follow the boat as it rocks
       const hx = sea.bx + (26 * Math.cos(roll) + 76 * Math.sin(roll)) * sea.bs, hy = y + 4 * sea.bs + (26 * Math.sin(roll) - 76 * Math.cos(roll)) * sea.bs;
       drawThought(t, hx, hy);
     }
+  }
+
+  /* ---------- Random events ---------- */
+  // Major random events happen one at a time and never while the fisherman is thinking: the biplane, the giant, the
+  // mermaid, the UFO, the eagle with the flag, and Nessie. A director starts one every 2½-5 minutes (the biplane first,
+  // about 30 s after the page opens, so its banner is seen), picked at random among those that suit the scene and never
+  // the same twice in a row; the fisherman stays quiet until it's over, and some end with him saying something.
+  // Minor random events happen whenever, alongside anything: gulls, dolphins, jumping fish, shooting stars, Black Hawk
+  // helicopters and a passenger jet. Flying events (gulls, biplane, helicopters, jet, eagle, UFO) stay away in high wind,
+  // thunderstorms, hurricanes, tornadoes, heavy rain and heavy snow.
+  // Testing: ?event=giant (or mermaid, ufo, eagle, nessie, biplane; ?plane works too) starts one in a couple of seconds;
+  // ?heli and ?jet send those over.
+  const BAD_SKY = ['windy', 'storm', 'hurricane', 'tornado', 'heavy', 'heavysnow'];
+  const flyOK = () => !BAD_SKY.includes(mode.kind);
+  const forced = (location.search.match(/[?&]event=(\w+)/) || [])[1] || (/[?&]plane\b/.test(location.search) ? 'biplane' : '');
+  const stage = { ev: null, next: performance.now() / 1000 + (forced ? 2 : 30), last: '', first: true };
+  const MAJORS = { biplane: 2, giant: 1, mermaid: 1, ufo: 1, eagle: 1, nessie: 1 };   // how likely each one is
+  const saluting = () => !!(stage.ev && stage.ev.kind === 'eagle' && sea && (sea.pose === 'fish' || sea.pose === 'mug'));
+  const ease = u => { u = Math.min(1, Math.max(0, u)); return u * u * (3 - 2 * u); };
+  const randFish = () => FISH[Math.floor(Math.random() * FISH.length)];
+  function eligible(kind) {
+    if (S.display === 'mirror') return false;
+    const fishing = !!sea && sea.pose === 'fish';
+    switch (kind) {
+      case 'biplane': return flyOK() && !!window.TW_BANNER;
+      case 'giant': return !/hurricane|tornado/.test(mode.kind);
+      case 'mermaid': return fishing;
+      case 'ufo': return flyOK() && fishing;
+      case 'eagle': return flyOK();
+      case 'nessie': return !!sea && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind);
+    }
+    return false;
+  }
+  function startMajor(kind, t) {
+    const e = { kind, t0: t, p: 0, dur: 10 };
+    if (kind === 'biplane') { if (!startPlane(t)) return null; e.dur = Infinity; }
+    else if (kind === 'giant') { e.say = 'Did you hear something?'; e.look = 0; }
+    else if (kind === 'mermaid') { e.say = 'Where did my fish go?'; e.fish = [randFish(), randFish(), randFish()]; }
+    else if (kind === 'ufo') { e.dur = 11; e.say = 'No one is going to believe me.'; e.fish = [randFish(), randFish(), randFish()]; }
+    else if (kind === 'eagle') { e.dir = Math.random() < .5 ? 1 : -1; e.k = Hd / 1080 * (Hd > Wd ? 1 : 1.55); e.dur = (Wd + 520 * e.k) / (160 * Math.max(.6, Math.min(Wd / 1920, 1.2))); }
+    else if (kind === 'nessie') e.dur = 12;
+    return e;
+  }
+  function eventsTick(t) {
+    planeTick(t);
+    minorTick(t);
+    const e = stage.ev;
+    if (e) {
+      e.p = Math.min(1, (t - e.t0) / e.dur);
+      const over = e.kind === 'biplane' ? !plane : e.p >= 1;
+      if (!over && eligible(e.kind)) return;   // still going (it stops early if the weather turns against it)
+      if (e.kind === 'biplane') plane = null;
+      stage.ev = null; stage.last = e.kind; stage.next = t + rnd(150, 300);
+      if (over && e.say && sea) { talk.line = e.say; talk.isCatch = true; talk.start = t; talk.dur = 6; }   // his reaction
+      else talk.next = Math.max(talk.next, t + 8);
+      return;
+    }
+    if (t < stage.next || talk.line) return;   // wait for the fisherman to finish his thought
+    let kind = stage.first ? (forced || 'biplane') : '';
+    if (!kind || !MAJORS[kind] || !eligible(kind)) {
+      const pool = Object.keys(MAJORS).filter(k => k !== stage.last && eligible(k)).flatMap(k => Array(MAJORS[k]).fill(k));
+      kind = pool[Math.floor(Math.random() * pool.length)];
+    }
+    stage.first = false;
+    stage.ev = kind ? startMajor(kind, t) : null;
+    if (!stage.ev) stage.next = t + 20;
+  }
+
+  // ----- minor: Black Hawk helicopters and a passenger jet, far off, each on its own timer -----
+  const now0 = performance.now() / 1000;
+  const minor = { heli: null, jet: null, nextHeli: now0 + (/[?&]heli\b/.test(location.search) ? 2 : rnd(60, 200)), nextJet: now0 + (/[?&]jet\b/.test(location.search) ? 2 : rnd(40, 150)) };
+  function minorTick(t) {
+    const ok = flyOK() && S.display !== 'mirror', sp = 160 * Math.max(.6, Math.min(Wd / 1920, 1.2));
+    if (!ok) minor.heli = minor.jet = null;
+    for (const [key, next, gap] of [['heli', 'nextHeli', [180, 420]], ['jet', 'nextJet', [150, 360]]]) {
+      const m = minor[key];
+      if (m) { m.x = m.x0 + m.dir * m.v * (t - m.t0); if (m.dir > 0 ? m.x > Wd + m.tail : m.x < -m.tail) { minor[key] = null; minor[next] = t + rnd(...gap); } }
+      if (!ok || minor[key] || t < minor[next]) continue;
+      const dir = Math.random() < .5 ? 1 : -1, tall = Hd > Wd;
+      const k = Hd / 1080 * (key === 'heli' ? (tall ? .5 : .62) : (tall ? .4 : .5));
+      const tail = key === 'heli' ? 230 * k : 60 * k + Wd * .3;   // the trailing helicopters, or the contrail
+      minor[key] = { t0: t, dir, k, tail, n: Math.random() < .5 ? 2 : 3, x0: dir > 0 ? -60 * k : Wd + 60 * k,
+        y: Hd * (key === 'heli' ? rnd(.17, .28) : rnd(.07, .15)), v: key === 'heli' ? sp * 1.05 : sp * .45 };
+      minor[key].x = minor[key].x0;
+    }
+  }
+  function drawMinors(ts) {
+    const t = ts / 1000, night = mode.tod === 'night';
+    if (minor.jet) drawJet(minor.jet, t, night);
+    if (minor.heli) {
+      const h = minor.heli;
+      for (let i = 0; i < h.n; i++) drawHeli(h.x - h.dir * i * 80 * h.k, h.y + [0, 16, -12][i] * h.k + Math.sin(t * 1.4 + i) * 2 * h.k, h.k, h.dir, t + i * .13, night);
+    }
+  }
+  function drawHeli(cx, cy, k, dir, t, night) {   // a Black Hawk from the side, nose forward and a little down
+    const body = night ? '#15191a' : '#323d2e';
+    g.save(); g.translate(cx, cy); g.scale(dir * k, k); g.rotate(.06);
+    g.fillStyle = body;
+    g.beginPath(); g.moveTo(-8, -6); g.lineTo(-50, -4); g.lineTo(-50, 0); g.lineTo(-8, 5); g.fill();                     // tail boom
+    g.beginPath(); g.moveTo(-45, -3); g.lineTo(-53, -17); g.lineTo(-48, -17); g.lineTo(-41, -3); g.fill();                // tail fin
+    g.beginPath(); g.moveTo(-16, -8); g.quadraticCurveTo(8, -13, 21, -3); g.quadraticCurveTo(24, 6, 10, 8); g.lineTo(-16, 7); g.closePath(); g.fill();   // cabin
+    g.fillStyle = night ? '#263137' : '#8fb0c0'; g.beginPath(); g.moveTo(8, -8); g.quadraticCurveTo(17, -7, 20, -2); g.lineTo(8, -2); g.closePath(); g.fill();   // windshield
+    g.fillStyle = body; g.fillRect(-2, -14, 4, 6); g.beginPath(); g.arc(-4, 11, 2.2, 0, 7); g.arc(13, 11, 2.2, 0, 7); g.fill();   // rotor mast, wheels
+    const b = Math.abs(Math.sin(t * 47));
+    g.strokeStyle = 'rgba(25,28,28,.5)'; g.lineWidth = 2; g.beginPath(); g.moveTo(-44 * b - 3, -14); g.lineTo(44 * b + 3, -14); g.stroke();   // main rotor
+    g.strokeStyle = 'rgba(40,40,40,.14)'; g.lineWidth = 3; g.beginPath(); g.ellipse(0, -14, 46, 2.4, 0, 0, 7); g.stroke();                      // its blur
+    g.strokeStyle = 'rgba(30,30,30,.35)'; g.lineWidth = 1.2; g.beginPath(); g.arc(-51, -12, 6.5, 0, 7); g.stroke();                              // tail rotor
+    if (night && Math.sin(t * 4) > .5) { g.fillStyle = '#ff4a4a'; g.beginPath(); g.arc(-50, -17, 2, 0, 7); g.fill(); }                          // beacon
+    g.restore();
+  }
+  function drawJet(j, t, night) {   // a passenger jet high up, with a contrail by day and blinking lights at night
+    const k = j.k, tailX = j.x - j.dir * 30 * k;
+    if (!night) {
+      const ex = tailX - j.dir * Wd * .3, gr = g.createLinearGradient(tailX, 0, ex, 0);
+      gr.addColorStop(0, 'rgba(255,255,255,.65)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      g.strokeStyle = gr; g.lineCap = 'round';
+      g.lineWidth = Math.max(1.5, 3 * k); g.beginPath(); g.moveTo(tailX, j.y + 1 * k); g.lineTo(ex, j.y + 2 * k); g.stroke();
+      g.lineWidth = Math.max(4, 9 * k); g.globalAlpha = .25; g.beginPath(); g.moveTo(tailX - j.dir * 40 * k, j.y + 1 * k); g.lineTo(ex, j.y + 4 * k); g.stroke(); g.globalAlpha = 1;
+    }
+    g.save(); g.translate(j.x, j.y); g.scale(j.dir * k, k);
+    g.fillStyle = night ? '#1c2230' : '#eef1f4';
+    g.beginPath(); g.moveTo(-30, -2); g.lineTo(26, -3); g.quadraticCurveTo(33, 0, 26, 3); g.lineTo(-30, 2.5); g.closePath(); g.fill();   // fuselage
+    g.fillStyle = night ? '#141a26' : '#2f6db5';
+    g.beginPath(); g.moveTo(-24, -2); g.lineTo(-33, -14); g.lineTo(-28, -14); g.lineTo(-17, -2); g.fill();                         // tail fin
+    g.fillStyle = night ? '#141a26' : '#9aa6b2';
+    g.beginPath(); g.moveTo(4, 1); g.lineTo(-10, 10); g.lineTo(-15, 10); g.lineTo(-5, 1); g.fill();                                  // wing
+    g.beginPath(); g.ellipse(-4, 5, 4, 1.8, 0, 0, 7); g.fill();                                                                        // engine
+    if (!night) { g.fillStyle = '#2f6db5'; g.fillRect(-26, -.6, 50, 1.2); }                                                           // stripe
+    else {
+      if (Math.sin(t * 6) > .7) { g.fillStyle = '#fff'; g.beginPath(); g.arc(-32, -13, 1.8, 0, 7); g.fill(); }
+      g.fillStyle = Math.sin(t * 3) > 0 ? '#ff4a4a' : '#66101a'; g.beginPath(); g.arc(-1, -4, 1.6, 0, 7); g.fill();
+      g.fillStyle = '#4aff7a'; g.beginPath(); g.arc(-13, 10, 1.4, 0, 7); g.fill();
+    }
+    g.restore();
+  }
+
+  // ----- major events drawn in the sky: the giant peeking in from the left, the eagle with the flag -----
+  function drawMajorSky(ts) {
+    const e = stage.ev, t = ts / 1000;
+    if (e.kind === 'giant') drawGiant(e, t);
+    if (e.kind === 'eagle') drawEagle(e, t);
+  }
+  function drawGiant(e, t) {
+    const R = Math.min(Hd * .2, Wd * .22), p = e.p, night = mode.tod === 'night';
+    const inOut = p < .18 ? ease(p / .18) : p > .82 ? ease((1 - p) / .18) : 1;
+    const cx = -R * 1.15 + inOut * R * 1.7, cy = sea ? sea.top - R * .65 : Hd * .55;
+    // he looks right, left, right again, then back at us
+    const target = p < .3 ? .7 : p < .45 ? -.8 : p < .62 ? .9 : p < .74 ? -.4 : .15;
+    e.look += (target - e.look) * .12;
+    const blink = Math.abs(p - .4) < .012 || Math.abs(p - .69) < .012;
+    const skin = night ? '#6e5a4c' : '#b07a52', shade = night ? '#584538' : '#8f5e3c', hair = night ? '#2a1d14' : '#4a2f1d';
+    g.save(); g.translate(cx, cy); g.rotate(.1 + Math.sin(t * .8) * .04);
+    g.fillStyle = skin; g.beginPath(); g.ellipse(R * .95, R * .05, R * .14, R * .22, 0, 0, 7); g.fill();                    // ear
+    g.beginPath(); g.ellipse(0, 0, R, R * 1.12, 0, 0, 7); g.fill();                                                           // head
+    g.fillStyle = hair; g.beginPath(); g.ellipse(-R * .1, -R * .78, R * .95, R * .45, -.15, Math.PI * .95, Math.PI * 2.1); g.fill();   // hair
+    for (let i = 0; i < 6; i++) { const a = -2.6 + i * .32; g.beginPath(); g.arc(Math.cos(a) * R * .9, Math.sin(a) * R * 1.0, R * .16, 0, 7); g.fill(); }   // messy tufts
+    g.strokeStyle = hair; g.lineWidth = R * .07; g.lineCap = 'round';
+    for (const [ex, raise] of [[.25, .05], [.66, .1]]) { g.beginPath(); g.moveTo(R * (ex - .14), -R * (.42 + raise)); g.quadraticCurveTo(R * ex, -R * (.55 + raise), R * (ex + .14), -R * (.44 + raise)); g.stroke(); }   // eyebrows, raised
+    for (const [ex, er] of [[.25, .16], [.66, .14]]) {
+      if (blink) { g.strokeStyle = shade; g.lineWidth = R * .04; g.beginPath(); g.moveTo(R * (ex - er), -R * .15); g.lineTo(R * (ex + er), -R * .15); g.stroke(); continue; }
+      g.fillStyle = '#f4f1ea'; g.beginPath(); g.ellipse(R * ex, -R * .15, R * er, R * er * 1.1, 0, 0, 7); g.fill();
+      g.fillStyle = '#2a2018'; g.beginPath(); g.arc(R * (ex + e.look * er * .55), -R * .13, R * er * .45, 0, 7); g.fill();   // pupils that dart about
+    }
+    g.fillStyle = shade; g.beginPath(); g.ellipse(R * .58, R * .2, R * .17, R * .13, .2, 0, 7); g.fill();                       // big nose
+    g.beginPath(); g.ellipse(R * .48, R * .55, R * .09, R * .11, 0, 0, 7); g.fill();                                            // a curious little "o"
+    g.restore();
+    // his fingers curled round the edge of the screen
+    g.fillStyle = skin; g.strokeStyle = shade; g.lineWidth = Math.max(1, R * .015);
+    for (let i = 0; i < 4; i++) {
+      const fy = cy + R * (.45 + i * .15), fw = R * (.32 - Math.abs(i - 1.5) * .05) * inOut + R * .05;
+      g.beginPath(); g.roundRect(-R * .1, fy, fw + R * .1, R * .12, R * .06); g.fill(); g.stroke();
+    }
+  }
+  function drawEagle(e, t) {
+    const k = e.k, span = Wd + 520 * k, x = e.dir > 0 ? -260 * k + e.p * span : Wd + 260 * k - e.p * span;
+    const y = (sea ? sea.top - Hd * .28 : Hd * .33) + Math.sin(t * 1.1) * 8 * k, night = mode.tod === 'night';
+    const w = Math.sin(t * 3.4);   // slow, powerful wingbeats
+    g.save(); g.translate(x, y); g.scale(e.dir * k, k);
+    // the flag, flying back from a short pole held in the talons, rippling a little
+    const red = night ? '#6e1c26' : '#b22234', white = night ? '#a9adb6' : '#ffffff', blue = night ? '#23224a' : '#3c3b6e';
+    g.strokeStyle = night ? '#6e6234' : '#c9a63c'; g.lineWidth = 2.2; g.beginPath(); g.moveTo(6, 10); g.lineTo(6, 62); g.stroke();
+    const FW = 66, FH = 38, sl = 3;
+    for (let s = 0; s < FW; s += sl) {
+      const off = Math.sin(t * 5 - s * .14) * 2.6 * (s / FW), fx = 4 - s - sl;
+      for (let r = 0; r < 13; r++) { g.fillStyle = r % 2 ? white : red; g.fillRect(fx, 14 + off + r * FH / 13, sl + .5, FH / 13 + .4); }
+      if (s < 28) {
+        g.fillStyle = blue; g.fillRect(fx, 14 + off, sl + .5, FH * 7 / 13);
+        if (s % 6 === 0) { g.fillStyle = white; for (let d = 0; d < 4; d++) { g.beginPath(); g.arc(fx + 1.5, 17 + off + d * 4.6, .7, 0, 7); g.fill(); } }
+      }
+    }
+    // the eagle
+    const brown = night ? '#22180f' : '#4a3324', dark = night ? '#170f09' : '#36241a', whiteH = night ? '#b9bcc4' : '#f6f4ee', beak = night ? '#8a7020' : '#f2b705';
+    const wing = (col, lift) => {   // a broad wing from the shoulder, its fingered tip up or down with the beat
+      const ty = -38 * lift, mid = -14 * lift;
+      g.fillStyle = col; g.beginPath(); g.moveTo(10, -4); g.quadraticCurveTo(-4, mid - 8, -26, ty - 4);
+      for (let f = 0; f < 4; f++) g.lineTo(-30 - f * 4, ty + f * 3 + (f % 2 ? 2 : -2));
+      g.quadraticCurveTo(-12, mid + 10, -4, 4); g.closePath(); g.fill();
+    };
+    wing(dark, w * .9);                                                                              // far wing
+    g.fillStyle = whiteH; g.beginPath(); g.moveTo(-18, -1); g.lineTo(-36, -6); g.lineTo(-36, 6); g.lineTo(-18, 4); g.fill();   // white tail
+    g.fillStyle = brown; g.beginPath(); g.ellipse(0, 1, 22, 9, -.05, 0, 7); g.fill();                    // body
+    g.fillStyle = beak; g.fillRect(3, 8, 6, 4);                                                       // talons on the pole
+    wing(brown, w);                                                                                   // near wing
+    g.fillStyle = whiteH; g.beginPath(); g.ellipse(23, -5, 8, 7, 0, 0, 7); g.fill();                    // white head
+    g.fillStyle = beak; g.beginPath(); g.moveTo(29, -7); g.lineTo(37, -4); g.quadraticCurveTo(36, 0, 32, 0); g.lineTo(29, -2); g.fill();   // hooked beak
+    g.fillStyle = '#1b1b1b'; g.beginPath(); g.arc(25, -7, 1.2, 0, 7); g.fill();                       // eye
+    g.restore();
+  }
+
+  // ----- major events at sea: the mermaid at the stern, the UFO over the boat, Nessie and her question -----
+  function arcFish(f, x0, y0, x1, y1, u, k, lift) {   // a fish flung from (x0,y0) to (x1,y1), turning along its path
+    const x = x0 + (x1 - x0) * u, y = y0 + (y1 - y0) * u - lift * 4 * u * (1 - u);
+    const ang = Math.atan2((y1 - y0) - lift * 4 * (1 - 2 * u), x1 - x0);
+    g.save(); g.translate(x, y); g.rotate(ang); drawFishShape(g, f, k, Math.sin(u * 40) * 2); g.restore();
+  }
+  function splashRing(x, y, a, k) {   // a ring spreading on the water a seconds after something hits it
+    if (a < 0 || a > .7) return;
+    g.strokeStyle = `rgba(255,255,255,${.55 * (1 - a / .7)})`; g.lineWidth = Math.max(1, 1.3 * k);
+    g.beginPath(); g.ellipse(x, y, (5 + 30 * a) * k, (5 + 30 * a) * k * .28, 0, 0, 7); g.stroke();
+  }
+  function clipAboveWave(L, x0, x1, t) {   // only the part above this wave shows, the rest is underwater
+    g.beginPath(); g.moveTo(x0, 0);
+    for (let x = x0; x <= x1; x += 4) g.lineTo(x, waveY(L, x, t));
+    g.lineTo(x1, 0); g.closePath(); g.clip();
+  }
+  function drawMermaid(t, yBoat) {
+    const e = stage.ev, p = e.p, k = sea.bs, L = sea.layers[sea.boatLayer], mx = sea.bx - 112 * k, wy = waveY(L, mx, t);
+    const night = mode.tod === 'night';
+    const up = p < .15 ? ease(p / .15) : p < .74 ? 1 : p < .88 ? 1 - ease((p - .74) / .14) : 0;
+    const skin = night ? '#7b6458' : '#f1c8a8', hairC = night ? '#5a1d18' : '#c0392b', tailC = night ? '#1d4c45' : '#2a9d8f';
+    g.save(); clipAboveWave(L, mx - 90 * k, mx + 60 * k, t);
+    if (up > 0) {
+      g.translate(mx, wy + 4 * k + (1 - up) * 74 * k); g.scale(k, k);
+      const sway = Math.sin(t * 1.6) * 3;
+      g.fillStyle = hairC; g.beginPath(); g.moveTo(-9, -48); g.quadraticCurveTo(-26 + sway, -20, -18 + sway, 6); g.lineTo(-4, 6); g.quadraticCurveTo(-8, -20, 2, -40); g.fill();   // long hair behind
+      g.fillStyle = skin; g.beginPath(); g.roundRect(-8, -30, 17, 34, 6); g.fill();                         // body
+      g.fillStyle = night ? '#4b2a55' : '#8e44ad'; g.beginPath(); g.arc(-3, -21, 4.2, 0, 7); g.arc(5, -21, 4.2, 0, 7); g.fill();   // shell top
+      const wave = p > .55 && p < .74 ? Math.sin(t * 9) * .5 : 0;                                        // waves goodbye at the end
+      g.strokeStyle = skin; g.lineWidth = 4; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(-7, -24); g.lineTo(-14, -10); g.stroke();                                   // left arm
+      g.beginPath(); g.moveTo(8, -25); g.lineTo(18 + 4 * Math.cos(wave), -36 - 8 * Math.sin(wave + .6)); g.stroke();   // right arm, toward the boat
+      g.fillStyle = skin; g.beginPath(); g.arc(0, -40, 9, 0, 7); g.fill();                                // head
+      g.fillStyle = hairC; g.beginPath(); g.arc(-1, -43, 9.5, Math.PI * 1.05, Math.PI * 1.95); g.fill();     // fringe
+      g.fillStyle = '#2a2018'; g.beginPath(); g.arc(3, -40, 1.1, 0, 7); g.arc(7, -40, 1.1, 0, 7); g.fill();  // eyes
+      g.strokeStyle = night ? '#4a2a2a' : '#b5523e'; g.lineWidth = 1; g.beginPath(); g.arc(5, -36, 2.4, .2, Math.PI - .2); g.stroke();   // smile
+    }
+    g.restore();
+    // her tail flips up as she dives
+    if (p > .8 && p < .96) {
+      const u = (p - .8) / .16, h = Math.sin(Math.PI * u) * 44 * k;
+      g.save(); clipAboveWave(L, mx - 80 * k, mx + 40 * k, t);
+      g.translate(mx - 14 * k, wy + 6 * k - h); g.rotate(-.5 + u * .9); g.scale(k, k);
+      g.fillStyle = tailC; g.beginPath(); g.moveTo(-5, 30); g.quadraticCurveTo(-7, 8, 0, 0); g.quadraticCurveTo(7, 8, 5, 30); g.fill();
+      g.beginPath(); g.moveTo(0, 1); g.quadraticCurveTo(-16, -6, -20, -14); g.quadraticCurveTo(-8, -8, 0, -4); g.quadraticCurveTo(8, -8, 20, -14); g.quadraticCurveTo(16, -6, 0, 1); g.fill();   // fluke
+      g.restore();
+    }
+    // the fish she frees: flung from the deck back over the stern into the sea, one after another
+    const deckX = sea.bx - 26 * k, deckY = yBoat - 22 * k;
+    e.fish.forEach((f, i) => {
+      const s = .27 + i * .13, u = (p - s) / .1, tx = mx - (34 + i * 24) * k, ty = waveY(L, tx, t);
+      if (u > 0 && u < 1) arcFish(f, deckX, deckY, tx, ty, u, .75 * k, 60 * k);
+      splashRing(tx, ty, (p - s - .1) * e.dur, k);
+    });
+    splashRing(mx - 10 * k, wy, (p - .9) * e.dur, k * 1.4);   // and where she went under
+  }
+  function drawMajorFront(t, yBoat) {
+    const e = stage.ev;
+    if (e.kind === 'ufo') drawUFO(e, t, yBoat);
+    if (e.kind === 'nessie' && e.hx != null && e.p > .26 && e.p < .78) drawSpeech('Can I borrow tree-fiddy?', e.hx, e.hy, Math.min(1, (e.p - .26) * 30, (.78 - e.p) * 30));
+  }
+  function drawUFO(e, t, yBoat) {
+    const p = e.p, k = sea.bs, tx = sea.bx - 6 * k, ty = yBoat - 24 * k;
+    const hx = tx - 8 * k, hy = Math.max(Hd * .1, yBoat - 230 * k);
+    let ux = hx, uy = hy + Math.sin(t * 2.6) * 4 * k;
+    if (p < .18) { const u = ease(p / .18); ux = hx - Wd * .4 * (1 - u); uy = -80 * k + (hy + 80 * k) * u; }      // swoops in
+    if (p > .78) { const u = Math.pow((p - .78) / .22, 2); ux = hx + Wd * .9 * u; uy = hy - Hd * .5 * u; }          // and zips away
+    const beam = p > .22 && p < .76 ? Math.min(1, (p - .22) * 25, (.76 - p) * 25) : 0;
+    if (beam > 0) {   // the tractor beam, down onto the deck
+      const gr = g.createLinearGradient(0, uy, 0, ty);
+      gr.addColorStop(0, `rgba(180,255,170,${.45 * beam})`); gr.addColorStop(1, `rgba(180,255,170,${.12 * beam})`);
+      g.fillStyle = gr; g.beginPath(); g.moveTo(ux - 20 * k, uy + 8 * k); g.lineTo(ux + 20 * k, uy + 8 * k); g.lineTo(tx + 46 * k, ty); g.lineTo(tx - 46 * k, ty); g.closePath(); g.fill();
+      e.fish.forEach((f, i) => {   // his fish floating up into the saucer, spinning and shrinking
+        const u = (p - (.3 + i * .12)) / .18;
+        if (u <= 0 || u >= 1) return;
+        g.save(); g.translate(tx + (ux - tx) * u + Math.sin(u * 9 + i) * 8 * k, ty + (uy + 8 * k - ty) * u); g.rotate(u * 7 + i);
+        drawFishShape(g, f, .75 * k * (1 - u * .6), Math.sin(t * 30) * 2); g.restore();
+      });
+    }
+    g.save(); g.translate(ux, uy); g.scale(k, k); g.rotate(p > .78 ? -.25 : Math.sin(t * 1.3) * .05);
+    g.fillStyle = 'rgba(170,220,255,.75)'; g.beginPath(); g.arc(0, -8, 22, Math.PI, 0); g.fill();                   // glass dome
+    g.fillStyle = '#7ccf6a'; g.beginPath(); g.ellipse(0, -16, 7, 9, 0, 0, 7); g.fill();                              // little green alien
+    g.fillStyle = '#111'; g.beginPath(); g.ellipse(-3, -17, 2.4, 3.4, -.4, 0, 7); g.ellipse(3, -17, 2.4, 3.4, .4, 0, 7); g.fill();
+    const hull = g.createLinearGradient(0, -14, 0, 14);
+    hull.addColorStop(0, '#d9dde3'); hull.addColorStop(1, '#6d747e');
+    g.fillStyle = hull; g.beginPath(); g.ellipse(0, 0, 62, 14, 0, 0, 7); g.fill();                                 // saucer
+    g.fillStyle = '#4c535c'; g.beginPath(); g.ellipse(0, 4, 40, 6, 0, 0, Math.PI); g.fill();
+    for (let i = 0; i < 7; i++) {                                                                                     // running lights
+      const a = Math.PI * (.1 + .8 * i / 6), on = (Math.floor(t * 6) + i) % 3 === 0;
+      g.fillStyle = on ? ['#ff5a5a', '#ffe14a', '#5affc8'][i % 3] : 'rgba(255,255,255,.35)';
+      g.beginPath(); g.arc(-Math.cos(a) * 52, Math.sin(a) * 6, 2.6, 0, 7); g.fill();
+    }
+    g.restore();
+  }
+  function drawNessie(t) {   // drawn right after wave layer 1, so nearer waves (and the boat) pass in front of her
+    const e = stage.ev, p = e.p, L = sea.layers[1], k = sea.bs * .95, nx = Wd * (Hd > Wd ? .22 : .17), wy = waveY(L, nx, t);
+    const up = p < .14 ? ease(p / .14) : p < .8 ? 1 : p < .94 ? 1 - ease((p - .8) / .14) : 0;
+    const night = mode.tod === 'night', body = night ? '#1f3a2c' : '#3f7d5c', belly = night ? '#2d4b3a' : '#7fb38f';
+    const base = wy + (1 - up) * 120 * k, bob = Math.sin(t * 1.5) * 3 * k;
+    e.hx = nx + 28 * k; e.hy = base - 100 * k + bob;   // her head, for the speech bubble
+    if (up <= 0) { splashRing(nx, wy, (p - .94) * e.dur, k * 1.5); return; }
+    g.save(); clipAboveWave(L, nx - 140 * k, nx + 70 * k, t);
+    g.translate(nx, base); g.scale(k, k);
+    g.fillStyle = body;
+    g.beginPath(); g.ellipse(-62, 6, 18, 13, 0, Math.PI, 0); g.fill();                                       // humps
+    g.beginPath(); g.ellipse(-98, 8, 13, 9, 0, Math.PI, 0); g.fill();
+    g.beginPath(); g.moveTo(-122, 10); g.quadraticCurveTo(-134, -6, -126, -12); g.quadraticCurveTo(-122, 0, -114, 10); g.fill();   // tail tip
+    g.strokeStyle = body; g.lineWidth = 17; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(-12, 14); g.quadraticCurveTo(-6, -60, 16, -92 + bob / k); g.stroke();             // long neck
+    g.strokeStyle = belly; g.lineWidth = 6;
+    g.beginPath(); g.moveTo(-4, 12); g.quadraticCurveTo(2, -54, 20, -86 + bob / k); g.stroke();                 // paler front
+    g.fillStyle = body; g.beginPath(); g.ellipse(26, -99 + bob / k, 17, 10, .12, 0, 7); g.fill();             // head
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(28, -103 + bob / k, 3.4, 0, 7); g.fill();
+    g.fillStyle = '#111'; g.beginPath(); g.arc(29.5, -103 + bob / k, 1.8, 0, 7); g.arc(41, -100 + bob / k, .9, 0, 7); g.fill();   // eye, nostril
+    g.strokeStyle = '#1d3a2a'; g.lineWidth = 1.2; g.beginPath(); g.arc(34, -97 + bob / k, 6, .3, 1.6); g.stroke();   // smile
+    g.restore();
+    splashRing(nx, wy, p * e.dur, k * 1.5);   // where she came up
+  }
+  function drawSpeech(text, hx, hy, a) {   // a speech bubble (rounded box with a pointed tail) above and right of a head
+    if (a <= 0) return;
+    const k = Math.max(.75, sea.bs), fs = Math.max(14, Math.round(17 * k));
+    g.save(); g.globalAlpha = a; g.font = `600 ${fs}px "Segoe UI", Inter, Roboto, Arial, sans-serif`;
+    const tw = g.measureText(text).width, pw = 14 * k, bw = tw + pw * 2, bh = fs + 20 * k;
+    const bx = Math.min(Math.max(hx + 14 * k, 8), Wd - bw - 8), by = hy - 46 * k - bh;
+    g.fillStyle = 'rgba(255,255,255,.96)'; g.shadowColor = 'rgba(0,0,0,.25)'; g.shadowBlur = 10 * k;
+    g.beginPath(); g.roundRect(bx, by, bw, bh, 12 * k); g.fill();
+    g.beginPath(); g.moveTo(bx + 16 * k, by + bh - 2); g.lineTo(hx + 6 * k, hy - 12 * k); g.lineTo(bx + 34 * k, by + bh - 2); g.closePath(); g.fill();
+    g.shadowBlur = 0; g.fillStyle = '#1f3a5a'; g.textBaseline = 'middle'; g.fillText(text, bx + pw, by + bh / 2 + 1);
+    g.restore();
   }
 
   // A lighthouse like Barnegat Light: a tapered tower, white below and red above, with a black gallery, lantern room
@@ -2118,7 +2468,8 @@ const Sky = (() => {
     }
     flakes = []; for (let i = 0; i < Math.round((sc.snow || 0) * k * area); i++) { const r = rnd(1.2, 3.8) * sy * (sc.size || 1); flakes.push({ x: rnd(0, Wd), y: rnd(0, Hd), r, v: (20 + r * 18) * sy * (sc.fall || 1), ph: rnd(0, 6.3) }); }
     meteor = null; nextMeteor = performance.now() / 1000 + rnd(6, 25);
-    birds = !night && ['clear', 'partly', 'cloudy'].includes(kind); flock = []; nextFlock = performance.now() / 1000 + rnd(4, 12);   // first gulls soon after the scene starts
+    birds = !BAD_SKY.includes(kind); flock = [];   // a flying random event: any weather but high wind and bad storms
+    nextFlock = performance.now() / 1000 + rnd(4, 12);   // first gulls soon after the scene starts
     stars = []; if (night && (kind === 'clear' || kind === 'partly' || kind === 'windy')) for (let i = 0; i < 170 * area; i++) stars.push({ x: rnd(0, Wd), y: rnd(0, .75) * Hd, r: rnd(.6, 1.9), ph: rnd(0, 6.3), sp: rnd(.4, 1.8) });
     fogs = [];
     for (let i = 0; i < (sc.fog || 0); i++) {
@@ -2220,9 +2571,9 @@ const Sky = (() => {
       else if (t > nextMeteor) meteor = newMeteor();
     }
     if (birds) updateBirds(dt, t);
-    planeTick(t);
+    eventsTick(t);
     if (tornado) for (const d of [...tornado.debris, ...tornado.spray]) d.a += d.sp * dt;   // whirling round the base
-    if (sea && sea.pose === 'fish') { fishingTick(dt); jumpTick(dt); }
+    if (sea && sea.pose === 'fish') { if (!saluting()) fishingTick(dt); jumpTick(dt); }   // he stops to salute the flag
     if (sea) talkTick(t);
     if (sea && sea.dolphinsOk) podTick(dt);
     updateGlass(dt, t);
@@ -2287,8 +2638,10 @@ const Sky = (() => {
     }
     for (const c of clouds) { g.globalAlpha = c.a; g.drawImage(c.img, c.x, c.y, c.w, c.h); }
     if (tornado) { g.globalAlpha = 1; drawTornado(ts); }
+    drawMinors(ts);   // far-off helicopters and the passenger jet
     if (flock.length) { g.globalAlpha = 1; drawBirds(); }
     if (plane) { g.globalAlpha = 1; drawPlane(ts); }
+    if (stage.ev) { g.globalAlpha = 1; drawMajorSky(ts); }   // the giant and the eagle
     g.globalAlpha = 1;
     if (swirl) {
       g.strokeStyle = 'rgb(222,230,234)'; g.lineCap = 'round';

@@ -205,23 +205,44 @@ These effects appear on top of everything else, as if they were on the TV screen
 
 Random events are the occasional visitors that pass through the scene at random times, so the display never looks quite the same twice. None of them appear in smart mirror mode or with **Background animation** set to **Off**.
 
-| Random event | Where | When | How often |
+There are two kinds:
+
+- **Major random events** happen **one at a time**, about every 2½ to 5 minutes, and never while the fisherman is thinking: he stays quiet until it's over, and some end with him saying something. The biplane always goes first, about 30 seconds after the page opens, so its banner gets seen; after that, each one is picked at random from those that suit the scene, never the same one twice in a row.
+- **Minor random events** happen whenever, each on its own timer, alongside each other and alongside major events.
+
+**Flying events** (seagulls, the biplane, the helicopters, the jet, the eagle and the UFO) show up in every weather and at every time of day except **high wind, thunderstorms, hurricanes, tornadoes, heavy rain and heavy snow**.
+
+### Major random events
+
+| Event | Where | What happens | Fisherman |
 |---|---|---|---|
-| **Seagulls** | Normal and Ocean | Clear, partly cloudy and cloudy days | Every 20 seconds to a minute (the first within about 10 seconds) |
+| **Biplane with banner** | Normal and Ocean | Crosses the sky towing a banner (see [Changing the banner message](#changing-the-banner-message)) | |
+| **Giant** | Normal and Ocean (not in a hurricane or tornado) | Peeks in from the left edge, fingers curled round the screen, looks around, and ducks back out | *"Did you hear something?"* |
+| **Mermaid** | Ocean, while he's fishing | Pops up at the stern, flings three of his fish back into the sea, waves, and dives with a flick of her tail | *"Where did my fish go?"* |
+| **UFO** | Ocean, while he's fishing | Swoops in, beams three fish up out of the boat with a tractor beam, and zips away | *"No one is going to believe me."* |
+| **Eagle with the flag** | Normal and Ocean | A bald eagle flies across carrying an American flag | Stands and salutes until it's gone |
+| **Nessie** | Ocean (not in heavy rain or storms) | The Loch Ness monster rises out of the sea and asks *"Can I borrow tree-fiddy?"*, then sinks back down | |
+
+### Minor random events
+
+| Event | Where | When | How often |
+|---|---|---|---|
+| **Seagulls** | Normal and Ocean | Flying-event weather | Every 20 seconds to a minute |
 | **Dolphins** | Ocean | Nice days: no rain or storms | A pod every 25 to 60 seconds |
-| **Biplane with banner** | Normal and Ocean | Any weather | About 30 seconds after the page opens, then every 5 minutes |
 | **Jumping fish** | Ocean | Whenever the fisherman is fishing | Every 4 to 12 seconds |
-| **Shooting stars** | Normal and Ocean | Clear nights | Every 30 seconds to 2 minutes (the first within about half a minute) |
+| **Shooting stars** | Normal and Ocean | Clear nights | Every 30 seconds to 2 minutes |
+| **Black Hawk helicopters** | Normal and Ocean | Flying-event weather | Two or three in formation, every 3 to 7 minutes |
+| **Passenger jet** | Normal and Ocean | Flying-event weather | High up with a contrail (blinking lights at night), every 2½ to 6 minutes |
 
-**Seagulls:** a single gull or a small group of up to five flies across from either side. They flap with the odd glide, swoop gently up and down instead of flying straight, and tilt as they climb and dip. By day they're white with black wingtips (grey under an overcast sky, where white would fade into the clouds); at sunrise and sunset they're dark silhouettes.
+**Seagulls:** a single gull or a small group of up to five flies across, flapping with the odd glide, swooping gently up and down and tilting as they go. By day they're white with black wingtips, grey under a cloudy or wet sky, dark silhouettes at sunrise and sunset, and pale grey at night.
 
-**Dolphins:** a pod of two or three swims across the open sea, each arcing out of the water and back in three or four times with a small splash. Pods farther out are smaller and pass behind the boat; nearer ones pass in front. At sunset and at night they're dark silhouettes.
+**Dolphins:** a pod of two or three swims across the open sea, each arcing out of the water three or four times. Pods farther out pass behind the boat; nearer ones pass in front.
 
-**Biplane with banner:** a red biplane with yellow wings crosses the sky right to left, towing a banner with a message (see [Changing the banner message](#changing-the-banner-message)). It flies level in calm weather, bobs and tilts in wind, and gets bumped about in storms; the banner trails just behind with only a small ripple, so it stays readable. At night it shows red and green wingtip lights. The fisherman never thinks while the plane is passing, so the two don't overlap. Add `?plane` to the address to send one over straight away.
+**Jumping fish:** a fish leaps out of the sea away from the boat with a splash going out and coming back in. On a wide screen they only jump in the open sea on the left, since the forecast boxes cover the right.
 
-**Jumping fish:** a fish leaps out of the sea away from the boat, arcs through the air and drops back in, with a splash going out and coming back in. Fish farther out look smaller. At sunset and at night they're dark silhouettes. On a wide screen they only jump in the open sea on the left, since the forecast boxes cover the right.
+### Trying them out
 
-**Shooting stars:** a bright streak crosses part of the night sky and fades out in about a second.
+Add one of these to the end of the website address to see an event straight away: `?event=giant`, `?event=mermaid`, `?event=ufo`, `?event=eagle`, `?event=nessie`, `?event=biplane` (or `?plane`), `?heli`, `?jet`. The mermaid, UFO and Nessie need the Ocean style, so add `&display=ocean` too, for example `tidalweather.com/?display=ocean&event=nessie`.
 
 ## Alerts
 
