@@ -2161,21 +2161,50 @@ const Sky = (() => {
       }
     }
     // the eagle
-    const brown = night ? '#22180f' : '#4a3324', dark = night ? '#170f09' : '#36241a', whiteH = night ? '#b9bcc4' : '#f6f4ee', beak = night ? '#8a7020' : '#f2b705';
-    const wing = (col, lift) => {   // a broad wing from the shoulder, its fingered tip up or down with the beat
-      const ty = -38 * lift, mid = -14 * lift;
-      g.fillStyle = col; g.beginPath(); g.moveTo(10, -4); g.quadraticCurveTo(-4, mid - 8, -26, ty - 4);
-      for (let f = 0; f < 4; f++) g.lineTo(-30 - f * 4, ty + f * 3 + (f % 2 ? 2 : -2));
-      g.quadraticCurveTo(-12, mid + 10, -4, 4); g.closePath(); g.fill();
+    const brown = night ? '#22180f' : '#4a3324', dark = night ? '#170f09' : '#36241a', light = night ? '#2c2015' : '#6b4a32';
+    const whiteH = night ? '#b9bcc4' : '#f6f4ee', shade = night ? '#8d919a' : '#d9d6cc', beak = night ? '#8a7020' : '#f2b705';
+    // A broad wing seen from a little above: it beats from about 25° below level to 50° above, so the far wing shows
+    // above the body and the near one below it when level. In the wing's own units u runs from the shoulder (0) to the
+    // tip (1, about 62 px) and c across it from the leading edge (0) to the trailing edge (1, 22 px). The tip splits
+    // into five spread "finger" feathers, and the trailing edge is scalloped.
+    const a = .25 + .65 * w;
+    const wing = (rx, ry, side, col) => {
+      const vx = (side > 0 ? -.18 : -.34) * 62, vy = (-.82 * Math.sin(a) + side * .57 * Math.cos(a)) * 62;   // (the near one sweeps back less)
+      const P = (u, c) => [rx + vx * u - 22 * c, ry + vy * u];
+      const poly = pts => { g.beginPath(); pts.forEach(([u, c], i) => g.lineTo(...P(u, c))); g.closePath(); g.fill(); };
+      const out = [[0, 0], [.35, -.06], [.68, -.02], [.9, .12]];
+      for (let i = 0; i < 5; i++) out.push([1.18 - i * .055, .16 + i * .2], [.93 - i * .025, .3 + i * .2]);
+      out.push([.78, 1.05], [.64, .98], [.5, 1.07], [.36, .99], [.22, 1.06], [.08, .98], [0, 1]);
+      g.fillStyle = col; poly(out);
+      g.fillStyle = side > 0 ? light : brown; poly([[0, 0], [.35, -.06], [.68, -.02], [.84, .14], [.66, .42], [.34, .48], [0, .46]]);   // coverts
+      g.strokeStyle = dark; g.lineWidth = .7; g.beginPath();
+      for (let u = .1; u < .75; u += .14) { g.moveTo(...P(u, .55)); g.lineTo(...P(u + .02, 1)); }   // feather lines
+      g.stroke();
     };
-    wing(dark, w * .9);                                                                              // far wing
-    g.fillStyle = whiteH; g.beginPath(); g.moveTo(-18, -1); g.lineTo(-36, -6); g.lineTo(-36, 6); g.lineTo(-18, 4); g.fill();   // white tail
-    g.fillStyle = brown; g.beginPath(); g.ellipse(0, 1, 22, 9, -.05, 0, 7); g.fill();                    // body
-    g.fillStyle = beak; g.fillRect(3, 8, 6, 4);                                                       // talons on the pole
-    wing(brown, w);                                                                                   // near wing
-    g.fillStyle = whiteH; g.beginPath(); g.ellipse(23, -5, 8, 7, 0, 0, 7); g.fill();                    // white head
-    g.fillStyle = beak; g.beginPath(); g.moveTo(29, -7); g.lineTo(37, -4); g.quadraticCurveTo(36, 0, 32, 0); g.lineTo(29, -2); g.fill();   // hooked beak
-    g.fillStyle = '#1b1b1b'; g.beginPath(); g.arc(25, -7, 1.2, 0, 7); g.fill();                       // eye
+    wing(2, -8, -1, dark);                                                                             // far wing
+    g.fillStyle = whiteH; g.beginPath(); g.moveTo(-21, -3); g.lineTo(-42, -9); g.quadraticCurveTo(-47, -1, -42, 7); g.lineTo(-21, 4); g.closePath(); g.fill();   // white tail
+    g.strokeStyle = shade; g.lineWidth = .8; g.beginPath();
+    for (const ty of [-5, 0, 4]) { g.moveTo(-24, ty * .3); g.lineTo(-43, ty); }
+    g.stroke();
+    g.fillStyle = brown; g.beginPath(); g.moveTo(21, -6); g.quadraticCurveTo(8, -12, -10, -8); g.quadraticCurveTo(-22, -5, -25, -1);
+    g.lineTo(-25, 3); g.quadraticCurveTo(-12, 10, 3, 9); g.quadraticCurveTo(17, 8, 22, 2); g.closePath(); g.fill();   // body
+    g.fillStyle = light; g.beginPath(); g.ellipse(-2, 5.5, 15, 2.6, -.04, 0, 7); g.fill();          // its paler underside
+    g.fillStyle = brown; g.beginPath(); g.ellipse(5, 7.5, 5, 4, 0, 0, 7); g.fill();                   // feathered legs
+    g.fillStyle = beak; g.fillRect(3.5, 9.5, 5, 2.5);                                                 // feet gripping the pole
+    g.strokeStyle = beak; g.lineWidth = 1.6; g.beginPath(); g.arc(6, 12.5, 2.6, -2.6, .4); g.stroke();
+    g.fillStyle = '#1b1b1b'; g.beginPath(); g.arc(8.6, 13.6, .7, 0, 7); g.arc(3.6, 14, .7, 0, 7); g.fill();   // talons
+    wing(8, -4, 1, brown);                                                                             // near wing
+    // white head with a ragged edge where it meets the brown, a fierce brow and a big hooked beak
+    g.fillStyle = whiteH; g.beginPath(); g.moveTo(13, -9); g.quadraticCurveTo(19, -15, 26, -14); g.quadraticCurveTo(33, -13, 34, -8);
+    g.lineTo(33, -4); g.quadraticCurveTo(28, 0, 21, 2); g.lineTo(19, -.5); g.lineTo(16.5, 2.5); g.lineTo(15, -1.5); g.lineTo(12, 1);
+    g.quadraticCurveTo(10.5, -4, 13, -9); g.closePath(); g.fill();
+    g.fillStyle = beak; g.beginPath(); g.moveTo(32, -10); g.quadraticCurveTo(38.5, -11, 41, -7); g.quadraticCurveTo(42.5, -3, 39.5, -1);
+    g.quadraticCurveTo(39.5, -4, 36.5, -4.6); g.lineTo(32, -4); g.closePath(); g.fill();
+    g.fillStyle = night ? '#6e5a18' : '#d39a00'; g.beginPath(); g.moveTo(32, -4); g.lineTo(37, -4.2); g.quadraticCurveTo(36, -2, 33, -2); g.closePath(); g.fill();
+    g.fillStyle = night ? '#8a7020' : '#e8b923'; g.beginPath(); g.arc(28, -9, 1.7, 0, 7); g.fill();   // eye
+    g.fillStyle = '#1b1b1b'; g.beginPath(); g.arc(28.4, -9, .9, 0, 7); g.fill();
+    g.strokeStyle = night ? '#55585e' : '#7d7a72'; g.lineWidth = 1.3; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(25, -11.2); g.lineTo(31, -10.6); g.stroke();                               // brow
     g.restore();
   }
 
