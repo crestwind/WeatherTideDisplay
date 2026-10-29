@@ -421,7 +421,7 @@
           <option value="drizzle">Preview: drizzle</option><option value="rain">Preview: rain</option>
           <option value="heavy">Preview: heavy rain</option><option value="flurries">Preview: flurries</option>
           <option value="snow">Preview: snow</option><option value="heavysnow">Preview: heavy snow</option>
-          <option value="storm">Preview: thunderstorm</option><option value="hurricane">Preview: hurricane</option>
+          <option value="storm">Preview: thunderstorm</option><option value="hurricane">Preview: hurricane</option><option value="tornado">Preview: tornado</option>
           <option value="windy">Preview: high wind</option>
         </select>
       </label>
@@ -900,14 +900,14 @@ const SKY_COLORS = {
     fog: ['#8e979f', '#aeb5bb', '#cfd4d8'], drizzle: ['#53606c', '#7a8691', '#a0aab3'], rain: ['#38434f', '#56626e', '#7a8590'],
     heavy: ['#29323c', '#434d58', '#606b76'], snow: ['#7c8996', '#a8b2bd', '#dbe1e7'], storm: ['#181e26', '#2f3843', '#4b5561'],
     flurries: ['#6f8fb0', '#9fb7cc', '#d3dee8'], heavysnow: ['#5d6772', '#87919b', '#b5bdc4'], hurricane: ['#161d21', '#2b3637', '#4a5653'],
-    windy: ['#3d72ad', '#79a5cf', '#b9d2e6'],
+    windy: ['#3d72ad', '#79a5cf', '#b9d2e6'], tornado: ['#1e2925', '#36463e', '#5e6b5b'],   // a sickly green-grey
   },
   night: {
     clear: ['#02060f', '#0a1734', '#1c335f'], partly: ['#050a18', '#11203f', '#29395c'], cloudy: ['#0c1016', '#1a2029', '#2b333e'],
     fog: ['#13171d', '#242a32', '#394049'], drizzle: ['#0a0e14', '#171d25', '#272e38'], rain: ['#07090e', '#12171e', '#212831'],
     heavy: ['#050709', '#0e1217', '#1b2128'], snow: ['#141923', '#252d3a', '#3c4655'], storm: ['#040507', '#0c1015', '#191f27'],
     flurries: ['#0e1524', '#1d283a', '#344157'], heavysnow: ['#0f1218', '#1c2129', '#2e353f'], hurricane: ['#030506', '#0a0f11', '#151c1e'],
-    windy: ['#060b18', '#13213f', '#2a3a5c'],
+    windy: ['#060b18', '#13213f', '#2a3a5c'], tornado: ['#030605', '#0a110e', '#18211c'],
   },
   golden: { clear: ['#1d3264', '#a85f7d', '#f6a35a'], partly: ['#2a3a68', '#a26c88', '#eaa673'] },
 };
@@ -932,6 +932,10 @@ const Sky = (() => {
     windy:   { clouds: 9, tone: 'light', wind: true, leaves: 26, cloudSpeed: 7, cloudDir: -1 },
     hurricane: { clouds: 20, tone: 'storm', big: true, rain: 560, len: 1.5, slant: 1, wind: true, swirl: true, leaves: 18, cloudSpeed: 10, cloudDir: -1,
                  storm: true, boltMin: 9000, boltMax: 22000, glass: { rate: 4.5, max: 90, big: .55, wind: .9 } },
+    // Tornado: a green-grey storm sky with a funnel snaking down from the clouds (a waterspout in the Ocean style),
+    // heavy slanting rain, gusts, lightning and debris.
+    tornado: { clouds: 18, tone: 'storm', big: true, rain: 320, len: 1.3, slant: .35, wind: true, leaves: 14, cloudSpeed: 6, cloudDir: -1,
+               storm: true, tornado: true, boltMin: 5000, boltMax: 14000, glass: { rate: 2.5, max: 55, big: .4, wind: .5 } },
   };
   const TONES = {
     light: [[255,255,255],[205,216,232]], overcast: [[222,227,234],[100,110,124]], grey: [[200,207,216],[138,148,160]], dark: [[118,128,140],[64,72,84]],
@@ -1377,6 +1381,84 @@ const Sky = (() => {
     g.save(); g.translate(p.x, y); g.rotate(-pitch); g.drawImage(planeCv, -8 * k, -24 * k); g.restore();
   }
 
+  // The tornado: a funnel hanging from a dark wall cloud and snaking down to the ground (or to the sea, as a waterspout
+  // with a ring of spray), wide at the top and roping out at the bottom, with bands spinning around it and debris
+  // whirling at its base. Built with the scene (see build); in the Ocean style it's farther off and ends at the horizon.
+  let tornado = null;
+  function buildTornado() {
+    if (!sc.tornado) return null;
+    const sy = Hd / 1080, tall = Hd > Wd, ocean = !!sea, k = (ocean ? .85 : 1) * Math.min(sy, Wd / 900);
+    const bot = ocean ? sea.top + 2 : Hd * .93;
+    return { cx: Wd * (tall ? .25 : ocean ? .18 : .3), top: Hd * (tall ? .24 : .17), bot, k, ocean,
+      wTop: 115 * k, wBot: 7 * k, sway: 38 * k,
+      debris: Array.from({ length: ocean ? 0 : 40 }, () => ({ a: rnd(0, 6.3), r: rnd(.4, 1.6), up: Math.pow(Math.random(), 2), sp: rnd(2, 4.5), s: rnd(1.5, 3.5) })),
+      spray: Array.from({ length: ocean ? 46 : 0 }, () => ({ a: rnd(0, 6.3), r: rnd(.5, 1.5), up: Math.pow(Math.random(), 1.5), sp: rnd(2.5, 5) })) };
+  }
+  // where the funnel's centre is at height u (0 = top, 1 = ground) at time t: a slow snaking sway, more at the bottom
+  const funnelX = (T, u, t) => T.cx + 40 * T.k * Math.pow(u, 1.5) + T.sway * u * Math.sin(t * .55 + u * 3.1) + T.sway * .3 * u * Math.sin(t * 1.6 + u * 7.3);   // leans, snakes and sways
+  function drawTornado(ts) {
+    const T = tornado, t = ts / 1000, h = T.bot - T.top, n = 72, night = mode.tod === 'night';
+    // wide under the cloud, quickly narrowing to a rope; ragged edges that churn
+    const half = u => T.wTop * Math.pow(1 - u, T.ocean ? 2.4 : 1.45) + T.wBot * (1 + .5 * Math.sin(t * 2 + u * 9) * u) + 2.2 * T.k * Math.sin(u * 37 + t * 5);
+    const funnel = (grow, alpha) => {
+      g.beginPath();
+      for (let i = 0; i <= n; i++) { const u = i / n; g.lineTo(funnelX(T, u, t) - half(u) * grow, T.top + h * u); }
+      for (let i = n; i >= 0; i--) { const u = i / n; g.lineTo(funnelX(T, u, t) + half(u) * grow, T.top + h * u); }
+      g.closePath(); g.globalAlpha = alpha; g.fill(); g.globalAlpha = 1;
+    };
+    // dark and solid, turning dusty near the ground (paler spray-grey for a waterspout)
+    const body = g.createLinearGradient(0, T.top, 0, T.bot);
+    body.addColorStop(0, night ? 'rgb(14,18,18)' : 'rgb(28,33,32)');
+    body.addColorStop(.6, night ? 'rgb(22,26,25)' : 'rgb(38,42,40)');
+    body.addColorStop(1, T.ocean ? (night ? 'rgb(52,58,60)' : 'rgb(120,128,130)') : (night ? 'rgb(34,32,28)' : 'rgb(74,64,50)'));
+    g.fillStyle = body; funnel(1.5, .2); funnel(1.22, .45); funnel(.96, .97);
+    // spinning bands: darker streaks sweeping across the side facing us
+    g.lineCap = 'round';
+    for (let b = 0; b < 6; b++) {
+      g.lineWidth = Math.max(1.5, (2.6 - b * .2) * T.k); g.strokeStyle = night ? 'rgba(0,0,0,.4)' : (b % 2 ? 'rgba(25,28,28,.45)' : 'rgba(150,152,146,.22)');
+      g.beginPath(); let on = false;
+      for (let i = 2; i <= n - 3; i++) {
+        const u = i / n, ph = t * (2.2 + 2.2 * u) + b * 1.05 - u * 8, s = Math.sin(ph);
+        if (Math.cos(ph) < .1) { on = false; continue; }   // only the side facing us
+        const x = funnelX(T, u, t) + half(u) * .8 * s, y = T.top + h * u + 3 * T.k * Math.cos(ph);
+        on ? g.lineTo(x, y) : g.moveTo(x, y); on = true;
+      }
+      g.stroke();
+    }
+    // the lumpy wall cloud it hangs from, made of overlapping dark puffs
+    const dark = night ? '8,11,11' : '34,40,39';
+    for (const [ox, oy, r] of [[-2.3, -.35, .9], [-1.4, -.1, 1.05], [-.5, .12, 1.15], [.5, .1, 1.1], [1.4, -.12, 1], [2.3, -.4, .85], [0, -.5, 1.3]]) {
+      const x = T.cx + ox * T.wTop, y = T.top + oy * T.wTop * .5, rr = r * T.wTop;
+      const p = g.createRadialGradient(x, y, 0, x, y, rr);
+      p.addColorStop(0, `rgba(${dark},.95)`); p.addColorStop(.6, `rgba(${dark},.7)`); p.addColorStop(1, `rgba(${dark},0)`);
+      g.fillStyle = p; g.beginPath(); g.ellipse(x, y, rr, rr * .5, 0, 0, 7); g.fill();
+    }
+    if (!T.ocean) {
+      // a dust cloud and debris whirling round the base
+      const bx = funnelX(T, 1, t), dust = g.createRadialGradient(bx, T.bot, 0, bx, T.bot, 70 * T.k);
+      dust.addColorStop(0, night ? 'rgba(50,48,44,.6)' : 'rgba(120,108,90,.55)'); dust.addColorStop(1, 'rgba(120,108,90,0)');
+      g.fillStyle = dust; g.beginPath(); g.ellipse(bx, T.bot - 10 * T.k, 80 * T.k, 38 * T.k, 0, 0, 7); g.fill();
+      g.fillStyle = night ? 'rgb(14,16,16)' : 'rgb(40,38,34)';
+      for (const d of T.debris) {
+        const u = 1 - d.up * .45, cx = funnelX(T, u, t), r = (half(u) + 14 * T.k) * d.r;
+        const x = cx + Math.cos(d.a) * r, y = T.top + h * u + Math.sin(d.a) * r * .25;
+        g.save(); g.translate(x, y); g.rotate(d.a * 2); g.fillRect(-d.s * T.k, -d.s * .5 * T.k, d.s * 2 * T.k, d.s * T.k); g.restore();
+      }
+    }
+  }
+  // the waterspout's spray where it meets the sea (drawn with the sea, before the waves, so the swell covers its foot)
+  function drawSpray(t) {
+    const T = tornado, bx = funnelX(T, 1, t), y = T.bot, k = T.k;
+    const mist = g.createRadialGradient(bx, y, 0, bx, y, 60 * k);
+    mist.addColorStop(0, 'rgba(230,236,238,.6)'); mist.addColorStop(1, 'rgba(230,236,238,0)');
+    g.fillStyle = mist; g.beginPath(); g.ellipse(bx, y - 8 * k, 64 * k, 26 * k, 0, 0, 7); g.fill();
+    g.fillStyle = 'rgba(240,244,246,.75)';
+    for (const s of T.spray) {
+      const r = (14 + 46 * s.r) * k, x = bx + Math.cos(s.a) * r, yy = y - s.up * 40 * k + Math.sin(s.a) * r * .22;
+      g.beginPath(); g.arc(x, yy, Math.max(.8, 1.6 * k), 0, 7); g.fill();
+    }
+  }
+
   let birds = false, flock = [], nextFlock = 0;
   function newFlock() {
     const sx = Wd / 1920, dir = Math.random() < .5 ? 1 : -1, n = Math.random() < .45 ? 1 : Math.floor(rnd(2, 6));
@@ -1699,6 +1781,7 @@ const Sky = (() => {
     base.addColorStop(0, `rgb(${sea.pal[0]})`); base.addColorStop(1, `rgb(${sea.pal[1]})`);
     g.fillStyle = base; g.fillRect(0, sea.top - 2, Wd, Hd - sea.top + 2);
     drawLighthouse(t);   // on the horizon, behind every wave
+    if (tornado) drawSpray(t);
     for (let i = 0; i <= b; i++) { drawLayer(L[i], t); drawDolphins(t, i); }
     // the boat rides layer b, rising, falling and tilting with the wave under it
     const bl = L[b], y = waveY(bl, sea.bx, t), slope = (waveY(bl, sea.bx + 30, t) - waveY(bl, sea.bx - 30, t)) / 60;
@@ -1904,6 +1987,7 @@ const Sky = (() => {
     flashes = []; bolt = null; nextBolt = performance.now() + 3000;
     sea = buildSea();
     if (sea) sea.lhImg = lighthouseSprite();
+    tornado = buildTornado();
   }
 
   // Lightning: a jagged main channel from the clouds to the ground with forking branches,
@@ -1984,6 +2068,7 @@ const Sky = (() => {
     }
     if (birds) updateBirds(dt, t);
     planeTick(t);
+    if (tornado) for (const d of [...tornado.debris, ...tornado.spray]) d.a += d.sp * dt;   // whirling round the base
     if (sea && sea.pose === 'fish') { fishingTick(dt); jumpTick(dt); }
     if (sea && sea.dolphinsOk) podTick(dt);
     updateGlass(dt, t);
@@ -2047,6 +2132,7 @@ const Sky = (() => {
       g.restore(); g.globalAlpha = 1;
     }
     for (const c of clouds) { g.globalAlpha = c.a; g.drawImage(c.img, c.x, c.y, c.w, c.h); }
+    if (tornado) { g.globalAlpha = 1; drawTornado(ts); }
     if (flock.length) { g.globalAlpha = 1; drawBirds(); }
     if (plane) { g.globalAlpha = 1; drawPlane(ts); }
     g.globalAlpha = 1;
@@ -2166,6 +2252,11 @@ function isDayNow() {
 }
 
 // Hurricane scene: an active hurricane/typhoon/tropical storm warning, or (anywhere) hurricane-force gusts.
+// Tornado scene: a Tornado Warning or Tornado Emergency in effect (a test Tornado Warning switches it on too).
+function tornadoNow() {
+  const now = Date.now();
+  return alerts.some(a => !(a.ends < now) && /Tornado Warning|Tornado Emergency/.test(a.event));
+}
 function hurricaneNow() {
   const now = Date.now();
   if (alerts.some(a => !(a.ends < now) && /Hurricane Warning|Typhoon Warning|Tropical Storm Warning|Hurricane Force Wind Warning/.test(a.event))) return true;
@@ -2184,7 +2275,8 @@ function windyNow() {
 function applyScene() {
   let kind = S.scene !== 'auto' ? S.scene : W ? KIND(W.current.weather_code) : 'clear';
   if (S.scene === 'auto') {
-    if (hurricaneNow()) kind = 'hurricane';
+    if (tornadoNow()) kind = 'tornado';   // the most urgent, so it wins over everything
+    else if (hurricaneNow()) kind = 'hurricane';
     else if (windyNow() && ['clear', 'partly', 'cloudy', 'fog'].includes(kind)) kind = 'windy';   // rain/snow scenes win over wind
   }
   let tod = S.tod;

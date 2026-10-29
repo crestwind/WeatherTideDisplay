@@ -159,7 +159,9 @@ It appears on clear, partly cloudy and windy nights.
 
 The **high wind** scene comes on with sustained winds of 25 mph or more, gusts of 40 mph or more, or a High Wind Warning. Rain, snow, thunderstorm and fog scenes take priority over it.
 
-The **hurricane** scene comes on with a Hurricane, Typhoon, Tropical Storm or Hurricane Force Wind Warning, or with gusts of 74 mph or more. It takes priority over every other scene.
+The **hurricane** scene comes on with a Hurricane, Typhoon, Tropical Storm or Hurricane Force Wind Warning, or with gusts of 74 mph or more. It takes priority over every scene except the tornado.
+
+The **tornado** scene comes on with a Tornado Warning or Tornado Emergency, and takes priority over everything else. A dark funnel hangs from a lumpy wall cloud and snakes down to the ground, with spinning bands, a dust cloud and debris whirling round its base, under a green-grey sky with heavy rain, gusts and lightning. In the Ocean style it's a waterspout out on the horizon with spray at its foot, while the fisherman holds on tight. Preview it with **Background scene → Preview: tornado**, or the test alert **Tornado Warning**.
 
 ### Effects on the screen glass
 
