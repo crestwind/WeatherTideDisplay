@@ -115,10 +115,11 @@ The first time it runs, the settings panel opens. Type your town or ZIP code, pi
 - **Units:** °F, mph and ft, or °C, km/h and metres.
 - **Clock:** 12-hour or 24-hour.
 - **Tide station:** leave it blank to use the nearest NOAA station, or enter a station ID.
-- **Display style** (Ocean is the default for new visitors):
+- **Display style** (Normal is the default for new visitors):
   - **Normal:** the animated sky.
   - **Ocean:** the sky over open sea, with a small fishing boat riding the waves right of the temperature. The sea follows the weather (calm and glassy on nice days, choppy in rain and snow, big swells with whitecaps in storms) and the sky (blue by day, warm at sunrise and sunset, dark with moonlight at night), with a sparkling path of sun or moonlight. The fisherman fishes on nice days: every so often he gets a bite, reels in a catch picked at random (striped bass, bluefish, mackerel, red snapper, flounder or black sea bass, each a different colour, and once in a while an old boot) and casts again, while fish leap out of the sea every few seconds with a splash. He also wears a yellow raincoat in rain, sits with a steaming mug in snow, holds his hat on in high wind, and holds on tight in heavy rain, thunderstorms and hurricanes. A lantern is lit at night and in fog. A lighthouse in the style of Barnegat Light (white below, red above) stands on a little jetty on the horizon, right of the boat: its lantern glows at sunset, and at night and in fog its light turns, sweeping a beam across the sky. On nice days a small pod of dolphins swims across now and then, arcing out of the water.
   - **Smart mirror:** a black background so the mirror shows through, no animation, and clear boxes. On a tall mirror, everything shrinks to fit on one screen.
+  - **Woods** and **Beach:** coming soon (shown greyed out in the menu).
 - **Background animation:** **Full**, **Light** (half the particles at 15 fps; use this if it stutters) or **Off** (a still picture).
 - **Background scene** and **Time of day:** preview any background. Set them back to **Match current weather** and **Match the sun** for normal use.
 - **Test alert notice** and **Test state of emergency:** preview the alert notices (see [Testing alerts](#testing-alerts)).
@@ -213,7 +214,7 @@ Which ones you get depends on the display style:
 | Display style | Random events |
 |---|---|
 | **Ocean** | All of them. A major event every **2½ to 3½ minutes**, and **every other one is the biplane** (the first about 30 seconds after the page opens), so its banner gets seen often. The ones in between are picked at random from those that suit the scene, never the same as the previous in-between one. They wait for a thought the fisherman is already having to finish; he stays quiet during the event, and any thought that comes due while it's on is skipped. |
-| **Normal** | Minor events, plus **the biplane every 5 minutes** (the first about 30 seconds after the page opens). No other major events. |
+| **Normal** | Kept calm and professional: only **the biplane every 5 minutes** (the first about 30 seconds after the page opens), the **seagulls** and the **shooting stars**. |
 | **Smart mirror** | None. |
 
 None appear with **Background animation** set to **Off**.
@@ -225,7 +226,7 @@ None appear with **Background animation** set to **Off**.
 | Event | Where | What happens | Fisherman |
 |---|---|---|---|
 | **Biplane with banner** | Normal and Ocean | Crosses the sky towing a banner (see [Changing the banner message](#changing-the-banner-message)) | |
-| **Giant** | Ocean (not in a hurricane or tornado) | Peeks in from the left edge, fingers curled round the screen, looks around, and ducks back out | *"Did you hear something?"* |
+| **Giant** | Switched off for now while he's redesigned | Peeks in from the left edge, fingers curled round the screen, looks around, and ducks back out | *"Did you hear something?"* |
 | **Mermaid** | Ocean, while he's fishing | Pops up at the stern, flings three of his fish back into the sea, waves, and dives with a flick of her tail | *"Where did my fish go?"* |
 | **UFO** | Ocean, while he's fishing | Swoops in, beams three fish up out of the boat with a tractor beam, and zips away | *"No one is going to believe me."* |
 | **Eagle with the flag** | Ocean | A bald eagle flies across carrying an American flag | Stands and salutes until it's gone |
@@ -239,8 +240,8 @@ None appear with **Background animation** set to **Off**.
 | **Dolphins** | Ocean | Nice days: no rain or storms | A pod every 25 to 60 seconds |
 | **Jumping fish** | Ocean | Whenever the fisherman is fishing | Every 4 to 12 seconds |
 | **Shooting stars** | Normal and Ocean | Clear nights | Every 30 seconds to 2 minutes |
-| **Black Hawk helicopters** | Normal and Ocean | Flying-event weather | Two or three in formation, every 3 to 7 minutes |
-| **Passenger jet** | Normal and Ocean | Flying-event weather | High up with a contrail (blinking lights at night), every 2½ to 6 minutes |
+| **Black Hawk helicopters** | Ocean | Flying-event weather | Two or three in formation, every 3 to 7 minutes |
+| **Passenger jet** | Ocean | Flying-event weather | High up with a contrail (blinking lights at night), every 2½ to 6 minutes |
 
 **Seagulls:** a single gull or a small group of up to five flies across, flapping with the odd glide, swooping gently up and down and tilting as they go. By day they're white with black wingtips, grey under a cloudy or wet sky, dark silhouettes at sunrise and sunset, and pale grey at night.
 
@@ -250,7 +251,7 @@ None appear with **Background animation** set to **Off**.
 
 ### Trying them out
 
-Add one of these to the end of the website address to see an event straight away: `?event=giant`, `?event=mermaid`, `?event=ufo`, `?event=eagle`, `?event=nessie`, `?event=biplane` (or `?plane`), `?heli`, `?jet`. All the major events except the biplane need the Ocean style, so add `&display=ocean` too, for example `tidalweather.com/?display=ocean&event=nessie`.
+Add one of these to the end of the website address to see an event straight away: `?event=mermaid`, `?event=ufo`, `?event=eagle`, `?event=nessie`, `?event=biplane` (or `?plane`), `?heli`, `?jet`. All the major events except the biplane need the Ocean style, so add `&display=ocean` too, for example `tidalweather.com/?display=ocean&event=nessie`.
 
 **Showcase mode** plays them all quickly: major events back to back about 3 seconds apart, cycling through every one that fits the scene, minor events every few seconds, and the fisherman's regular thoughts paused (his reactions to events still show). **The test site is always in showcase mode** (its tag says TEST SITE · SHOWCASE), so new events can be seen straight away; add `?showcase=0` there to get the real timing. On any site, `?showcase` switches it on. tidalweather.com itself always uses the normal timing.
 

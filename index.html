@@ -450,7 +450,7 @@
       </label>
     </div>
     <label>Display style
-      <select id="displaySel"><option value="normal">Normal (animated sky)</option><option value="ocean">Ocean (the sea and a fishing boat)</option><option value="mirror">Smart mirror (black background, no animation)</option></select>
+      <select id="displaySel"><option value="normal">Normal (animated sky)</option><option value="ocean">Ocean (the sea and a fishing boat)</option><option value="mirror">Smart mirror (black background, no animation)</option><option value="woods" disabled>Woods (coming soon)</option><option value="beach" disabled>Beach (coming soon)</option></select>
     </label>
     <div class="row">
       <label>Background scene
@@ -518,7 +518,7 @@ const $ = s => document.querySelector(s);
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 /* ======================= settings ======================= */
-const DEFAULTS = { name: '', lat: null, lon: null, units: 'imperial', clock: '12', tideStation: '', motion: 'full', scene: 'auto', tod: 'auto', alertPreview: '', soePreview: '', display: 'ocean' };   // the Ocean style is the default
+const DEFAULTS = { name: '', lat: null, lon: null, units: 'imperial', clock: '12', tideStation: '', motion: 'full', scene: 'auto', tod: 'auto', alertPreview: '', soePreview: '', display: 'normal' };   // the Normal (sky) style is the default for new visitors
 let S = loadSettings();
 function loadSettings() {
   let s = { ...DEFAULTS };
@@ -1991,7 +1991,7 @@ const Sky = (() => {
     const fishing = !!sea && sea.pose === 'fish';
     switch (kind) {
       case 'biplane': return !!window.TW_BANNER;                 // the biplane flies in any weather, in both styles
-      case 'giant': return !!sea && !/hurricane|tornado/.test(mode.kind);   // the other majors: Ocean style only
+      case 'giant': return false;   // switched off until he's redesigned (his code is kept below)
       case 'mermaid': return fishing;
       case 'ufo': return flyOK() && fishing;
       case 'eagle': return !!sea && flyOK();
@@ -2047,7 +2047,8 @@ const Sky = (() => {
   const now0 = performance.now() / 1000;
   const minor = { heli: null, jet: null, nextHeli: now0 + (SHOWCASE || /[?&]heli\b/.test(location.search) ? 2 : rnd(60, 200)), nextJet: now0 + (SHOWCASE || /[?&]jet\b/.test(location.search) ? 6 : rnd(40, 150)) };
   function minorTick(t) {
-    const ok = flyOK() && S.display !== 'mirror', sp = 160 * Math.max(.6, Math.min(Wd / 1920, 1.2));
+    const ok = flyOK() && !!sea,   // helicopters and the jet: Ocean style only (the sky style keeps just the biplane, gulls and stars)
+          sp = 160 * Math.max(.6, Math.min(Wd / 1920, 1.2));
     if (!ok) minor.heli = minor.jet = null;
     for (const [key, next, gap] of [['heli', 'nextHeli', [180, 420]], ['jet', 'nextJet', [150, 360]]]) {
       const m = minor[key];
