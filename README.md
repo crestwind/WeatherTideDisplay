@@ -52,16 +52,20 @@ In the Ocean style, a thought bubble pops up over the fisherman every 2 to 4 min
 
 All his lines are in **fisherman-lines.js**, grouped by situation (`clear`, `rain`, `snow`, `hurricane`, `tornado`, `morning`, `night`, `hot`, `cold`, `catch`, `boot` and so on). To change them, open the file on GitHub, click the **pencil** icon, and edit the lines in quotes: keep the quotes and the comma at the end of each line. These words get filled in for you: `{temp}`, `{high}`, `{low}`, `{town}`, `{day}`, and in catch lines `{fish}`.
 
-### Changing the banner message
+### Changing the banner messages
 
-The biplane's banner says whatever is in the file **banner.txt** (one line, up to 70 characters; an empty file grounds the plane). To change it from any device:
+The biplane's banner messages are in the file **banner.txt**, **one message per line** (up to 70 characters each). Each time the biplane flies it shows the **next message in order**, and after the last one it starts again from the top. Each screen remembers which message it showed last, so reloading the page carries on with the next one instead of starting over. It's a good way to tell visitors about new features: add a line like `New: scuba diver in the Ocean style` when a feature goes live.
+
+Blank lines and lines starting with **#** are skipped, so the **#** lines at the top of the file are notes for you. A file with no messages grounds the plane.
+
+To change the messages from any device:
 
 1. Go to **github.com/crestwind/WeatherTideDisplay** and sign in.
 2. Click **banner.txt**, then the **pencil** icon (Edit this file).
-3. Replace the text with the new message.
+3. Add, change, remove or reorder the lines (the plane goes through them top to bottom).
 4. Click **Commit changes…**, then **Commit changes** again.
 
-tidalweather.com updates within a couple of minutes, and screens pick up the new message within half an hour (or straight away when reloaded with F5).
+tidalweather.com updates within a couple of minutes, and screens pick up the new messages within half an hour (or straight away when reloaded with F5).
 
 ### Adding it to a home screen
 
@@ -225,7 +229,7 @@ None appear with **Background animation** set to **Off**.
 
 | Event | Where | What happens | Fisherman |
 |---|---|---|---|
-| **Biplane with banner** | Sky and Ocean | Crosses the sky towing a banner (see [Changing the banner message](#changing-the-banner-message)) | |
+| **Biplane with banner** | Sky and Ocean | Crosses the sky towing a banner, showing the next message each time (see [Changing the banner messages](#changing-the-banner-messages)) | |
 | **Giant** | Switched off for now while he's redesigned | Peeks in from the left edge, fingers curled round the screen, looks around, and ducks back out | *"Did you hear something?"* |
 | **Mermaid** | Ocean, while he's fishing | Pops up at the stern, flings three of his fish back into the sea, waves, and dives with a flick of her tail | *"Where did my fish go?"* |
 | **UFO** | Ocean, while he's fishing | Swoops in, beams three fish up out of the boat with a tractor beam, and zips away | *"No one is going to believe me."* |
@@ -242,6 +246,8 @@ None appear with **Background animation** set to **Off**.
 | **Shooting stars** | Sky and Ocean | Clear nights | Every 30 seconds to 2 minutes |
 | **Black Hawk helicopters** | Ocean | Flying-event weather | Two or three in formation, every 3 to 7 minutes |
 | **Passenger jet** | Ocean | Flying-event weather | High up with a contrail (blinking lights at night), every 2½ to 6 minutes |
+| **Scuba diver** | Ocean | Not in high wind, heavy rain or storms | Every 1½ to 4 minutes |
+| **Motor yacht** | Ocean | Daytime on clear and partly cloudy days | Every 2 to 5 minutes |
 
 **Seagulls:** a single gull or a small group of up to five flies across, flapping with the odd glide, swooping gently up and down and tilting as they go. By day they're white with black wingtips, grey under a cloudy or wet sky, dark silhouettes at sunrise and sunset, and pale grey at night.
 
@@ -249,9 +255,13 @@ None appear with **Background animation** set to **Off**.
 
 **Jumping fish:** a fish leaps out of the sea away from the boat with a splash going out and coming back in. On a wide screen they only jump in the open sea on the left, since the forecast boxes cover the right.
 
+**Scuba diver:** a diver in a black wetsuit, orange mask and snorkel, with a yellow air tank, pops up out of the sea, looks left, then right, then back at you, and sinks again leaving a few bubbles. At night his headlamp is on. On a wide screen he comes up in the open water between the temperature and the boat.
+
+**Motor yacht:** a white motor yacht cruises along the far sea behind the fishing boat, leaving a white wake, and takes about half a minute to cross.
+
 ### Trying them out
 
-Add one of these to the end of the website address to see an event straight away: `?event=mermaid`, `?event=ufo`, `?event=eagle`, `?event=nessie`, `?event=biplane` (or `?plane`), `?heli`, `?jet`. All the major events except the biplane need the Ocean style, so add `&display=ocean` too, for example `tidalweather.com/?display=ocean&event=nessie`.
+Add one of these to the end of the website address to see an event straight away: `?event=mermaid`, `?event=ufo`, `?event=eagle`, `?event=nessie`, `?event=biplane` (or `?plane`), `?heli`, `?jet`, `?diver`, `?yacht`. All the major events except the biplane, and the diver and yacht, need the Ocean style, so add `&display=ocean` too, for example `tidalweather.com/?display=ocean&event=nessie`.
 
 **Showcase mode** plays them all quickly: major events back to back about 3 seconds apart, cycling through every one that fits the scene, minor events every few seconds, and the fisherman's regular thoughts paused (his reactions to events still show). **The test site is always in showcase mode** (its tag says TEST SITE · SHOWCASE), so new events can be seen straight away; add `?showcase=0` there to get the real timing. On any site, `?showcase` switches it on. tidalweather.com itself always uses the normal timing.
 

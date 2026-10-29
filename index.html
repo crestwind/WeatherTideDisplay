@@ -1336,14 +1336,22 @@ const Sky = (() => {
   // Seagulls: on clear and partly cloudy days, a gull or a small flock flies across every 20 s to 1 min.
   // They flap with the odd glide, climbing a little while flapping and sinking while gliding, swoop gently up and
   // down, and tilt to match. Wings move between up (w = 1) and down (w = -1).
-  // A biplane towing a banner (its text comes from banner.txt; see loadBanner) crosses the sky right to left. It's a
+  // A biplane towing a banner (its messages come from banner.txt, in turn; see loadBanner) crosses the sky right to left. It's a
   // major random event, so the events director (see eventsTick) decides when it flies. It flies level in calm weather
   // and bobs a little in a breeze. The banner trails a moment behind with only a small ripple, so it stays easy to read.
   let plane = null;
   const bannerCv = document.createElement('canvas'), planeCv = document.createElement('canvas');
   let bannerKey = '';
+  function nextBanner() {   // the message after the one this screen showed last (found by its words, so editing the list skips none)
+    const list = window.TW_BANNERS || [];
+    if (!list.length) return '';
+    let last = ''; try { last = localStorage.getItem('wt-banner-last') || ''; } catch (e) {}
+    const text = list[(list.indexOf(last) + 1) % list.length];
+    try { localStorage.setItem('wt-banner-last', text); } catch (e) {}
+    return text;
+  }
   function startPlane(t) {
-    const text = window.TW_BANNER || '';
+    const text = nextBanner();
     if (!text) return false;
     const k = Hd / 1080 * (Hd > Wd ? .8 : 1.3);   // big enough to read the banner from across a room
     plane = { k, t0: t, x: Wd + 30 * k, y0: Hd * (Hd > Wd ? .48 : .36), v: 120 * Math.min(Wd / 1920, 1.2) + 40, text };
@@ -1589,6 +1597,8 @@ const Sky = (() => {
       tint: night ? 'rgba(10,18,40,.55)' : golden ? 'rgba(70,32,44,.5)' : sc.storm ? 'rgba(30,38,44,.35)' : sc.tone === 'dark' ? 'rgba(30,40,50,.2)' : null,
       fishing: { st: 'wait', t: 0, dur: rnd(4, 10) }, off: document.createElement('canvas'), jumps: [], nextJump: rnd(2, 6),
       dolphins: [], nextPod: rnd(6, 15), dolphinsOk: pose === 'fish' && !sc.rain,   // dolphins on nice days only
+      diver: null, nextDiver: SHOWCASE || /[?&]diver\b/.test(location.search) ? 2 : rnd(40, 150), diverOk: pose === 'fish' || pose === 'mug',   // not in storms or wind
+      yacht: null, nextYacht: SHOWCASE || /[?&]yacht\b/.test(location.search) ? 4 : rnd(30, 120), yachtOk: tod === 'day' && (kind === 'clear' || kind === 'partly'),   // nice days only
       lhK: Math.min(sy, Wd / 700) * (portrait ? .8 : 1.15), lhX: Wd * (portrait ? .9 : .43),   // the lighthouse, right of the boat
       sparks: Array.from({ length: 220 }, () => ({ f: Math.pow(Math.random(), 1.4), o: (Math.random() + Math.random() - 1) * .9, w: rnd(.4, 1.2), sp: rnd(1.5, 4), ph: rnd(0, 6.3) })) };
   }
@@ -1930,7 +1940,7 @@ const Sky = (() => {
     g.fillStyle = base; g.fillRect(0, sea.top - 2, Wd, Hd - sea.top + 2);
     drawLighthouse(t);   // on the horizon, behind every wave
     if (tornado) drawSpray(t);
-    for (let i = 0; i <= b; i++) { drawLayer(L[i], t); drawDolphins(t, i); if (i === 1 && stage.ev && stage.ev.kind === 'nessie') drawNessie(t); }
+    for (let i = 0; i <= b; i++) { drawLayer(L[i], t); drawDolphins(t, i); drawSwimmers(t, i); if (i === 1 && stage.ev && stage.ev.kind === 'nessie') drawNessie(t); }
     // the boat rides layer b, rising, falling and tilting with the wave under it
     const bl = L[b], y = waveY(bl, sea.bx, t), slope = (waveY(bl, sea.bx + 30, t) - waveY(bl, sea.bx - 30, t)) / 60;
     const roll = Math.atan(slope) * .9 + Math.sin(t * 1.3) * .015 * sea.rough + (sea.rough > 2 ? Math.sin(t * 1.9) * .05 * (sea.rough - 2) : 0);   // extra rocking in storms
@@ -1938,7 +1948,7 @@ const Sky = (() => {
     const img = drawBoatSprite(t);
     g.save(); g.translate(sea.bx, y + 4 * sea.bs); g.rotate(roll); g.drawImage(img, -280 * sea.bs, -250 * sea.bs); g.restore();
     if (stage.ev && stage.ev.kind === 'mermaid') drawMermaid(t, y);   // at the stern, behind the nearer waves
-    for (let i = b + 1; i < L.length; i++) { drawLayer(L[i], t); drawDolphins(t, i); }
+    for (let i = b + 1; i < L.length; i++) { drawLayer(L[i], t); drawDolphins(t, i); drawSwimmers(t, i); }
     if (sea.pose === 'fish') drawJumps(t);   // leaping fish, only where he's fishing
     drawGlint(t, y, Hd);
     if (stage.ev) drawMajorFront(t, y);   // the UFO and its beam, Nessie's speech bubble
@@ -1974,7 +1984,7 @@ const Sky = (() => {
     if (S.display === 'mirror') return false;
     const fishing = !!sea && sea.pose === 'fish';
     switch (kind) {
-      case 'biplane': return !!window.TW_BANNER;                 // the biplane flies in any weather, in both styles
+      case 'biplane': return !!(window.TW_BANNERS || []).length;               // the biplane flies in any weather, in both styles
       case 'giant': return false;   // switched off until he's redesigned (his code is kept below)
       case 'mermaid': return fishing;
       case 'ufo': return flyOK() && fishing;
@@ -2417,6 +2427,115 @@ const Sky = (() => {
     }
   }
 
+  // A scuba diver now and then pops up in the open sea, looks left, then right, then back at us, and sinks again in a
+  // trail of bubbles (not in storms or high wind). At night his headlamp is on.
+  // A motor yacht cruises along the far sea behind the boat on clear and partly cloudy days, leaving a white wake.
+  // Both are minor random events, Ocean style only. Testing: ?diver and ?yacht bring them in a couple of seconds.
+  function diverTick(dt) {
+    if (sea.diver) { sea.diver.t += dt; if (sea.diver.t > sea.diver.dur + 2.5) sea.diver = null; return; }
+    if (!sea.diverOk || (sea.nextDiver -= dt) > 0) return;
+    sea.nextDiver = SHOWCASE ? rnd(4, 8) : rnd(90, 240);
+    // on a wide screen, in the open water between the temperature text and the boat (the forecast boxes cover the
+    // right); on a tall one, anywhere away from the boat
+    const wide = Wd > Hd, lo = (wide ? .17 : .08) * Wd, hi = (wide ? .44 : .92) * Wd, gap = 150 * sea.bs, li = 3;
+    let x = rnd(lo, hi);
+    if (Math.abs(x - sea.bx) < gap) x = sea.bx - gap - rnd(0, Math.max(0, sea.bx - gap - lo));
+    sea.diver = { li, x, t: 0, dur: 8, k: (.55 + 1.1 * sea.layers[li].d) * sea.bs };
+  }
+  function yachtTick(dt) {
+    const y = sea.yacht;
+    if (y) { y.x += y.dir * y.v * dt; if (y.dir > 0 ? y.x > Wd + y.tail : y.x < -y.tail) sea.yacht = null; return; }
+    if (!sea.yachtOk || (sea.nextYacht -= dt) > 0) return;
+    sea.nextYacht = SHOWCASE ? rnd(4, 8) : rnd(120, 300);
+    const dir = Math.random() < .5 ? 1 : -1, k = .55 * sea.bs, tail = 330 * k;
+    sea.yacht = { li: 1, dir, k, tail, x: dir > 0 ? -70 * k : Wd + 70 * k, v: 40 * Math.max(.6, Math.min(Wd / 1920, 1.2)) + 15 };
+  }
+  function drawSwimmers(t, layer) {
+    if (sea.yacht && sea.yacht.li === layer) drawYacht(t);
+    if (sea.diver && sea.diver.li === layer) drawDiver(t);
+  }
+  function drawDiver(t) {
+    const d = sea.diver, L = sea.layers[d.li], k = d.k, wy = waveY(L, d.x, t), night = sea.night;
+    const down = d.dur - 1.3, up = d.t < 1 ? ease(d.t) : d.t < down ? 1 : 1 - ease((d.t - down) / 1.1);
+    // where he's looking: -1 left, 1 right, 0 at us
+    const keys = [[1.4, 0], [2.2, -1], [3.6, -1], [4.6, 1], [5.9, 1], [6.5, 0]];
+    let look = 0;
+    for (let i = 1; i < keys.length; i++) {
+      const [ta, la] = keys[i - 1], [tb, lb] = keys[i];
+      if (d.t >= ta && d.t <= tb) look = la + (lb - la) * ease((d.t - ta) / (tb - ta));
+      else if (d.t > tb) look = lb;
+    }
+    const bob = Math.sin(t * 1.6) * 2 * k, base = wy + (1 - up) * 62 * k + bob;
+    const suit = night ? '#0c1016' : '#1b2229', mask = night ? '#7a4a10' : '#f39c12', glass = night ? '#1d3348' : '#9fd8f2';
+    if (up > 0) {
+      g.save(); clipAboveWave(L, d.x - 50 * k, d.x + 50 * k, t);
+      g.translate(d.x, base); g.scale(k, k);
+      g.fillStyle = night ? '#6b5a14' : '#f1c40f'; g.beginPath(); g.roundRect(9, -30, 8, 34, 3); g.fill();   // air tank behind his shoulder
+      g.fillStyle = '#8a9299'; g.fillRect(11, -34, 4, 5);                                                       // its valve
+      g.fillStyle = suit; g.beginPath(); g.ellipse(0, 8, 24, 15, 0, 0, 7); g.fill();                            // shoulders
+      g.beginPath(); g.arc(0, -16, 12, 0, 7); g.fill();                                                          // hood
+      const mx = look * 6, mw = 17 * (1 - .4 * Math.abs(look));
+      g.fillStyle = night ? '#5c4636' : '#e3b48f'; g.beginPath(); g.ellipse(mx * .9, -14, mw * .5, 8, 0, 0, 7); g.fill();   // face
+      g.fillStyle = mask; g.beginPath(); g.roundRect(mx - mw / 2 - 1.5, -24, mw + 3, 10, 4); g.fill();          // mask
+      g.fillStyle = glass; g.beginPath(); g.roundRect(mx - mw / 2, -22.5, mw, 7, 3); g.fill();
+      if (!night) { g.fillStyle = 'rgba(255,255,255,.75)'; g.fillRect(mx - mw / 2 + 2, -21.5, 3, 2); }          // glint
+      g.fillStyle = '#3a4048'; g.beginPath(); g.roundRect(mx - 3, -12, 6, 4, 1.5); g.fill();                     // regulator
+      g.strokeStyle = '#3a4048'; g.lineWidth = 2; g.beginPath(); g.moveTo(mx + 3, -10); g.quadraticCurveTo(14, -8, 13, 2); g.stroke();   // its hose
+      g.strokeStyle = mask; g.lineWidth = 3; g.lineCap = 'round';                                                // snorkel
+      g.beginPath(); g.moveTo(-10 + look * 3, -14); g.quadraticCurveTo(-15 + look * 3, -20, -13 + look * 3, -36); g.stroke();
+      if (night) {   // headlamp
+        const hx = mx * .8, glow = g.createRadialGradient(hx, -29, 0, hx, -29, 14);
+        glow.addColorStop(0, 'rgba(255,240,190,.9)'); glow.addColorStop(1, 'rgba(255,240,190,0)');
+        g.fillStyle = glow; g.beginPath(); g.arc(hx, -29, 14, 0, 7); g.fill();
+        g.fillStyle = '#fff6d8'; g.beginPath(); g.arc(hx, -29, 2.6, 0, 7); g.fill();
+      }
+      g.restore();
+    }
+    splashRing(d.x, wy, d.t - .2, k * 1.3);          // where he came up
+    splashRing(d.x, wy, d.t - down - .7, k * 1.3);   // and where he went under
+    if (d.t > down + .6) {   // bubbles popping up after him
+      const a = d.t - down - .6;
+      g.fillStyle = `rgba(255,255,255,${.7 * Math.max(0, 1 - a / 1.9)})`;
+      for (let i = 0; i < 6; i++) {
+        const s = (a * 1.8 + i * .37) % 1;
+        g.beginPath(); g.arc(d.x + Math.sin(i * 2.3 + t * 3) * 9 * k, wy - s * 5 * k, (1 + s * 1.6) * k, 0, 7); g.fill();
+      }
+    }
+  }
+  function drawYacht(t) {
+    const y = sea.yacht, L = sea.layers[y.li], k = y.k, wy = waveY(L, y.x, t);
+    const tilt = Math.atan((waveY(L, y.x + 40 * k, t) - waveY(L, y.x - 40 * k, t)) / (80 * k)) * .7;
+    // the wake: two white lines spreading out behind the stern and fading away
+    for (const side of [-1, 1]) {
+      g.beginPath();
+      for (let s = 0; s <= 1; s += .05) {
+        const x = y.x - y.dir * (50 + 280 * s) * k;
+        const py = waveY(L, x, t) + side * s * 9 * k + 1.5 * k;
+        s ? g.lineTo(x, py) : g.moveTo(x, py);
+      }
+      const gr = g.createLinearGradient(y.x - y.dir * 50 * k, 0, y.x - y.dir * 330 * k, 0);
+      gr.addColorStop(0, 'rgba(255,255,255,.8)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      g.strokeStyle = gr; g.lineWidth = Math.max(1, 2.2 * k); g.stroke();
+    }
+    g.save(); clipAboveWave(L, y.x - 80 * k, y.x + 80 * k, t);
+    g.translate(y.x, wy + 3 * k); g.rotate(tilt); g.scale(y.dir * k, k);
+    g.fillStyle = '#f7f8f9';
+    g.beginPath(); g.moveTo(-58, -14); g.lineTo(42, -14); g.quadraticCurveTo(60, -13, 68, -9); g.lineTo(52, 4); g.lineTo(-56, 4); g.closePath(); g.fill();   // hull
+    g.fillStyle = '#1f3a5a'; g.beginPath(); g.moveTo(-57, -5); g.lineTo(60, -5); g.lineTo(57, -2); g.lineTo(-56, -2); g.fill();   // stripe
+    g.fillStyle = '#eef0f2';
+    g.beginPath(); g.moveTo(-40, -14); g.lineTo(-40, -27); g.lineTo(14, -27); g.lineTo(32, -14); g.closePath(); g.fill();   // cabin
+    g.beginPath(); g.moveTo(-30, -27); g.lineTo(-30, -36); g.lineTo(0, -36); g.lineTo(10, -27); g.closePath(); g.fill();    // flybridge
+    g.fillStyle = '#2b3a4a';
+    g.beginPath(); g.moveTo(-36, -23); g.lineTo(14, -23); g.lineTo(24, -17); g.lineTo(-36, -17); g.closePath(); g.fill();   // windows
+    g.beginPath(); g.moveTo(-2, -35); g.lineTo(6, -28); g.lineTo(-2, -28); g.closePath(); g.fill();                         // windscreen
+    g.strokeStyle = '#8a9299'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(-18, -36); g.lineTo(-18, -46); g.moveTo(-24, -44); g.lineTo(-12, -44); g.stroke();   // radar mast
+    g.restore();
+    // white water at the bow
+    const bx = y.x + y.dir * 58 * k, by = waveY(L, bx, t);
+    g.fillStyle = 'rgba(255,255,255,.75)';
+    for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(bx - y.dir * i * 5 * k, by - (2 + Math.abs(Math.sin(t * 7 + i)) * 3) * k, (2.6 - i * .4) * k, 0, 7); g.fill(); }
+  }
+
   function moonSprite() {
     const r = Hd * .048, R = Math.round(r * 6), [c, x] = mk(R * 2, R * 2);
     // Real moon phase: 0 = new, .5 = full.
@@ -2579,6 +2698,7 @@ const Sky = (() => {
     if (sea && sea.pose === 'fish') { if (!saluting()) fishingTick(dt); jumpTick(dt); }   // he stops to salute the flag
     if (sea) talkTick(t);
     if (sea && sea.dolphinsOk) podTick(dt);
+    if (sea) { diverTick(dt); yachtTick(dt); }
     updateGlass(dt, t);
     for (const c of clouds) {
       c.x += c.v * gust * dt;
@@ -3611,13 +3731,15 @@ new IntersectionObserver(es => es.forEach(e => TideYear.show(e.isIntersecting)),
 $('#moreHint').onclick = () => $('#more').scrollIntoView({ behavior: 'smooth' });
 $('#chgLoc').onclick = () => openSettings();   // settings opens with the location box selected, ready to type
 
-// The biplane's banner message comes from banner.txt next to this page, so it can be changed without touching the
-// code (an empty file grounds the plane). If the file can't be read (e.g. the test copy opened from disk), this is used.
-window.TW_BANNER = 'Check out our display styles in settings';
+// The biplane's banner messages come from banner.txt next to this page, one per line, so they can be changed without
+// touching the code (blank lines and lines starting with # are skipped; a file with no messages grounds the plane).
+// Each flight shows the next message in order, round and round, and each screen remembers which one it showed last,
+// so a reload carries on from there. If the file can't be read (e.g. the test copy opened from disk), this is used.
+window.TW_BANNERS = ['Check out our display styles in settings'];
 async function loadBanner() {
   try {
     const r = await fetch('banner.txt', { cache: 'no-store' });
-    if (r.ok) window.TW_BANNER = (await r.text()).replace(/\s+/g, ' ').trim().slice(0, 70);
+    if (r.ok) window.TW_BANNERS = (await r.text()).split(/\r?\n/).map(l => l.replace(/\s+/g, ' ').trim().slice(0, 70)).filter(l => l && !l.startsWith('#'));
   } catch (e) { /* keep the built-in message */ }
 }
 loadBanner(); setInterval(loadBanner, 30 * 60e3);
