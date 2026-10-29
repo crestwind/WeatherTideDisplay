@@ -1675,7 +1675,7 @@ const Sky = (() => {
   // he thinks a line from fisherman-lines.js that suits the weather, time of day and temperature, and now and then
   // says something about his catch. He stays quiet while the biplane is passing. Lives outside build(), so a scene
   // change doesn't reset it. ?talk in the address makes him start straight away.
-  const talk = { next: performance.now() / 1000 + (/[?&]talk/.test(location.search) ? 3 : 25), line: '', start: 0, dur: 9, recent: [], react: null };
+  const talk = { next: performance.now() / 1000 + (/[?&]talk/.test(location.search) ? 3 : 25), line: '', start: 0, dur: 9, recent: [], react: null, kind: null };
   function fillIn(s, extra) {
     const d = W && W.daily, c = W && W.current, r = v => v == null ? '' : Math.round(v);
     return s.replace(/\{temp\}/g, c ? r(c.temperature_2m) : '').replace(/\{high\}/g, d ? r(d.temperature_2m_max[0]) : '')
@@ -1706,6 +1706,14 @@ const Sky = (() => {
   }
   function talkTick(t) {
     if (!sea || plane) { if (talk.line && plane) talk.line = ''; return; }   // never over the plane
+    // When the weather changes, react to it soon instead of waiting out the 2-4 minute timer: within a few seconds
+    // for a hurricane or tornado (dropping any calmer thought he's in the middle of), within ~15 s otherwise.
+    if (mode.kind !== talk.kind) {
+      const urgent = /hurricane|tornado/.test(mode.kind), changed = talk.kind != null;
+      talk.kind = mode.kind;
+      if (urgent) { talk.line = ''; talk.next = Math.min(talk.next, t + 3); }
+      else if (changed) talk.next = Math.min(talk.next, t + rnd(8, 15));
+    }
     if (talk.line) {
       if (t - talk.start > talk.dur) { talk.line = ''; talk.next = t + (sea.pose === 'hold' && /hurricane|tornado/.test(mode.kind) ? rnd(50, 80) : rnd(120, 240)); }
       return;
