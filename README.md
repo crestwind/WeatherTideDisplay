@@ -219,7 +219,7 @@ Which ones you get depends on the display style:
 | Display style | Random events |
 |---|---|
 | **Ocean** | All of them. A major event every **2½ to 3½ minutes**, and **every other one is the biplane** (the first about 30 seconds after the page opens), so its banner gets seen often. The ones in between are picked at random from those that suit the scene, never the same as the previous in-between one. They wait for a thought the fisherman is already having to finish; he stays quiet during the event, and any thought that comes due while it's on is skipped. |
-| **Forest** | Its own set: the **biplane**, **Bigfoot**, the **bear** and the **raccoon** as major events (same timing as the Ocean style: one every 2½ to 3½ minutes, every other one the biplane), and its own minor events: **geese and crows** instead of seagulls, **deer**, **rabbits**, a **squirrel**, an **owl** at night, **fireflies** on warm summer evenings, and the **shooting stars**. |
+| **Forest** | Its own set: the **biplane**, **Bigfoot**, the **bear** and the **raccoon** as major events (same timing as the Ocean style: one every 2½ to 3½ minutes, every other one the biplane), and its own minor events: **geese and crows** by day and **bats** at night instead of seagulls, a **hot air balloon**, **deer**, **rabbits**, a **squirrel**, an **owl** at night, **fireflies** on warm summer evenings, and the **shooting stars**. |
 | **Sky** | Kept calm and professional: only **the biplane every 5 minutes** (the first about 30 seconds after the page opens), the **seagulls** and the **shooting stars**. |
 | **Smart mirror** | None. |
 
@@ -253,12 +253,14 @@ None appear with **Background animation** set to **Off**.
 | **Passenger jet** | Ocean | Flying-event weather | High up with a contrail (blinking lights at night), every 2½ to 6 minutes |
 | **Scuba diver** | Ocean | Not in high wind, heavy rain or storms | Every 1½ to 4 minutes |
 | **Motor yacht** | Ocean | Daytime on clear and partly cloudy days | Every 2 to 5 minutes |
-| **Geese and crows** | Forest | Flying-event weather | A V of geese (or two to four crows) every 40 seconds to 2 minutes |
+| **Geese and crows** | Forest | Daytime, flying-event weather | A V of geese (or two to four crows) every 40 seconds to 2 minutes |
+| **Bats** | Forest | Night, flying-event weather | Two to four bats flitting over the treetops, every 40 seconds to 2 minutes (no birds at night) |
+| **Hot air balloon** | Forest | Daytime, not in bad weather | Lifts up from behind the trees, drifts across the open sky and rises out of sight, every 3 to 6 minutes |
 | **Deer** | Forest | Not in bad weather | Every 2 to 5 minutes |
 | **Rabbit** | Forest | Not in bad weather | Every 1 to 3 minutes |
 | **Squirrel** | Forest | Daytime, not in bad weather | Every 1½ to 4 minutes |
 | **Owl** | Forest | Night, not in bad weather | Every 2 to 4 minutes |
-| **Fireflies** | Forest | Evenings and nights from May to September, 58°F or warmer, not in bad weather | Every 2 to 4 minutes, for about 45 seconds |
+| **Fireflies** | Forest | Evenings and nights from May to September, 58°F or warmer, not in bad weather (on the test site, and with `?fireflies`, any time of year) | Every 2 to 4 minutes, for about 45 seconds |
 
 **Seagulls:** a single gull or a small group of up to five flies across, flapping with the odd glide, swooping gently up and down and tilting as they go. By day they're white with black wingtips, grey under a cloudy or wet sky, dark silhouettes at sunrise and sunset, and pale grey at night.
 
@@ -274,7 +276,7 @@ None appear with **Background animation** set to **Off**.
 
 ### Trying them out
 
-Add one of these to the end of the website address to see an event straight away: `?event=mermaid`, `?event=ufo`, `?event=eagle`, `?event=nessie`, `?event=biplane` (or `?plane`), `?heli`, `?jet`, `?diver`, `?yacht`. All the major events except the biplane, and the diver and yacht, need the Ocean style, so add `&display=ocean` too, for example `tidalweather.com/?display=ocean&event=nessie`. For the Forest style use `?display=forest` with `&event=bigfoot`, `&event=bear` or `&event=raccoon`, or `&deer`, `&rabbit`, `&squirrel`, `&owl`, `&fireflies` or `&geese` (each only shows in the weather and time of day it suits).
+Add one of these to the end of the website address to see an event straight away: `?event=mermaid`, `?event=ufo`, `?event=eagle`, `?event=nessie`, `?event=biplane` (or `?plane`), `?heli`, `?jet`, `?diver`, `?yacht`. All the major events except the biplane, and the diver and yacht, need the Ocean style, so add `&display=ocean` too, for example `tidalweather.com/?display=ocean&event=nessie`. For the Forest style use `?display=forest` with `&event=bigfoot`, `&event=bear` or `&event=raccoon`, or `&deer`, `&rabbit`, `&squirrel`, `&owl`, `&fireflies`, `&geese` (bats at night) or `&balloon` (each only shows in the weather and time of day it suits).
 
 **Showcase mode** plays them all quickly: major events back to back about 3 seconds apart, cycling through every one that fits the scene, minor events every few seconds, and the fisherman's regular thoughts paused (his reactions to events still show). **The test site is always in showcase mode** (its tag says TEST SITE · SHOWCASE), so new events can be seen straight away; add `?showcase=0` there to get the real timing. On any site, `?showcase` switches it on. tidalweather.com itself always uses the normal timing.
 

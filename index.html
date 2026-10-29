@@ -1994,11 +1994,12 @@ const Sky = (() => {
       sparks: [], smoke: [], nextSpark: 0, nextSmoke: 0,
       eat: { st: 'roast', t: 0, dur: rnd(6, 10), toast: 0, has: true },
       wind: sc.swirl ? .09 : sc.tornado ? .08 : sc.wind ? .05 : sc.storm ? .03 : 0 };   // how hard the wind bends the trees
-    // the Forest's own minor random events, each on its own timer (?deer, ?rabbit, ?owl, ?fireflies, ?squirrel and
-    // ?geese bring one in a few seconds)
+    // the Forest's own minor random events, each on its own timer (?deer, ?rabbit, ?owl, ?fireflies, ?squirrel,
+    // ?geese (bats at night) and ?balloon bring one in a few seconds)
     const now = performance.now() / 1000, first = (n, lo, hi) => now + (SHOWCASE || new RegExp('[?&]' + n + '\\b').test(location.search) ? rnd(2, 5) : rnd(lo, hi));
-    f.next = { deer: first('deer', 60, 150), rabbit: first('rabbit', 30, 90), owl: first('owl', 30, 100), flies: first('fireflies', 20, 60), squirrel: first('squirrel', 40, 120), birds: first('geese', 8, 25) };
-    f.deer = f.rabbit = f.owl = f.flies = f.squirrel = f.flock = null; f.bagBack = 0;
+    f.next = { deer: first('deer', 60, 150), rabbit: first('rabbit', 30, 90), owl: first('owl', 30, 100), flies: first('fireflies', 20, 60), squirrel: first('squirrel', 40, 120), birds: first('geese', 8, 25), balloon: first('balloon', 60, 180) };
+    f.deer = f.rabbit = f.owl = f.flies = f.squirrel = f.flock = f.balloon = null; f.bagBack = 0;
+    f.fliesAnyTime = SHOWCASE || /[?&]fireflies\b/.test(location.search);
     f.snag = { x: Wd * (portrait ? .9 : .445), y: f.top + 46 * Hd / 1080, h: 125 * Hd / 1080 };   // a dead tree on the right of the clearing
     f.bg = forestBackdrop(f, tint);
     return f;
@@ -2104,28 +2105,35 @@ const Sky = (() => {
     run('squirrel', calm && !f.night, 90, 240, () => ({ dur: 10 }));
     run('owl', calm && f.night, 120, 240, () => ({ dur: 13 }));
     const month = new Date().getMonth(), warm = !W || (imp() ? W.current.temperature_2m : W.current.temperature_2m * 9 / 5 + 32) >= 58;
-    run('flies', calm && (f.night || f.golden) && month >= 4 && month <= 8 && warm, 120, 240, () => ({ dur: 45,
+    // (on the test site and with ?fireflies they come any time of year, so they can be seen)
+    run('flies', calm && (f.night || f.golden) && (f.fliesAnyTime || month >= 4 && month <= 8 && warm), 120, 240, () => ({ dur: 45,
       pts: Array.from({ length: Math.round(34 * Math.max(sx, .6)) }, () => ({ x: rnd(0, Wd * (wide ? .46 : 1)), y: rnd(f.top + 10 * sy, f.gy + 40 * sy), ph: rnd(0, 6.3), sp: rnd(.6, 1.4), dx: rnd(0, 6.3) })) }));
-    // birds: a V of geese or a few crows crossing the sky
+    // a hot air balloon lifting up from behind the trees, drifting across the open sky and rising out of sight, on calm days
+    run('balloon', calm && !f.night && flyOK(), 180, 360, () => ({ dur: 70, xs: Wd * (wide ? rnd(.22, .27) : rnd(.15, .4)), xe: Wd * (wide ? rnd(.4, .44) : rnd(.6, .85)),
+      cols: [['#d8432f', '#f2c230', '#2f6db5'], ['#2f9e6b', '#f2efe6', '#d8432f'], ['#7a3fb0', '#f29a30', '#f2c230']][Math.floor(Math.random() * 3)] }));
+    // by day a V of geese or a few crows crossing the sky; at night bats flitting about instead
     if (f.flock) {
       const fl = f.flock; fl.t += dt;
       for (const b of fl.list) { b.x += fl.vx * dt; b.ph += b.fq * dt; b.y += Math.sin(t * b.wf + b.wp) * b.wa * dt; }
-      if (fl.list.every(b => fl.vx > 0 ? b.x > Wd + 60 : b.x < -60)) { f.flock = null; N.birds = gap(40, 120); }
+      if (fl.list.every(b => fl.vx > 0 ? b.x > Wd + 60 : b.x < -60) || (fl.kind === 'bats') !== f.night) { f.flock = null; N.birds = gap(40, 120); }
     } else if (flyOK() && t > N.birds) {
-      const geese = Math.random() < .6, dir = Math.random() < .5 ? 1 : -1, y0 = Hd * rnd(.08, .3), k = sy * (geese ? 1 : .9);
+      const kind = f.night ? 'bats' : Math.random() < .6 ? 'geese' : 'crows', geese = kind === 'geese', bats = kind === 'bats';
+      const dir = Math.random() < .5 ? 1 : -1, y0 = bats ? f.top - rnd(50, 150) * sy : Hd * rnd(.08, .3), k = sy * (geese ? 1 : bats ? 1.4 : .9);   // (bats flit just over the treetops)
       const n = geese ? (Math.random() < .5 ? 7 : 9) : 2 + Math.floor(Math.random() * 3), list = [];
       for (let i = 0; i < n; i++) {
         const row = Math.ceil(i / 2), side = i % 2 ? 1 : -1;   // geese: the leader in front, the others trailing back in two lines
         list.push(geese ? { x: (dir > 0 ? -40 : Wd + 40) - dir * row * 30 * k, y: y0 + side * row * 17 * k, ph: rnd(0, 6.3), fq: 6.5, wa: 2 * k, wf: .8, wp: rnd(0, 6.3) }
+          : bats ? { x: (dir > 0 ? -40 : Wd + 40) - dir * rnd(0, 160) * k, y: y0 + rnd(-50, 50) * k, ph: rnd(0, 6.3), fq: rnd(16, 20), wa: rnd(60, 110) * k, wf: rnd(2.5, 4.5), wp: rnd(0, 6.3) }   // (darting up and down)
           : { x: (dir > 0 ? -40 : Wd + 40) - dir * rnd(0, 140) * k, y: y0 + rnd(-40, 40) * k, ph: rnd(0, 6.3), fq: rnd(9, 12), wa: 14 * k, wf: rnd(1.5, 2.5), wp: rnd(0, 6.3) });
       }
-      f.flock = { geese, list, k, t: 0, vx: dir * (geese ? 85 : 110) * Math.max(.6, Math.min(sx, 1.2)) };
+      f.flock = { kind, geese, list, k, t: 0, vx: dir * (geese ? 85 : bats ? 95 : 110) * Math.max(.6, Math.min(sx, 1.2)) };
     }
   }
   function drawForest(ts) {
     const f = forest, t = ts / 1000, s = f.s, C = f.C, lit = !f.inside;
     const ev = stage.ev && ['bigfoot', 'bear', 'raccoon'].includes(stage.ev.kind) ? stage.ev : null;
-    if (f.flock) drawForestBirds(f, t);   // in the sky, behind the trees
+    if (f.balloon) drawBalloon(f, t);   // in the sky, behind the trees
+    if (f.flock) drawForestBirds(f, t);
     g.drawImage(f.bg, 0, 0);
     // the middle and near rows of pines, each bent over from its base when the wind blows (the near ones more)
     const layer = (img, base, lean) => {
@@ -2355,7 +2363,18 @@ const Sky = (() => {
     for (const b of fl.list) {
       const w = Math.sin(b.ph);   // wingbeat: 1 up, -1 down
       g.save(); g.translate(b.x, b.y); g.scale(d * k, k); g.lineCap = 'round';
-      if (fl.geese) {
+      if (fl.kind === 'bats') {   // a bat seen from below: pointed ears, wings spread both ways with a scalloped edge, beating fast
+        const p = new Path2D();
+        p.ellipse(0, .5, 2.4, 3.6, 0, 0, 7); p.arc(0, -3, 2.2, 0, 7);
+        for (const sg of [-1, 1]) {
+          p.moveTo(sg * .4, -4.5); p.lineTo(sg * 1.4, -7.5); p.lineTo(sg * 2, -4); p.closePath();   // ear
+          p.moveTo(sg * 1.5, -1.5); p.lineTo(sg * 6, -5 - 3 * w); p.lineTo(sg * 14, -3 - 6 * w);   // wing, up to the wrist and out to the tip
+          p.quadraticCurveTo(sg * 12, -2 * w, sg * 10.5, 2 - 2 * w); p.quadraticCurveTo(sg * 9, -w, sg * 7, 2.5 - w);
+          p.quadraticCurveTo(sg * 5, .5, sg * 2, 2.5); p.closePath();
+        }
+        g.strokeStyle = 'rgba(150,170,210,.45)'; g.lineWidth = 1.6; g.stroke(p);   // a faint moonlit edge (under the fill, so only the outline shows)
+        g.fillStyle = '#0b0c10'; g.fill(p);
+      } else if (fl.geese) {
         const body = f.night ? '#2c3038' : f.golden ? '#3a2a30' : '#6e6355', black = f.night ? '#15181d' : '#1d1d1f';
         g.fillStyle = body; g.beginPath(); g.ellipse(0, 0, 11, 4.2, 0, 0, 7); g.fill();
         g.strokeStyle = black; g.lineWidth = 2.4; g.beginPath(); g.moveTo(8, -1); g.quadraticCurveTo(14, -3, 18, -3); g.stroke();   // neck
@@ -2372,6 +2391,27 @@ const Sky = (() => {
       }
       g.restore();
     }
+  }
+  // A striped hot air balloon: lifts up from behind the trees (in the open sky between the clock and the forecast
+  // boxes on a wide screen), drifts across bobbing gently, and rises slowly out of sight. Its burner flares now and then.
+  function drawBalloon(f, t) {
+    const b = f.balloon, k = Hd / 1080 * 1.1, u = b.t / b.dur, hang = Hd * .24;
+    const x = lrp(b.xs, b.xe, u) + Math.sin(b.t * .2) * 8 * k;
+    const y = (u < .3 ? lrp(f.top + 60 * k, hang, ease(u / .3)) : u < .65 ? hang : lrp(hang, -150 * k, ease((u - .65) / .35))) + Math.sin(b.t * .5) * 4 * k;
+    g.save(); g.translate(x, y); g.scale(k, k);
+    const env = new Path2D();
+    env.moveTo(0, 30); env.bezierCurveTo(-14, 20, -34, 0, -34, -22); env.bezierCurveTo(-34, -46, -18, -58, 0, -58);
+    env.bezierCurveTo(18, -58, 34, -46, 34, -22); env.bezierCurveTo(34, 0, 14, 20, 0, 30); env.closePath();
+    g.save(); g.clip(env);
+    for (let i = 4; i >= 0; i--) { g.fillStyle = b.cols[i % 3]; g.beginPath(); g.ellipse(0, -14, 35 * (i + 1) / 5, 50, 0, 0, 7); g.fill(); }   // the gores, curving round it
+    const sh = g.createLinearGradient(-34, 0, 34, 0); sh.addColorStop(0, 'rgba(255,255,255,.18)'); sh.addColorStop(.45, 'rgba(255,255,255,0)'); sh.addColorStop(1, 'rgba(0,0,0,.3)');
+    g.fillStyle = sh; g.fillRect(-36, -60, 72, 92);   // lit from the left
+    if (f.golden) { g.fillStyle = 'rgba(90,40,60,.3)'; g.fillRect(-36, -60, 72, 92); }
+    g.restore();
+    g.strokeStyle = '#4a3a2a'; g.lineWidth = 1; g.beginPath(); g.moveTo(-8, 27); g.lineTo(-6, 44); g.moveTo(8, 27); g.lineTo(6, 44); g.moveTo(0, 30); g.lineTo(0, 44); g.stroke();   // ropes
+    g.fillStyle = '#8a5a2e'; g.fillRect(-7, 44, 14, 10); g.fillStyle = '#5e3c1e'; g.fillRect(-7.5, 43, 15, 2.2);   // wicker basket
+    if (b.t % 6 < .8) { g.fillStyle = '#ffb347'; g.beginPath(); g.moveTo(-2.5, 41); g.quadraticCurveTo(0, 30 - Math.sin(t * 30) * 2, 2.5, 41); g.fill(); }   // the burner
+    g.restore();
   }
   function drawSnag(f, t) {   // the dead tree: a broken grey trunk with a few bare branches, used by the owl and the squirrel
     const n = f.snag, C = f.C, sy = Hd / 1080, h = n.h, w = 9 * sy;
