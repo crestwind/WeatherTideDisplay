@@ -64,12 +64,33 @@ async function feedback(req, env, origin) {
   return reply({ ok: true }, 200, origin);
 }
 
+// Robots, scrapers and link previews: skipped by their browser name, or because they come from a data center or cloud host
+// (real visitors come through home internet, phone carriers and offices). Cloudflare tells us the network (cf.asn),
+// nothing is kept about it. Cloudflare and Akamai aren't on the list: iCloud Private Relay and WARP users come through them.
+const BOT_UA = /bot|crawl|spider|slurp|scrap|preview|headless|phantom|puppeteer|playwright|selenium|lighthouse|pingdom|uptime|monitor|facebookexternalhit|embedly|whatsapp|curl|wget|python|httpclient|okhttp|go-http|java\/|node-fetch|axios|libwww/i;
+const CLOUD_ASN = new Set([16509, 14618, 8987,   // Amazon (AWS)
+  15169, 396982, 19527,                          // Google, Google Cloud
+  8075, 8068,                                    // Microsoft (Azure)
+  14061, 16276, 24940, 213230, 63949, 20473, 31898, 45102, 37963, 132203, 51167, 12876, 60781, 28753, 9009,
+  // DigitalOcean, OVH, Hetzner, Linode, Vultr, Oracle, Alibaba, Tencent, Contabo, Scaleway, Leaseweb, M247
+  46562, 397423, 53667, 36352, 55286, 62567, 8100, 40021, 29802, 7506, 197540, 47583, 212238, 211252]);
+  // and more hosting companies: Performive, Tier.Net, FranTech/BuyVM, ColoCrossing, B2 Net, DigitalOcean, QuadraNet,
+  // Contabo US, HiVelocity, GMO, netcup, Hostinger, Datacamp/CDN77, Delis
+const CLOUD_ORG = /amazon|aws|google cloud|microsoft|azure|digitalocean|ovh|hetzner|linode|vultr|choopa|oracle|alibaba|tencent|contabo|scaleway|leaseweb|m247|colocrossing|quadranet|hostinger|hosting|datacenter|data center|server|vps|cloud/i;
+function isBot(req) {
+  const ua = req.headers.get('User-Agent') || '', cf = req.cf || {};
+  if (!ua || BOT_UA.test(ua)) return true;
+  if (CLOUD_ASN.has(+cf.asn)) return true;
+  const org = String(cf.asOrganization || '');
+  return CLOUD_ORG.test(org) && !/cloudflare|akamai|fastly|apple/i.test(org);
+}
+
 async function hit(req, env, origin) {
   let b = {};
   try { b = await req.json(); } catch (e) {}
-  const kind = b.kind === 'new' ? 'new' : 'returning';
+  const kind = isBot(req) ? 'bots' : b.kind === 'new' ? 'new' : 'returning';   // (robots are tallied apart, not in the visitor counts)
   const key = 'd:' + today(), day = JSON.parse((await env.KV.get(key)) || '{"new":0,"returning":0}');
-  day[kind]++;
+  day[kind] = (day[kind] || 0) + 1;
   await env.KV.put(key, JSON.stringify(day));
   return reply({ ok: true }, 200, origin);
 }
@@ -81,7 +102,7 @@ async function stats(url, env) {
   const sum = (n, k) => days.slice(0, n).reduce((s, [, d]) => s + d[k], 0);
   const max = Math.max(1, ...days.slice(0, 60).map(([, d]) => d.new + d.returning));
   const fmt = d => new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
-  const rows = days.slice(0, 60).map(([d, v]) => `<tr><td>${fmt(d)}</td><td>${v.new}</td><td>${v.returning}</td><td>${v.new + v.returning}</td>
+  const rows = days.slice(0, 60).map(([d, v]) => `<tr><td>${fmt(d)}</td><td>${v.new}</td><td>${v.returning}</td><td>${v.new + v.returning}</td><td class="bt">${v.bots || 0}</td>
     <td class="bar"><i style="width:${v.new / max * 100}%" class="n"></i><i style="width:${v.returning / max * 100}%" class="r"></i></td></tr>`).join('');
   const tile = (label, n) => `<div class="t"><div class="k">${label}</div><div class="v">${sum(n, 'new') + sum(n, 'returning')}</div><div class="s">${sum(n, 'new')} new · ${sum(n, 'returning')} returning</div></div>`;
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -90,11 +111,11 @@ body{margin:0;padding:24px 16px;font:16px system-ui,sans-serif;background:#0b1a3
 h1{font-size:22px;margin:0 0 4px}.sub{color:#9fb0c8;margin:0 0 20px;font-size:14px}.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:24px}
 .t{background:#14254d;border-radius:12px;padding:14px}.k{color:#9fb0c8;font-size:13px;text-transform:uppercase;letter-spacing:.06em}.v{font-size:30px;font-weight:600}.s{color:#9fb0c8;font-size:13px}
 table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px 8px;text-align:right;border-top:1px solid #1e3060}th{color:#9fb0c8;font-weight:600;border:0}td:first-child,th:first-child{text-align:left}
-.bar{width:40%;text-align:left}.bar i{display:inline-block;height:10px;vertical-align:middle}.n{background:#8fd3ff;border-radius:5px 0 0 5px}.r{background:#4aa8f0;border-radius:0 5px 5px 0}
+.bt{color:#6f80a0}.bar{width:36%;text-align:left}.bar i{display:inline-block;height:10px;vertical-align:middle}.n{background:#8fd3ff;border-radius:5px 0 0 5px}.r{background:#4aa8f0;border-radius:0 5px 5px 0}
 .key{font-size:13px;color:#9fb0c8;margin:8px 0 12px}.key i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 12px;vertical-align:middle}
-</style></head><body><main><h1>Tidal Weather visitors</h1><p class="sub">Devices that opened tidalweather.com, counted at most once per device per day. New = first visit from that device.</p>
+</style></head><body><main><h1>Tidal Weather visitors</h1><p class="sub">Devices that opened tidalweather.com, counted at most once per device per day. New = first visit from that device. Robots, scrapers and visits from data centers and cloud hosts are left out of the counts (shown in their own column, from Oct 31, 2026).</p>
 <div class="tiles">${tile('Today', 1)}${tile('Last 7 days', 7)}${tile('Last 30 days', 30)}</div>
 <div class="key">Daily visits:<i style="background:#8fd3ff"></i>new<i style="background:#4aa8f0"></i>returning</div>
-<table><tr><th>Day</th><th>New</th><th>Returning</th><th>Total</th><th></th></tr>${rows || '<tr><td colspan="5">No visits yet.</td></tr>'}</table></main></body></html>`;
+<table><tr><th>Day</th><th>New</th><th>Returning</th><th>Total</th><th class="bt">Robots skipped</th><th></th></tr>${rows || '<tr><td colspan="6">No visits yet.</td></tr>'}</table></main></body></html>`;
   return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
