@@ -243,6 +243,10 @@
   }
   .buttons button[type=submit] { background: #2f7fd6; border-color: #2f7fd6; font-weight: 600; }
   .hint { margin-top: 1rem; font-size: .85rem; color: var(--faint); }
+  /* first visit: just the location box (everything else waits in the settings button at the bottom right) */
+  #setForm.welcome > :not(h2):not(.keep):not(#locResults):not(.buttons), #setForm.welcome #fsSetBtn, #setForm.welcome #cancelBtn { display: none; }
+  .wonly { display: none; }
+  #setForm.welcome .wonly { display: block; }
   #toast {
     position: fixed; left: 50%; bottom: 2rem; transform: translateX(-50%); background: #141c28; border: 1px solid var(--line);
     padding: .6rem 1.2rem; border-radius: .8rem; font-size: 1.05rem; opacity: 0; transition: opacity .3s; z-index: 20; pointer-events: none;
@@ -428,8 +432,8 @@
 
 <div class="modal" id="settings" hidden>
   <form class="panel" id="setForm" autocomplete="off">
-    <h2>Settings</h2>
-    <label>Location
+    <h2 id="setTitle">Settings</h2>
+    <label class="keep">Location
       <input id="locInput" placeholder="City or town, ZIP code, or lat,lon">
     </label>
     <div id="locResults"></div>
@@ -504,7 +508,8 @@
         <div class="fbrow"><button type="button" id="fbSend">Send</button><span id="fbStatus"></span></div>
       </div>
     </details>
-    <div class="buttons"><button type="button" class="left" id="fsSetBtn">Full screen</button><button type="button" id="cancelBtn">Cancel</button><button type="submit">Save</button></div>
+    <div class="buttons"><button type="button" class="left" id="fsSetBtn">Full screen</button><button type="button" id="cancelBtn">Cancel</button><button type="submit" id="saveBtn">Save</button></div>
+    <p class="hint wonly keep">You can change the display style, units and more anytime with the settings button in the bottom right corner.</p>
     <p class="hint">Keys: S or Enter opens settings · Esc closes · R refreshes · F toggles full screen.</p>
     <p class="hint" id="verLine"></p>
   </form>
@@ -5005,13 +5010,16 @@ function dragScroll(el) {
 let pick = null, searchSeq = 0, searchT = 0;
 const box = $('#locResults');
 
-function openSettings(msg) {
+function openSettings(msg, welcome = false) {   // (welcome: a first visit, so just the location box)
   pick = null;
   $('#locInput').value = S.name;
   $('#unitsSel').value = S.units; $('#clockSel').value = S.clock; $('#stationInput').value = S.tideStation;
   $('#motionSel').value = S.motion; $('#sceneSel').value = S.scene; $('#todSel').value = S.tod; $('#displaySel').value = S.display; $('#holidaySel').value = S.holiday;
   $('#alertSel').value = S.alertPreview; $('#soeSel').value = S.soePreview;
   box.innerHTML = msg ? `<div class="msg">${msg}</div>` : '';
+  $('#setForm').classList.toggle('welcome', welcome);
+  $('#setTitle').textContent = welcome ? 'Welcome to Tidal Weather' : 'Settings';
+  $('#saveBtn').textContent = welcome ? 'Show my weather' : 'Save';
   renderLog();
   const v = window.APP_VERSION;
   $('#verLine').textContent = v ? `Website · updated ${v.built}` : 'Test copy on this PC (not the live website)';
@@ -5728,7 +5736,7 @@ setInterval(() => { alertIdx++; renderAlert(); }, 8000);   // rotate when there'
 // Nudge the layout a few pixels every few minutes so nothing sits on the same pixels forever.
 setInterval(() => { $('#app').style.transform = `translate(${rnd(-6, 6).toFixed(1)}px, ${rnd(-5, 5).toFixed(1)}px)`; }, 5 * 60e3);
 
-if (S.lat == null) openSettings('Welcome! Type your town or ZIP code, pick it from the list, then press Save.');
+if (S.lat == null) openSettings('Type your town or ZIP code, pick it from the list, then press Show my weather.', true);
 else { refreshWeather(); refreshSea(); refreshAlerts(); refreshDeclarations(); }
 </script>
 </body>
