@@ -362,7 +362,9 @@ function seaTurkey(e, t, bl) {   // the turkey in its rowboat, coming in from th
   const moving = e.p < .28 || e.p > .72, dim = thanks.dim;
   const y = waveY(bl, x, t) + 2 * k, slope = (waveY(bl, x + 20, t) - waveY(bl, x - 20, t)) / 40, col = h => tgCol(h, dim);
   g.save(); g.translate(x, y); g.rotate(Math.atan(slope) * .8);
+  g.save(); g.beginPath(); g.rect(-80 * k, -120 * k, 160 * k, 112 * k); g.clip();   // (nothing of him below the rowboat's rim, even his fanned tail)
   drawTurkey(g, 0, 6 * k, k * .85, e.p > .72 ? -1 : 1, 0, e.p > .35 && e.p < .6 ? 1 : 0, dim);
+  g.restore();
   pilgrimHat(g, 11 * k * .85 * (e.p > .72 ? -1 : 1), 6 * k - 41.5 * k * .85, .55 * k, dim);
   const a = 2.25 + (moving ? Math.sin(t * 4) * .4 : .5);   // the oars, pulling while it rows and resting when it stops
   g.strokeStyle = col('#8a6a44'); g.lineWidth = 2.2 * k; g.lineCap = 'round';
@@ -383,7 +385,7 @@ function drawThanksFront(ts) {
 
 // ----- the other major random events: football, the pie delivery, the nap, the pie thief -----
 const tgEv = kind => stage.ev && stage.ev.kind === kind ? stage.ev : null;
-const napping = () => { const e = tgEv('nap'); return !!e && e.p > .1 && e.p < .82; };
+const napping = () => { const e = tgEv('nap'); return !!e && e.p > .1 && e.p < .8; };   // (in the Ocean a bite on his line wakes him at .8)
 // A pumpkin pie in a foil tin, seen a little from above, standing on (x, y), r its radius
 function drawPie(c, x, y, r, dim) {
   const col = h => tgCol(h, dim), ry = .36, top = -r * .3;   // (the top is an ellipse ry of its width; top: above the tin's bottom)
@@ -513,10 +515,17 @@ function seaPie(e, t, bl, spot) {
   const k = sea.bs * 1.4, x1 = sea.bx - 140 * sea.bs - 42 * k, inn = ease(ramp(e.p, 0, .3)) - ease(ramp(e.p, .62, .92)), x = x1 - (x1 + 60 * k) * (1 - inn);
   const y = waveY(bl, x, t) + 2 * k, slope = (waveY(bl, x + 20, t) - waveY(bl, x - 20, t)) / 40, dim = thanks.dim, col = h => tgCol(h, dim), moving = e.p < .3 || e.p > .62;
   g.save(); g.translate(x, y); g.rotate(Math.atan(slope) * .8);
+  g.save(); g.beginPath(); g.rect(-60 * k, -90 * k, 120 * k, 81 * k); g.clip();   // (sitting in the kayak: nothing of her below its rim)
   drawNeighbor(g, 0, 2 * k, k * .8, e.p > .62 ? -1 : 1, 0, dim, e.p < .38, true);
+  g.restore();
   const a = moving ? Math.sin(t * 3) * .6 : .9;   // the paddle, dipping side to side while she paddles
   g.strokeStyle = col('#3a3a3a'); g.lineWidth = 2 * k; g.lineCap = 'round';
   g.beginPath(); g.moveTo(-Math.cos(a) * 30 * k, -14 * k - Math.sin(a) * 14 * k); g.lineTo(Math.cos(a) * 30 * k, -14 * k + Math.sin(a) * 14 * k); g.stroke();
+  {   // a blade on each end of the paddle
+    const e1 = [-Math.cos(a) * 30 * k, -14 * k - Math.sin(a) * 14 * k], e2 = [Math.cos(a) * 30 * k, -14 * k + Math.sin(a) * 14 * k], ang = Math.atan2(e2[1] - e1[1], e2[0] - e1[0]);
+    g.fillStyle = col('#2f5f8a');
+    for (const [ex, ey] of [e1, e2]) { g.beginPath(); g.ellipse(ex, ey, 7 * k, 2.8 * k, ang, 0, 7); g.fill(); }
+  }
   g.fillStyle = col('#d0402e'); g.beginPath(); g.moveTo(-46 * k, -6 * k); g.quadraticCurveTo(0, -12 * k, 46 * k, -6 * k); g.quadraticCurveTo(0, 8 * k, -46 * k, -6 * k); g.fill();   // the kayak
   g.restore();
   if (e.p >= .38 && e.p < .46) {   // the pie, lifted up onto the deck
@@ -549,11 +558,39 @@ function thanksSeaBack(e, t, bl, y, roll) {   // in the water, in front of the b
   if (e.kind === 'pie') seaPie(e, t, bl, boatPt(32, -33, y, roll));   // (to the pie's place on the deck, see drawBoatSprite)
 }
 function thanksSeaFront(e, t, y, roll, hx, hy) {   // over everything: the football, the Zzz, the seagull
-  if (e.kind === 'football') drawFootballEvent(e, t, boatPt(36, -56, y, roll), [hx, hy], sea.bs);
-  if (e.kind === 'nap') napZzz(t, [hx, hy - 6 * sea.bs], sea.bs);
+  if (e.kind === 'football') {   // (to his hands where he'll catch it, in them while he holds it, from where he throws it)
+    const at = q => boatPt(...fisherHandsOnBoat(q), y, roll);
+    drawFootballEvent(e, t, e.p < .3 ? at(.3) : e.p < .6 ? at(e.p) : at(.6), [hx, hy], sea.bs * .6);   // (smaller: he's smaller than the camper)
+  }
+  if (e.kind === 'nap') {
+    napZzz(t, [hx, hy - 6 * sea.bs], sea.bs);
+    if (e.p >= .8 && !e.bit && sea.pose === 'fish') { e.bit = true; Object.assign(sea.fishing, { st: 'bite', t: 1.6, dur: 1.6 }); }   // the bite wakes him: he grabs his rod and reels it in
+  }
   if (e.kind === 'piethief') { seaPieThief(e, t, boatPt(32, -36, y, roll)); if (e.p > .42) tgPie.gone = true; }
 }
 const deckPie = () => !tgPie.gone;   // (gone from the deck after the gull takes it, until the neighbour brings a new one)
+// The football's timing, shared by the camper and the fisherman: how far his hands are up (0 down, .5 holding it at his
+// chest, 1 up to catch): up for it by .3, down to his chest, the throw at .56-.62, then down again
+function footballReach(p) {
+  if (p < .2) return 0;
+  if (p < .3) return ease((p - .2) / .1);
+  if (p < .38) return 1 - ease((p - .3) / .08) * .5;
+  if (p < .56) return .5;
+  if (p < .62) return .5 + Math.sin((p - .56) / .06 * Math.PI) * .5;
+  return Math.max(0, .5 - (p - .62) / .06);
+}
+// Ocean: for the football and his nap he leans his rod on the rail, as when he salutes the flag
+const rodDown = () => { const e = stage.ev; return !!thanks && !!sea && sea.pose === 'fish' && !!e && (e.kind === 'football' && e.p > .06 && e.p < .9 || e.kind === 'nap' && e.p > .04 && e.p < .8); };
+// the fisherman's hands for the football (he faces the stern, where it comes from): sg -1 / 1. In his own units (as in
+// drawFisher); fisherHandsOnBoat adds where he stands on the deck (his head, (1, -45) to him, is at (26, -76) on the boat)
+function fisherHands(p, sg = 0) {
+  const r = footballReach(p), [x, y] = r < .5 ? [lrp(-3, -11, r * 2), lrp(-15, -29, r * 2)] : [lrp(-11, -13, (r - .5) * 2), lrp(-29, -50, (r - .5) * 2)];
+  return [x + sg * 2, y + sg * 1.2];
+}
+function fisherHandsOnBoat(p) {
+  const [x, y] = fisherHands(p);
+  return [x + 25, y - 31];
+}
 // Forest football: he gets up off his log at .1 and steps forward, hands up to catch it at .3, holds it ("Go long!"),
 // throws it back at .6, and walks back to his log by .95. Returns his pose (or null while he's sitting), with where
 // his hands are on the screen and his head, for the ball and the bubble.
@@ -564,12 +601,7 @@ function forestFootball(f, e, t, lx) {
   let x = x1, gait = 0, dir = -1, reach;
   if (p < .2) { x = lrp(x0, x1, ease((p - .1) / .1)); gait = t * 8; }
   else if (p > .85) { x = lrp(x1, x0, ease((p - .85) / .1)); gait = t * 8; dir = 1; }
-  if (p < .2) reach = 0;
-  else if (p < .3) reach = ease((p - .2) / .1);   // hands up for it
-  else if (p < .38) reach = 1 - ease((p - .3) / .08) * .5;   // caught: down to his chest
-  else if (p < .56) reach = .5;
-  else if (p < .62) reach = .5 + Math.sin((p - .56) / .06 * Math.PI) * .5;   // the throw
-  else reach = Math.max(0, .5 - (p - .62) / .06);
+  reach = footballReach(p);
   const [hx, hy] = reachPt(reach);   // (as drawCamperOnFoot puts his hands)
   return { x, dir, gait, reach, hand: [x + dir * hx * s, f.gy - 36 * s + hy * s], head: [x + dir * 4 * s, f.gy - 81 * s] };
 }

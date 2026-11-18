@@ -66,7 +66,7 @@ function startMajor(kind, t) {
   else if (kind === 'trickortreat') { e.dur = 22; e.say = sea ? 'Swedish Fish are my favorite!' : "Nothing beats Halloween s'mores!"; e.kids = [...KID_COSTUMES].sort(() => Math.random() - .5).slice(0, 3).map(c => ({ c, s: rnd(.88, 1.05) })); }
   else if (kind === 'football') { e.dur = 14; e.say = 'Did you see that spiral?!'; }
   else if (kind === 'pie') { e.dur = 20; e.say = 'Thank you! You saved Thanksgiving!'; }
-  else if (kind === 'nap') { e.dur = 16; e.say = "I wasn't sleeping!"; }
+  else if (kind === 'nap') { e.dur = 16; e.say = sea ? "Whoa! A bite! …I wasn't sleeping!" : "I wasn't sleeping!"; }
   else if (kind === 'piethief') { e.dur = 14; e.say = 'Hey! That was dessert!'; }
   else if (kind === 'turkey') { e.dur = sea ? 20 : 24; e.say = sea ? 'Was that turkey rowing a boat?!' : 'Next year, buddy. Next year.'; }
   else if (kind === 'reaper') { e.dur = 16; e.say = sea ? 'Not today! The fish are biting!' : 'Was he pointing at ME?!'; }

@@ -343,6 +343,25 @@ function drawFisher(x, t) {
     limb(coat, 4, [-1, -34], [-5, -24], [-4, -15]);   // left arm straight down
     limb(coat, 4, [1, -35], [11, -40], [8, -47]);     // right hand up at the brim
     x.fillStyle = skin; x.beginPath(); x.arc(8, -47, 2.2, 0, 7); x.fill();
+  } else if (rodDown()) {   // Thanksgiving: his rod leaning on the rail, for the football and his nap
+    const e = stage.ev, nap = e.kind === 'nap', bite = nap && e.p > .72 ? Math.sin(t * 28) : 0;   // (a fish takes the bait just before he wakes)
+    x.strokeStyle = '#3b2f2a'; x.lineWidth = 2; x.beginPath(); x.moveTo(20, 0); x.lineTo(62 + bite * 1.5, -64 + Math.abs(bite) * 3); x.stroke();
+    const bob = [92, 31 + (bite ? 5 * Math.abs(bite) : Math.sin(t * 2) * 1.5)];
+    x.strokeStyle = 'rgba(240,240,240,.7)'; x.lineWidth = .8; x.beginPath(); x.moveTo(62 + bite * 1.5, -64 + Math.abs(bite) * 3); x.quadraticCurveTo(80, -30, bob[0], bob[1]); x.stroke();
+    x.fillStyle = '#e74c3c'; x.beginPath(); x.arc(bob[0], bob[1] - 2, 3, 0, 7); x.fill(); x.fillStyle = '#fff'; x.fillRect(bob[0] - 3, bob[1] - 2, 6, 2);   // the bobber
+    limb(pants, 5, [-5, 0], [-2, -18]); limb(pants, 5, [5, 0], [2, -18]);
+    if (nap) {   // dozing: head dropped forward, arms hanging
+      body(0, -18, 1, -37); head(2, -42, .3);
+      limb(coat, 4, [0, -33], [-4, -24], [-3, -15]); limb(coat, 4, [2, -33], [6, -24], [5, -15]);
+      x.fillStyle = skin; for (const h of [[-3, -15], [5, -15]]) { x.beginPath(); x.arc(h[0], h[1], 2.2, 0, 7); x.fill(); }
+    } else {   // the football: turned to the stern, hands up to catch it, holding it, throwing it back
+      body(0, -18, 0, -38); head(1, -45, -.85);
+      for (const sg of [1, -1]) {
+        const h = fisherHands(e.p, sg), sh = [sg * .5, -34];
+        limb(coat, 4, sh, [(sh[0] + h[0]) / 2 + 2, (sh[1] + h[1]) / 2 + 3], h);
+        x.fillStyle = skin; x.beginPath(); x.arc(h[0], h[1], 2.2, 0, 7); x.fill();
+      }
+    }
   } else if (sea.pose === 'mug') {
     x.fillStyle = '#3b7dbf'; x.fillRect(-12, -14, 22, 14); x.fillStyle = '#e8eef4'; x.fillRect(-12, -15, 22, 3);                    // cooler
     if (sea.snowy) { x.fillStyle = '#fff'; x.fillRect(-12, -17, 22, 3); }
