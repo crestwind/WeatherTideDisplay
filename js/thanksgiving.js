@@ -24,8 +24,8 @@ function buildThanks() {
   return { night: tod === 'night', k: Math.min(Hd / 1080, Wd / 700),
     dim: tod === 'night' ? .42 : tod === 'golden' ? .25 : sc.tone === 'storm' ? .35 : sc.tone === 'dark' ? .2 : 0,   // (as Halloween's pumpkins)
     geese: null, strut: null, balloon: null, ship: null, gust: null, squirrel: null,
-    next: { geese: first('geese', 20, 70), strut: first('strut', 25, 80), balloon: first('balloon', 60, 150), ship: first('mayflower', 40, 120),
-      gust: first('gust', 30, 90), squirrel: first('squirrel', 20, 70) },
+    next: { geese: first('geese', 8, 25), strut: first('strut', 30, 90), balloon: first('balloon', 40, 100), ship: first('mayflower', 30, 90),   // (the same rates as Halloween's bats, zombies, witch, ghost ship…)
+      gust: first('gust', 30, 90), squirrel: first('squirrel', 30, 90) },
     tiles: !(sea || forest || tropic) };   // the Sky style's decorations sit on the weather tiles
 }
 
@@ -35,7 +35,7 @@ function thanksTick(dt, t) {
   if (h.geese) {
     const G = h.geese; G.x += G.vx * dt;
     if (G.react && !G.said && (G.vx > 0 ? G.x > Wd * .45 : G.x < Wd * .55)) { G.said = true; if (!stage.ev) talk.react = 'geese'; }
-    if (G.vx > 0 ? G.x - G.span > Wd + 40 : G.x + G.span < -40) { h.geese = null; N.geese = gap(70, 160); }
+    if (G.vx > 0 ? G.x - G.span > Wd + 40 : G.x + G.span < -40) { h.geese = null; N.geese = gap(25, 70); }
   } else if ((!h.night || /[?&]geese\b/.test(location.search)) && flyOK() && t > N.geese) {
     const dir = Math.random() < .5 ? 1 : -1, k = sy * (Hd > Wd ? .7 : .85), n = 2 * Math.floor(rnd(3, 6)) + 1;
     h.geese = { k, dir, n, vx: dir * 95 * Math.max(.6, Math.min(sx, 1.2)), x: dir > 0 ? -60 * k : Wd + 60 * k, y: Hd * rnd(.1, .24),
@@ -43,11 +43,11 @@ function thanksTick(dt, t) {
   }
   // the Sky style's turkey, strutting along the tops of the weather tiles
   if (h.tiles) {
-    if (h.strut) { h.strut.t += dt; if (h.strut.t > h.strut.dur) { h.strut = null; N.strut = gap(80, 180); } }
+    if (h.strut) { h.strut.t += dt; if (h.strut.t > h.strut.dur) { h.strut = null; N.strut = gap(100, 220); } }
     else if (t > N.strut && !/hurricane|tornado/.test(mode.kind) && !h.squirrel) h.strut = { t: 0, dur: 20, dir: Math.random() < .5 ? 1 : -1 };
   }
   // a giant turkey parade balloon drifting across the sky on its ropes (by day, in calm weather)
-  if (h.balloon) { h.balloon.x += h.balloon.vx * dt; if (h.balloon.vx > 0 ? h.balloon.x > Wd + 300 * h.balloon.k : h.balloon.x < -300 * h.balloon.k) { h.balloon = null; N.balloon = gap(150, 300); } }
+  if (h.balloon) { h.balloon.x += h.balloon.vx * dt; if (h.balloon.vx > 0 ? h.balloon.x > Wd + 300 * h.balloon.k : h.balloon.x < -300 * h.balloon.k) { h.balloon = null; N.balloon = gap(90, 200); } }
   else if ((!h.night || /[?&]balloon\b/.test(location.search)) && flyOK() && !/rain|heavy|storm|snow/.test(mode.kind) && t > N.balloon) {
     const dir = Math.random() < .5 ? 1 : -1, k = sy * (Hd > Wd ? 1.6 : 2.6);
     h.balloon = { k, dir, vx: dir * 38 * Math.max(.6, Math.min(sx, 1.2)), x: dir > 0 ? -260 * k : Wd + 260 * k, y: Hd * (Hd > Wd ? .2 : .26), ph: rnd(0, 6) };
@@ -57,7 +57,7 @@ function thanksTick(dt, t) {
     if (h.ship) {
       h.ship.t += dt;
       if (h.ship.react && !h.ship.said && h.ship.t > h.ship.dur * .45) { h.ship.said = true; if (!stage.ev) talk.react = 'mayflower'; }
-      if (h.ship.t > h.ship.dur) { h.ship = null; N.ship = gap(120, 260); }
+      if (h.ship.t > h.ship.dur) { h.ship = null; N.ship = gap(120, 240); }
     } else if (t > N.ship && !/hurricane|tornado/.test(mode.kind)) {
       const dir = Math.random() < .5 ? 1 : -1, k = sea.lhK * .85, x0 = dir > 0 ? -90 * k : Wd + 90 * k, x1 = dir > 0 ? Wd + 90 * k : -90 * k;
       h.ship = { t: 0, dur: Math.abs(x1 - x0) / (14 * Math.max(.6, sx)), dir, x0, x1, react: Math.random() < .6 };
@@ -67,7 +67,7 @@ function thanksTick(dt, t) {
   if (h.gust) {
     h.gust.t += dt;
     for (const l of h.gust.list) { l.x += l.vx * dt; l.y += (l.vy + Math.sin(t * l.fq + l.ph) * l.amp) * dt; l.rot += l.vr * dt; l.flip += l.vf * dt; }
-    if (h.gust.list.every(l => h.gust.dir > 0 ? l.x > Wd + 60 : l.x < -60)) { h.gust = null; N.gust = gap(60, 150); }
+    if (h.gust.list.every(l => h.gust.dir > 0 ? l.x > Wd + 60 : l.x < -60)) { h.gust = null; N.gust = gap(100, 220); }
   } else if (t > N.gust && !/storm|hurricane|tornado|heavy/.test(mode.kind) && S.motion !== 'off') {
     const dir = Math.random() < .5 ? 1 : -1, n = Math.round(rnd(18, 30) * (S.motion === 'light' ? .5 : 1));
     h.gust = { t: 0, dir, list: Array.from({ length: n }, () => {
@@ -78,7 +78,7 @@ function thanksTick(dt, t) {
   }
   // a squirrel: scampers in, sits up to stuff an acorn in its cheeks, and scampers off (Forest; Sky style along the tiles)
   if (forest || h.tiles) {
-    if (h.squirrel) { h.squirrel.t += dt; if (h.squirrel.t > h.squirrel.dur) { h.squirrel = null; N.squirrel = gap(60, 150); } }
+    if (h.squirrel) { h.squirrel.t += dt; if (h.squirrel.t > h.squirrel.dur) { h.squirrel = null; N.squirrel = gap(100, 220); } }
     else if (t > N.squirrel && !sc.rain && !/storm|hurricane|tornado|heavysnow/.test(mode.kind) && !h.strut) h.squirrel = { t: 0, dur: 12, dir: Math.random() < .5 ? 1 : -1 };
   }
 }
