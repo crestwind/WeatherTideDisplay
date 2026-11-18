@@ -2,6 +2,8 @@
 // by commas. He picks lines that match the weather, the time of day and the temperature, and never repeats one too soon.
 // These words are filled in for you: {temp} (temperature now), {high} and {low} (today's), {town}, {day} (e.g. Friday).
 // To add a line, copy an existing one, keep the quotes and the comma at the end, and change the words.
+// Any group can have a Day and a Night version next to it (like clear, clearDay and clearNight): lines in clearDay are
+// only said by day (sunshine, sunglasses, blue skies…), lines in clearNight only at night (stars, the moon…).
 window.TW_BEACH_LINES = {
 
   // ---------- in the hammock in calm weather ----------
@@ -9,7 +11,6 @@ window.TW_BEACH_LINES = {
     "This is the life.",
     "Island time, baby.",
     "Do not disturb.",
-    "Another day in paradise.",
     "I could get used to this.",
     "Hammock: 1. Stress: 0.",
     "Someone bring me another coconut.",
@@ -19,11 +20,18 @@ window.TW_BEACH_LINES = {
     "Sand in my shorts. Worth it.",
     "Just five more minutes. Or hours.",
     "Who needs Wi-Fi?",
-    "Sunscreen check: done.",
     "The tide's coming in. So is my nap.",
     "Out of office: permanently.",
     "Best hammock on the island.",
     "No plans. Perfect plans.",
+  ],
+  hammockDay: [
+    "Another day in paradise.",
+    "Sunscreen check: done.",
+  ],
+  hammockNight: [
+    "Another night in paradise.",
+    "Sleeping under the stars tonight.",
   ],
 
   // ---------- in the hut in bad weather ----------
@@ -51,8 +59,10 @@ window.TW_BEACH_LINES = {
 
   // ---------- by weather ----------
   clear: [
-    "It's gonna be a beautiful day!",
     "Not a cloud in the sky!",
+  ],
+  clearDay: [
+    "It's gonna be a beautiful day!",
     "Sunscreen weather, folks.",
     "Perfect beach day.",
     "Sunglasses: on. Worries: off.",
@@ -61,21 +71,38 @@ window.TW_BEACH_LINES = {
     "If you're stuck inside today, I'm sorry.",
     "The water looks amazing today.",
   ],
+  clearNight: [
+    "Clear night. Look at all those stars!",
+    "The moon on the water. Beautiful.",
+    "Make a wish on a shooting star!",
+  ],
   partly: [
     "A few clouds, nothing to worry about.",
+    "Pretty nice out, all things considered.",
+  ],
+  partlyDay: [
     "Sun's playing peekaboo today.",
     "Nice mix of sun and clouds.",
-    "Pretty nice out, all things considered.",
     "That cloud looks like a coconut.",
     "Good day for a walk on the beach.",
   ],
+  partlyNight: [
+    "A few clouds drifting past the moon.",
+    "Nice night, all things considered.",
+  ],
   cloudy: [
+    "Bring a light jacket, just in case.",
+  ],
+  cloudyDay: [
     "No sun today, but no rain either.",
     "Cloudy days are cozy days.",
-    "Bring a light jacket, just in case.",
     "Grey day. Still beats the office.",
     "The sun's taking a day off.",
     "No sunburn today at least.",
+  ],
+  cloudyNight: [
+    "No stars tonight. Too cloudy.",
+    "Cloudy night. Still beats the office.",
   ],
   fog: [
     "Can't see a thing out here!",
@@ -95,11 +122,16 @@ window.TW_BEACH_LINES = {
   rain: [
     "Don't forget your umbrella!",
     "Rain jacket weather.",
-    "Good day to stay in with a book.",
     "Puddles everywhere today!",
     "Watch out for slick roads.",
     "Rain, rain, go away…",
     "Perfect weather for a nap. Indoors.",
+  ],
+  rainDay: [
+    "Good day to stay in with a book.",
+  ],
+  rainNight: [
+    "Good night to stay in with a book.",
   ],
   heavy: [
     "It's really coming down!",
@@ -122,12 +154,17 @@ window.TW_BEACH_LINES = {
     "Bundle up out there!",
   ],
   snow: [
-    "Snow day!",
     "Brrr! Bundle up!",
     "Snow on the palm trees. Now I've seen it all.",
     "Drive slow on the snowy roads.",
     "Check on your neighbors today.",
+  ],
+  snowDay: [
+    "Snow day!",
     "Build a sandman for me!",
+  ],
+  snowNight: [
+    "It'll be a snow day tomorrow! On the beach!",
   ],
   heavysnow: [
     "Whoa, look at it snow!",
@@ -142,8 +179,10 @@ window.TW_BEACH_LINES = {
     "Not a day for umbrellas, they'll fly away.",
     "Secure your trash cans!",
     "Watch out for falling coconuts!",
-    "Great day for kite surfing.",
     "My hammock's swinging by itself!",
+  ],
+  windyDay: [
+    "Great day for kite surfing.",
   ],
 
   // ---------- hurricanes and tornadoes: safety first ----------
@@ -204,9 +243,15 @@ window.TW_BEACH_LINES = {
   hot: [
     "Whew, it's a hot one! {temp}° right now.",
     "Stay hydrated today!",
+    "Don't leave pets in the car!",
+  ],
+  hotDay: [
     "Time for a dip in the water.",
     "Sunscreen. Reapply. Repeat.",
-    "Don't leave pets in the car!",
+  ],
+  hotNight: [
+    "Still {temp}° and it's dark out!",
+    "Even the night is hot. Time for a moonlight swim.",
   ],
   cold: [
     "Brrr! {temp}° out here.",
@@ -246,10 +291,15 @@ window.TW_BEACH_LINES = {
   // ---------- Thanksgiving (when the Thanksgiving holiday theme is on) ----------
   thanksgiving: [
     "Happy Thanksgiving!",
-    "Thankful for sunshine and a hammock.",
     "Pineapple stuffing. It's a thing.",
     "Somebody save me some pie.",
     "Happy Thanksgiving, {town}!",
+  ],
+  thanksgivingDay: [
+    "Thankful for sunshine and a hammock.",
+  ],
+  thanksgivingNight: [
+    "Thankful for warm nights and a hammock.",
   ],
   geese: [
     "Geese! They know where the warm weather is.",

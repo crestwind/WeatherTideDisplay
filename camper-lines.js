@@ -2,12 +2,13 @@
 // He picks lines that match the weather, the time of day and the temperature, and never repeats one too soon.
 // These words are filled in for you: {temp} (temperature now), {high} and {low} (today's), {town}, {day} (e.g. Friday).
 // To add a line, copy an existing one, keep the quotes and the comma at the end, and change the words.
+// Any group can have a Day and a Night version next to it (like clear, clearDay and clearNight): lines in clearDay are
+// only said by day (sunshine, sunglasses, blue skies…), lines in clearNight only at night (stars, the moon…).
 window.TW_CAMP_LINES = {
 
   // ---------- by the fire in calm weather ----------
   camping: [
     "Nothing beats a campfire.",
-    "Perfect night for s'mores.",
     "Golden brown. That's the secret.",
     "Who brought the graham crackers?",
     "Smell that fresh pine air.",
@@ -22,10 +23,18 @@ window.TW_CAMP_LINES = {
     "Leave no trace, folks.",
     "Remember to put your fire out properly!",
     "The trick is not to rush the marshmallow.",
-    "I could sit here all day.",
     "Signal's terrible out here. I love it.",
     "Pass the hot dogs.",
     "Hiked six miles today. Worth it.",
+  ],
+  campingNight: [
+    "Perfect night for s'mores.",
+    "The fire's the only light for miles.",
+    "Listen to the crickets.",
+  ],
+  campingDay: [
+    "I could sit here all day.",
+    "Perfect afternoon for s'mores.",
   ],
 
   // ---------- in the tent in bad weather ----------
@@ -53,8 +62,10 @@ window.TW_CAMP_LINES = {
 
   // ---------- by weather ----------
   clear: [
-    "It's gonna be a beautiful day!",
     "Not a cloud in the sky!",
+  ],
+  clearDay: [
+    "It's gonna be a beautiful day!",
     "Sunscreen weather, folks.",
     "Perfect day for a hike.",
     "Sunglasses: on. Worries: off.",
@@ -63,21 +74,41 @@ window.TW_CAMP_LINES = {
     "If you're stuck inside today, I'm sorry.",
     "Great day to hit the trail.",
   ],
+  clearNight: [
+    "Clear night. Look at all those stars!",
+    "You can see the Milky Way out here.",
+    "Clear skies tonight. It'll be chilly.",
+    "Make a wish on a shooting star!",
+  ],
   partly: [
     "A few clouds, nothing to worry about.",
+    "Pretty nice out, all things considered.",
+  ],
+  partlyDay: [
     "Sun's playing peekaboo today.",
     "Nice mix of sun and clouds.",
-    "Pretty nice out, all things considered.",
     "That cloud looks like a bear. I hope it's a cloud.",
     "Good day for a walk in the woods.",
   ],
+  partlyNight: [
+    "A few clouds drifting past the moon.",
+    "Stars peeking out between the clouds.",
+    "Nice night, all things considered.",
+  ],
   cloudy: [
+    "Bring a light jacket, just in case.",
+  ],
+  cloudyDay: [
     "No sun today, but no rain either.",
     "Cloudy days are cozy days.",
-    "Bring a light jacket, just in case.",
     "Grey day. Good day for soup.",
     "The sun's taking a day off.",
     "Good hiking weather. Not too hot.",
+  ],
+  cloudyNight: [
+    "No stars tonight. Too cloudy.",
+    "Cloudy night. Good thing I've got the fire.",
+    "Dark in the woods tonight.",
   ],
   fog: [
     "Can't see a thing out here!",
@@ -99,12 +130,17 @@ window.TW_CAMP_LINES = {
   rain: [
     "Don't forget your umbrella!",
     "Rain jacket weather.",
-    "Good day to stay in with a book.",
     "Puddles everywhere today!",
     "Watch out for slick roads.",
     "Rain, rain, go away…",
     "Perfect weather for a nap.",
     "The rain on the tent is kind of relaxing.",
+  ],
+  rainDay: [
+    "Good day to stay in with a book.",
+  ],
+  rainNight: [
+    "Good night to stay in with a book.",
   ],
   heavy: [
     "It's really coming down!",
@@ -130,13 +166,19 @@ window.TW_CAMP_LINES = {
     "Bundle up out there!",
   ],
   snow: [
-    "Snow day!",
     "Brrr! Bundle up!",
     "Cocoa's the only thing keeping me warm.",
     "Drive slow on the snowy roads.",
     "Check on your neighbors today.",
-    "Build a snowman for me!",
     "Snowy pines. Like a postcard.",
+  ],
+  snowDay: [
+    "Snow day!",
+    "Build a snowman for me!",
+  ],
+  snowNight: [
+    "Snow falling in the firelight. Beautiful.",
+    "It'll be a snow day tomorrow!",
   ],
   heavysnow: [
     "Whoa, look at it snow!",
@@ -218,8 +260,13 @@ window.TW_CAMP_LINES = {
     "Whew, it's a hot one! {temp}° right now.",
     "Stay hydrated today!",
     "Too hot for a campfire. Not too hot for s'mores.",
-    "Hike early, before the heat.",
     "Don't leave pets in the car!",
+  ],
+  hotDay: [
+    "Hike early, before the heat.",
+  ],
+  hotNight: [
+    "Still {temp}° and it's dark out!",
   ],
   cold: [
     "Brrr! {temp}° out here.",

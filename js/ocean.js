@@ -131,7 +131,9 @@ function fillIn(s, extra) {
 }
 function pickLine(groups, extra) {
   const L = (forest ? window.TW_CAMP_LINES : tropic ? window.TW_BEACH_LINES : window.TW_LINES) || {}, pool = [];
-  for (const [g, weight] of groups) for (const s of (L[g] || [])) for (let i = 0; i < weight; i++) pool.push(s);
+  // each group can also have a Day and a Night version (e.g. clear, clearDay, clearNight): the one that fits the sky now joins in
+  const dn = mode.tod === 'night' ? 'Night' : 'Day';
+  for (const [g, weight] of groups) for (const s of [...(L[g] || []), ...(L[g + dn] || [])]) for (let i = 0; i < weight; i++) pool.push(s);
   let fresh = pool.filter(s => !talk.recent.includes(s));
   if (!fresh.length) fresh = pool;
   if (!fresh.length) return '';
@@ -141,7 +143,7 @@ function pickLine(groups, extra) {
   return /\{(temp|high|low)\}/.test(s) && !W ? pickLine(groups.filter(([g]) => !['hot', 'cold'].includes(g)), extra) : fillIn(s, extra);
 }
 function chooseThought() {
-  const kind = mode.kind, h = new Date().getHours();
+  const kind = mode.kind, h = +new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone: tz() }).format(Date.now());   // (the hour where the location is, not on this device)
   if (kind === 'hurricane' || kind === 'tornado') return pickLine([[kind, 1]]);
   const groups = [[kind, 3]];
   const tod = mode.tod === 'night' ? 'night' : h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';

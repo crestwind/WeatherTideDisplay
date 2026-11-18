@@ -3,6 +3,8 @@
 // These words are filled in for you: {temp} (temperature now), {high} and {low} (today's), {town}, {day} (e.g. Friday),
 // {fish} (only in "catch" lines: the fish he just caught).
 // To add a line, copy an existing one, keep the quotes and the comma at the end, and change the words.
+// Any group can have a Day and a Night version next to it (like clear, clearDay and clearNight): lines in clearDay are
+// only said by day (sunshine, sunglasses, blue skies…), lines in clearNight only at night (stars, the moon…).
 window.TW_LINES = {
 
   // ---------- any time he's fishing in calm weather ----------
@@ -17,16 +19,23 @@ window.TW_LINES = {
     "A bad day fishing beats a good day at work.",
     "Is that a nibble?",
     "Same spot as yesterday. Lucky spot.",
-    "Told my wife I'd be back by noon…",
     "The bait's fresh, the line's tight.",
     "Fish tacos tonight. Hopefully.",
-    "Just me, the gulls and the sea.",
     "If I'm quiet, they'll come.",
     "Nothing like the smell of salt air.",
     "Maybe I should try a different lure.",
     "The tide's turning. Here they come.",
     "Ever notice how fish never call back?",
     "Reel, wait, repeat.",
+  ],
+  fishingDay: [
+    "Told my wife I'd be back by noon…",
+    "Just me, the gulls and the sea.",
+  ],
+  fishingNight: [
+    "Just me, the stars and the sea.",
+    "The fish bite better after dark. Supposedly.",
+    "Told my wife I'd be back before dark…",
   ],
 
   // ---------- anything, in any weather except storms ----------
@@ -45,8 +54,10 @@ window.TW_LINES = {
 
   // ---------- by weather ----------
   clear: [
-    "It's gonna be a beautiful day!",
     "Not a cloud in the sky!",
+  ],
+  clearDay: [
+    "It's gonna be a beautiful day!",
     "Sunscreen weather, folks.",
     "Days like this are why I live here.",
     "Perfect day to be on the water.",
@@ -56,23 +67,44 @@ window.TW_LINES = {
     "Bring a hat today, it's bright out there.",
     "If you're stuck inside today, I'm sorry.",
   ],
+  clearNight: [
+    "Clear night. Look at all those stars!",
+    "Perfect night for stargazing.",
+    "Clear skies tonight. It'll be chilly.",
+    "You can see every star out here.",
+    "Make a wish on a shooting star!",
+  ],
   partly: [
     "A few clouds, nothing to worry about.",
+    "Pretty nice out, all things considered.",
+  ],
+  partlyDay: [
     "Sun's playing peekaboo today.",
     "Nice mix of sun and clouds.",
     "Clouds keep the glare off the water.",
-    "Pretty nice out, all things considered.",
     "That cloud looks like a fish. Or a boot.",
     "Good day for a walk on the beach.",
+  ],
+  partlyNight: [
+    "A few clouds drifting past the moon.",
+    "Stars peeking out between the clouds.",
+    "Nice night, all things considered.",
   ],
   cloudy: [
     "Grey skies, but the fish don't mind.",
     "Overcast. The fish like it this way.",
-    "No sun today, but no rain either.",
-    "Cloudy days are cozy days.",
     "Bring a light jacket, just in case.",
+  ],
+  cloudyDay: [
+    "Cloudy days are cozy days.",
+    "No sun today, but no rain either.",
     "Grey day. Good day for soup.",
     "The sun's taking a day off.",
+  ],
+  cloudyNight: [
+    "No stars tonight. Too cloudy.",
+    "Cloudy night. Good thing I brought a lantern.",
+    "Dark night out here. Not even the moon.",
   ],
   fog: [
     "Can't see a thing out here!",
@@ -95,12 +127,17 @@ window.TW_LINES = {
     "Don't forget your umbrella!",
     "Rain jacket weather.",
     "Fish don't mind the rain. They're already wet.",
-    "Good day to stay in with a book.",
     "Puddles everywhere today!",
     "Watch out for slick roads.",
     "Glad I wore the yellow coat.",
     "Rain, rain, go away…",
     "Perfect weather for a nap.",
+  ],
+  rainDay: [
+    "Good day to stay in with a book.",
+  ],
+  rainNight: [
+    "Good night to stay in with a book.",
   ],
   heavy: [
     "It's really coming down!",
@@ -128,13 +165,19 @@ window.TW_LINES = {
     "Bundle up out there!",
   ],
   snow: [
-    "Snow day!",
     "Brrr! Bundle up!",
     "Coffee's the only thing keeping me warm.",
     "Drive slow on the snowy roads.",
     "Check on your neighbors today.",
-    "Build a snowman for me!",
     "Even the fish are cold today.",
+  ],
+  snowDay: [
+    "Snow day!",
+    "Build a snowman for me!",
+  ],
+  snowNight: [
+    "Snowing in the lantern light. Beautiful.",
+    "It'll be a snow day tomorrow!",
   ],
   heavysnow: [
     "Whoa, look at it snow!",
@@ -150,8 +193,10 @@ window.TW_LINES = {
     "Not a day for umbrellas, they'll fly away.",
     "Secure your trash cans!",
     "Windy enough to blow the fish away.",
-    "Kite flying weather!",
     "Watch for falling branches.",
+  ],
+  windyDay: [
+    "Kite flying weather!",
   ],
 
   // ---------- hurricanes and tornadoes: safety first ----------
@@ -220,7 +265,12 @@ window.TW_LINES = {
     "Too hot for fishing. Not too hot for ice cream.",
     "The fish are hiding in the deep, cool water.",
     "Don't leave pets in the car!",
+  ],
+  hotDay: [
     "Beach day!",
+  ],
+  hotNight: [
+    "Still {temp}° out here, and it's dark!",
   ],
   cold: [
     "Brrr! {temp}° out here.",
