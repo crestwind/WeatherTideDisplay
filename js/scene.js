@@ -259,7 +259,7 @@ function draw(ts) {
   if (flock.length) { g.globalAlpha = 1; drawBirds(); }
   if (plane) { g.globalAlpha = 1; drawPlane(ts); }
   if (hallo) { g.globalAlpha = 1; drawHalloSky(ts); }   // Halloween's bats and witch
-  if (thanks) { g.globalAlpha = 1; drawThanksSky(ts); }   // Thanksgiving's geese
+  if (thanks && !forest) { g.globalAlpha = 1; drawThanksSky(ts); }   // Thanksgiving's geese and parade balloon (the Forest draws them itself, in front of its hot air balloon)
   if (stage.ev) { g.globalAlpha = 1; drawMajorSky(ts); }   // the giant and the eagle
   g.globalAlpha = 1;
   if (swirl) {

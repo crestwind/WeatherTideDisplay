@@ -182,6 +182,7 @@ function drawForest(ts) {
   const ev = stage.ev && ['bigfoot', 'bear', 'raccoon', 'skunk', 'ranger', 'turkey', 'football', 'pie', 'nap'].includes(stage.ev.kind) ? stage.ev : null;
   if (f.balloon) drawBalloon(f, t);   // in the sky, behind the trees
   if (f.flock) drawForestBirds(f, t);
+  if (thanks) drawThanksSky(ts);   // Thanksgiving's geese and parade balloon: in front of the hot air balloon, behind the trees
   g.drawImage(f.bg, 0, 0);
   // the middle and near rows of pines, each bent over from its base when the wind blows (the near ones more)
   const layer = (img, base, lean) => {
