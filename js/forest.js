@@ -179,7 +179,7 @@ function forestMinorsTick(f, dt, t) {
 }
 function drawForest(ts) {
   const f = forest, t = ts / 1000, s = f.s, C = f.C, lit = !f.inside;
-  const ev = stage.ev && ['bigfoot', 'bear', 'raccoon', 'skunk', 'ranger', 'turkey'].includes(stage.ev.kind) ? stage.ev : null;
+  const ev = stage.ev && ['bigfoot', 'bear', 'raccoon', 'skunk', 'ranger', 'turkey', 'football', 'pie', 'nap'].includes(stage.ev.kind) ? stage.ev : null;
   if (f.balloon) drawBalloon(f, t);   // in the sky, behind the trees
   if (f.flock) drawForestBirds(f, t);
   g.drawImage(f.bg, 0, 0);
@@ -203,6 +203,7 @@ function drawForest(ts) {
   }
   drawSnag(f, t);
   if (hallo) drawBigWeb(t);   // Halloween: the giant spider web between the dead tree and the pines
+  if (thanks) drawThanksForest(f, t);   // Thanksgiving: the squirrel, along the far edge of the clearing
   if (f.deer) drawDeer(f, t);
   const tx = f.fx - 215 * s, tb = f.gy - 34 * s, k = s * .9, lx = f.fx - 100 * s;   // the tent, set back on the left; his log
   // When the bear turns up he jumps up, runs to the tent and dives in, watches it from the doorway, and once it's
@@ -217,6 +218,8 @@ function drawForest(ts) {
   if (trickOrTreat()) f.look = -.9;   // (at the trick-or-treaters)
   if (reaperLook()) f.look = -.9;   // (at the Grim Reaper)
   if (turkeyLook()) f.look = -.9;   // (at the turkey)
+  if (napping()) f.look = .2;
+  if (tgEv('football') && (tgEv('football').p < .32 || tgEv('football').p > .58) || tgEv('pie') && tgEv('pie').p < .55) f.look = -.9;   // (at the football, and at his neighbour)
   if (ev && ev.p > .08 && ev.p < .9) {
     if (ev.kind === 'bigfoot') f.look = bigfootX(f, ev) < lx ? -.85 : .85;
     else if (ev.kind === 'raccoon' && ev.p > .25) f.look = -.9;
@@ -229,6 +232,7 @@ function drawForest(ts) {
   }
   drawTent(f, t, tx, tb, k, lit && !hiding ? null : hiding ? (bearX > tx ? 1 : -1) : 0);
   if (thanks) harvestPile(g, tx - 62 * k, tb + 2 * k, k * .9, thanks.dim);   // Thanksgiving: a corn shock, hay bale and pumpkins beside the tent
+  const lapPie = ev && ev.kind === 'pie' ? forestPie(f, ev, t, lx) : 0;   // Thanksgiving: his neighbour brings him a pie
   const gobbler = ev && ev.kind === 'turkey' ? forestTurkey(f, ev, t, lx) : null;   // Thanksgiving: the wild turkey (and where he is, if he's up after it)
   if (f.rabbit) drawRabbit(f, t);
   if (ev && ev.kind === 'bear') drawBear(f, ev, t, lx);
@@ -297,7 +301,12 @@ function drawForest(ts) {
     if (wolf.howl) drawSpeech('Awooooo!', lx + 6 * s, f.gy - 84 * s, Math.min(1, ramp(stage.ev.p, .34, .36), 1 - ramp(stage.ev.p, .54, .56)));
     drawBatCloud(lx + 4 * s, f.gy - 52 * s, s, t);
   }
-  if (ev && ev.kind === 'turkey' && ev.gob) drawSpeech('Gobble gobble!', ...ev.gob);   // Thanksgiving: the turkey's gobble, over everything
+  if (ev && ev.gob) drawSpeech(...ev.gob);   // Thanksgiving: the turkey's gobble, his neighbour's greeting (over everything)
+  if (thanks && ev) {   // Thanksgiving: the football, the pie on his lap, the Zzz while he naps
+    if (ev.kind === 'football') drawFootballEvent(ev, t, [lx + 16 * s, f.gy - 44 * s], [lx + 6 * s, f.gy - 69 * s], s);
+    if (lapPie > 0) drawPie(g, lx + 16 * s, f.gy - 30 * s, 9 * s, f.night ? .42 : f.golden ? .25 : 0, lapPie);
+    if (ev.kind === 'nap') napZzz(t, [lx + 6 * s, f.gy - 80 * s], s);
+  }
   if (ev && ev.kind === 'ranger' && ev.p > .6 && ev.p < .76) {   // the ranger's answer
     const r = rangerPos(f, ev);
     drawSpeech('Keep it that way!', r.x + 4 * s * r.d, f.gy - 8 * s - 92 * s,   // (from the top of his head, under the hat)
@@ -367,8 +376,12 @@ function drawCamperHead(f, t, look, sc2, chew) {
   g.beginPath(); g.ellipse(look * 3, 3.5, 6.5, 6, 0, 0, Math.PI); g.fill();
   const ex = look * 4.5;
   g.fillStyle = '#1b1b1b';
+  if (napping()) {   // Thanksgiving: eyes shut, dozing off
+    g.strokeStyle = '#1b1b1b'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(ex - 4.6, -1.2); g.lineTo(ex - 1.8, -1.2); g.moveTo(ex + 1.8, -1.2); g.lineTo(ex + 4.6, -1.2); g.stroke();
+  } else {
   if (Math.abs(look) < .75) { g.beginPath(); g.arc(ex - 3.2, -1.5, 1.1, 0, 7); g.fill(); }
   g.beginPath(); g.arc(ex + 3.2 * (look < -.75 ? -1 : 1), -1.5, 1.1, 0, 7); g.fill();
+  }
   g.fillStyle = C.skin; g.beginPath(); g.ellipse(ex + look * 3, 1.2, 1.8, 1.5, 0, 0, 7); g.fill();   // nose
   if (chew) { g.fillStyle = '#3a2214'; g.beginPath(); g.ellipse(ex + look * 2, 5, 2.2, .8 + Math.abs(Math.sin(t * 10)) * 1.2, 0, 0, 7); g.fill(); }
   const wolf = forest ? wolfState(forest.fx - 100 * forest.s) : { k: 0 };   // Halloween: the werewolf
@@ -647,6 +660,7 @@ function drawRabbit(f, t) {   // hops across behind the log, stretching mid-hop;
   g.restore();
 }
 function drawBag(f, x, y, sz) {   // his bag of marshmallows
+  if (thanks) { drawPie(g, x, y, 9 * f.s * sz, f.night ? .42 : f.golden ? .25 : 0); return; }   // (on Thanksgiving, a pumpkin pie)
   const C = f.C; g.save(); g.translate(x, y); g.scale(f.s * sz, f.s * sz);
   g.fillStyle = C.bag; g.beginPath(); g.moveTo(-7, 0); g.lineTo(-6, -15); g.lineTo(-4, -17); g.lineTo(4, -17); g.lineTo(6, -15); g.lineTo(7, 0); g.closePath(); g.fill();
   g.fillStyle = C.bagBand; g.fillRect(-6.5, -10, 13, 4); g.fillRect(-4, -19, 8, 2.2);
@@ -727,7 +741,8 @@ function drawRaccoon(f, e, t, lx) {
   g.fillStyle = C.coonDark; g.beginPath(); g.ellipse(5, -1.4, 6.2, 2.3, .15, 0, 7); g.fill();                     // black mask
   g.fillStyle = '#fff'; g.beginPath(); g.arc(6.8, -1.6, .9, 0, 7); g.fill();
   g.fillStyle = '#111'; g.beginPath(); g.arc(15, 2, 1.3, 0, 7); g.fill();
-  if (has) { g.fillStyle = C.bag; g.beginPath(); g.roundRect(12, 2, 9, 11, 2); g.fill(); g.fillStyle = C.bagBand; g.fillRect(12, 6, 9, 3); }   // the stolen bag
+  if (has && thanks) drawPie(g, 17, 12, 8, 0);   // the stolen pie (Thanksgiving)
+  else if (has) { g.fillStyle = C.bag; g.beginPath(); g.roundRect(12, 2, 9, 11, 2); g.fill(); g.fillStyle = C.bagBand; g.fillRect(12, 6, 9, 3); }   // the stolen bag
   g.restore(); g.restore();
 }
 function skunkPos(f, e, lx) {   // waddles in from the right, stops by his feet to sniff about, and waddles off to the left

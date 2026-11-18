@@ -315,4 +315,10 @@ window.TW_LINES = {
     "Even the geese are going home for the holidays.",
     "Nice V, geese. Very organized.",
   ],
+  mayflower: [
+    "Is that… the Mayflower?!",
+    "Welcome, pilgrims! You're a few hundred years late.",
+    "Now that's an old boat.",
+    "Plymouth Rock is that way!",
+  ],
 };

@@ -290,7 +290,7 @@ function drawBoatSprite(t) {
   x.save(); x.globalAlpha = batCloudAlpha(); drawFisher(x, t); x.restore();   // (gone while he's a cloud of bats)
   if (sea.tint) { x.globalCompositeOperation = 'source-atop'; x.fillStyle = sea.tint; x.fillRect(-ox, -oy, W, H); x.globalCompositeOperation = 'source-over'; }
   if (hallo) drawPumpkin(x, 58, -34, 10.5, true, hallo.dim, t);   // Halloween: a jack-o'-lantern on the deck at the bow
-  if (thanks) { plainPumpkin(x, 56, -34, 10, thanks.dim); gourd(x, 68, -35, 5, thanks.dim, 'stripe'); plainPumpkin(x, 46, -33.5, 6, thanks.dim, true); }   // Thanksgiving: pumpkins and a gourd at the bow
+  if (thanks) { plainPumpkin(x, 56, -34, 10, thanks.dim); gourd(x, 68, -35, 5, thanks.dim, 'stripe'); plainPumpkin(x, 46, -33.5, 6, thanks.dim, true); if (deckPie(t)) drawPie(x, 32, -33, 7.5, thanks.dim); }   // Thanksgiving: pumpkins, a gourd and a pie at the bow
   if (sea.lantern) {   // the lantern and cabin windows stay bright after the tint
     const glow = x.createRadialGradient(-36, -96, 1, -36, -96, 26);
     glow.addColorStop(0, 'rgba(255,220,140,.9)'); glow.addColorStop(1, 'rgba(255,200,120,0)');
@@ -313,6 +313,8 @@ function drawFisher(x, t) {
     if (trickOrTreat()) look = -.85;   // (and at the trick-or-treaters)
     if (reaperLook()) look = -.85;   // (and at the Grim Reaper)
     if (turkeyLook()) look = -.85;   // (and at the turkey in its rowboat)
+    if (tgEv('football') && (tgEv('football').p < .32 || tgEv('football').p > .58) || tgEv('pie') && tgEv('pie').p < .5 || tgEv('piethief') && tgEv('piethief').p > .3) look = -.85;   // (Thanksgiving)
+    if (napping()) look = .2;
     if (wolf.k > .45) { wolfHead(x, hx, hy, 8, wolf.side, wolf.k, wolf.howl); return; }
     if (sea.coat === 'rain') { x.fillStyle = coat; x.beginPath(); x.arc(hx, hy - .5, 8.3, 0, 7); x.fill(); }                         // hood
     x.fillStyle = skin; x.beginPath(); x.arc(hx, hy, sea.coat === 'rain' ? 5.8 : 6.5, 0, 7); x.fill();
@@ -320,8 +322,10 @@ function drawFisher(x, t) {
     x.fillStyle = '#d6d1c7'; x.beginPath(); x.arc(hx + look * 1.2, hy + .6, 6, .12 * Math.PI, .88 * Math.PI); x.closePath(); x.fill();   // beard
     x.beginPath(); x.ellipse(ex - look * .6, hy + 3, 3.8, 3, 0, 0, Math.PI); x.fill();
     x.fillStyle = '#1b1b1b';
+    if (napping()) { x.strokeStyle = '#1b1b1b'; x.lineWidth = .8; x.beginPath(); x.moveTo(ex - 3, hy - 1); x.lineTo(ex - 1, hy - 1); x.moveTo(ex + 1, hy - 1); x.lineTo(ex + 3, hy - 1); x.stroke(); } else {   // (Thanksgiving: dozing)
     if (Math.abs(look) < .75) { x.beginPath(); x.arc(ex - 2, hy - 1.2, .75, 0, 7); x.fill(); }
     x.beginPath(); x.arc(ex + 2 * (look < -.75 ? -1 : 1), hy - 1.2, .75, 0, 7); x.fill();
+    }
     x.fillStyle = '#d99f78'; x.beginPath(); x.ellipse(ex + look * 1.8, hy + .7, 1.2, 1, 0, 0, 7); x.fill();                       // nose
     if (wolf.k > 0) wolfHead(x, hx, hy, 8, wolf.side, wolf.k, false);
     if (hallo) { witchHat(x, hx, hy - (sea.coat === 'rain' ? 7 : 5.5), .85); return; }                                          // Halloween
@@ -406,6 +410,7 @@ function drawSea(ts) {
   drawLighthouse(t);   // on the horizon, behind every wave
   if (hallo) drawBigWeb(t);   // Halloween: the giant spider web off the lighthouse
   if (hallo && hallo.ship) drawGhostShip(t);
+  if (thanks && thanks.ship) drawMayflower(t);   // Thanksgiving: the pilgrim ship on the horizon
   if (tornado) drawSpray(t);
   for (let i = 0; i <= b; i++) { drawLayer(L[i], t); drawDolphins(t, i); drawSwimmers(t, i); if (i === 1 && stage.ev && stage.ev.kind === 'nessie') drawNessie(t); }
   // the boat rides layer b, rising, falling and tilting with the wave under it
@@ -421,6 +426,7 @@ function drawSea(ts) {
   }
   if (stage.ev && stage.ev.kind === 'trickortreat') drawRowboat(stage.ev, t, bl);   // Halloween: trick-or-treaters rowing up
   if (stage.ev && stage.ev.kind === 'turkey') seaTurkey(stage.ev, t, bl);   // Thanksgiving: a turkey rowing up
+  if (thanks && stage.ev) thanksSeaBack(stage.ev, t, bl, y, roll);   // (and the neighbour in her kayak)
   for (let i = b + 1; i < L.length; i++) { drawLayer(L[i], t); drawDolphins(t, i); drawSwimmers(t, i); }
   if (sea.pose === 'fish') drawJumps(t);   // leaping fish, only where he's fishing
   drawGlint(t, y, Hd);
@@ -428,6 +434,7 @@ function drawSea(ts) {
   // his head is at about (26, -76) in the boat's own units; follow the boat as it rocks
   const hx = sea.bx + (26 * Math.cos(roll) + 76 * Math.sin(roll)) * sea.bs, hy = y + 4 * sea.bs + (26 * Math.sin(roll) - 76 * Math.cos(roll)) * sea.bs;
   if (talk.line) drawThought(t, hx, hy);
+  if (thanks && stage.ev) thanksSeaFront(stage.ev, t, y, roll, hx, hy);   // Thanksgiving: the football, his pie, the Zzz, the seagull
   if (hallo && stage.ev) {   // Halloween: the werewolf's howl, and the cloud of bats round where he stands
     const w = wolfState(sea.bx), e = stage.ev;
     if (w.howl) drawSpeech('Awooooo!', hx, hy - 6 * sea.bs, Math.min(1, ramp(e.p, .34, .36), 1 - ramp(e.p, .54, .56)));

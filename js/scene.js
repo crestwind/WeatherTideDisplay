@@ -276,7 +276,7 @@ function draw(ts) {
   if (forest) { g.globalAlpha = 1; drawForest(ts); }   // Forest display style, likewise
   if (tropic) { g.globalAlpha = 1; drawTropic(ts); }   // and Tropical
   if (hallo && hallo.lanterns.length) { g.globalAlpha = 1; drawHalloGround(ts); }   // the Sky style's jack-o'-lanterns
-  if (thanks && thanks.tiles) { g.globalAlpha = 1; drawThanksGround(ts); }   // the Sky style's Thanksgiving decorations and turkey
+  if (thanks) { g.globalAlpha = 1; drawThanksFront(ts); }   // Thanksgiving: the Sky style's decorations, turkey and squirrel; gusts of leaves
   for (const f of flares) { g.fillStyle = f.gr; g.beginPath(); g.arc(f.x, f.y, f.r, 0, 7); g.fill(); }
   if (windLines.length) {   // faint streaks of wind
     g.strokeStyle = 'rgb(255,255,255)'; g.lineWidth = Math.max(1, 1.4 * Hd / 1080); g.lineCap = 'round';
