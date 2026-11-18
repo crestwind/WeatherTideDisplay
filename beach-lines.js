@@ -75,6 +75,13 @@ window.TW_BEACH_LINES = {
     "Clear night. Look at all those stars!",
     "The moon on the water. Beautiful.",
     "Make a wish on a shooting star!",
+    "The waves sound louder at night.",
+    "You can see the Milky Way from this hammock.",
+    "Warm breeze, clear sky. Perfect night.",
+    "Stars above, waves below. Not bad.",
+    "Somebody's having a bonfire down the beach.",
+    "Clear skies. Good night for sleeping under the stars.",
+    "The stars are out tonight.",
   ],
   partly: [
     "A few clouds, nothing to worry about.",
@@ -89,6 +96,8 @@ window.TW_BEACH_LINES = {
   partlyNight: [
     "A few clouds drifting past the moon.",
     "Nice night, all things considered.",
+    "The moon keeps ducking behind the clouds.",
+    "A few stars peeking through.",
   ],
   cloudy: [
     "Bring a light jacket, just in case.",
@@ -103,6 +112,9 @@ window.TW_BEACH_LINES = {
   cloudyNight: [
     "No stars tonight. Too cloudy.",
     "Cloudy night. Still beats the office.",
+    "Clouds are keeping it nice and warm tonight.",
+    "Dark night. Just the waves and me.",
+    "Hope it holds off till morning.",
   ],
   fog: [
     "Can't see a thing out here!",
@@ -165,6 +177,7 @@ window.TW_BEACH_LINES = {
   ],
   snowNight: [
     "It'll be a snow day tomorrow! On the beach!",
+    "Snow on the beach at night. Now that's strange.",
   ],
   heavysnow: [
     "Whoa, look at it snow!",
@@ -183,6 +196,10 @@ window.TW_BEACH_LINES = {
   ],
   windyDay: [
     "Great day for kite surfing.",
+  ],
+  windyNight: [
+    "The palms are really swaying tonight.",
+    "Windy night. Hold onto that hammock!",
   ],
 
   // ---------- hurricanes and tornadoes: safety first ----------
@@ -231,7 +248,6 @@ window.TW_BEACH_LINES = {
     "Almost time for dinner on the beach.",
   ],
   night: [
-    "The stars are out tonight.",
     "Shouldn't you be asleep?",
     "Good night, {town}!",
     "Low tonight: {low}°. Grab a blanket.",

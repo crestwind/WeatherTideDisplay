@@ -79,6 +79,12 @@ window.TW_CAMP_LINES = {
     "You can see the Milky Way out here.",
     "Clear skies tonight. It'll be chilly.",
     "Make a wish on a shooting star!",
+    "Not a cloud. Just stars and firelight.",
+    "There's the Big Dipper!",
+    "Cold, clear night. Scoot closer to the fire.",
+    "Clear skies. Good night for sleeping under the stars.",
+    "I can see my breath tonight.",
+    "The stars are out tonight.",
   ],
   partly: [
     "A few clouds, nothing to worry about.",
@@ -94,6 +100,8 @@ window.TW_CAMP_LINES = {
     "A few clouds drifting past the moon.",
     "Stars peeking out between the clouds.",
     "Nice night, all things considered.",
+    "The moon keeps ducking behind the clouds.",
+    "A few stars peeking through the trees.",
   ],
   cloudy: [
     "Bring a light jacket, just in case.",
@@ -109,6 +117,9 @@ window.TW_CAMP_LINES = {
     "No stars tonight. Too cloudy.",
     "Cloudy night. Good thing I've got the fire.",
     "Dark in the woods tonight.",
+    "Clouds are keeping it a little warmer tonight.",
+    "Pitch dark past the firelight.",
+    "Hope it holds off till morning.",
   ],
   fog: [
     "Can't see a thing out here!",
@@ -197,6 +208,10 @@ window.TW_CAMP_LINES = {
     "Hold onto the tent!",
     "Listen to those trees creak.",
   ],
+  windyNight: [
+    "Listen to those pines in the wind tonight.",
+    "Windy night. Good thing the tent's staked down.",
+  ],
 
   // ---------- hurricanes and tornadoes: safety first ----------
   hurricane: [
@@ -246,7 +261,6 @@ window.TW_CAMP_LINES = {
     "Time to start dinner.",
   ],
   night: [
-    "The stars are out tonight.",
     "Shouldn't you be asleep?",
     "Good night, {town}!",
     "Low tonight: {low}°. Grab a blanket.",

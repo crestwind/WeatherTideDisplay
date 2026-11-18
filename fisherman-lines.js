@@ -73,6 +73,12 @@ window.TW_LINES = {
     "Clear skies tonight. It'll be chilly.",
     "You can see every star out here.",
     "Make a wish on a shooting star!",
+    "Clear and calm. You can hear every wave.",
+    "The lighthouse beam looks extra bright tonight.",
+    "There's the Big Dipper!",
+    "Clear night, cold hands. Worth it.",
+    "The stars are out tonight.",
+    "The moon's lighting up the water.",
   ],
   partly: [
     "A few clouds, nothing to worry about.",
@@ -89,6 +95,8 @@ window.TW_LINES = {
     "A few clouds drifting past the moon.",
     "Stars peeking out between the clouds.",
     "Nice night, all things considered.",
+    "The moon keeps ducking behind the clouds.",
+    "Patchy clouds, a few stars. Good enough.",
   ],
   cloudy: [
     "Grey skies, but the fish don't mind.",
@@ -105,6 +113,8 @@ window.TW_LINES = {
     "No stars tonight. Too cloudy.",
     "Cloudy night. Good thing I brought a lantern.",
     "Dark night out here. Not even the moon.",
+    "Can't see a single star. Just me and the lantern.",
+    "Clouds are keeping it a little warmer tonight.",
   ],
   fog: [
     "Can't see a thing out here!",
@@ -198,6 +208,10 @@ window.TW_LINES = {
   windyDay: [
     "Kite flying weather!",
   ],
+  windyNight: [
+    "Hear that wind whistling through the rigging?",
+    "Windy night. Glad I tied the boat up tight.",
+  ],
 
   // ---------- hurricanes and tornadoes: safety first ----------
   hurricane: [
@@ -250,12 +264,10 @@ window.TW_LINES = {
   ],
   night: [
     "Night fishing, my favorite.",
-    "The stars are out tonight.",
     "Shouldn't you be asleep?",
     "Good night, {town}!",
     "The lighthouse keeps me company.",
     "Low tonight: {low}°. Grab a blanket.",
-    "The moon's lighting up the water.",
   ],
 
   // ---------- by temperature ----------
