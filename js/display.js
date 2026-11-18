@@ -66,16 +66,16 @@ function tick() {
 // The Moon tile: today's phase, and the next full moon (on the day of a full moon, the next new moon instead).
 const shortDay = ms => fmt(ms, { month: 'short', day: 'numeric' });
 function moonTile() {
-  const m = moonOn(Date.now()), want = m.event === .5 ? 0 : .5;
+  const m = moonNow(), want = m.event === .5 ? 0 : .5;
   const nx = moonEvents(Date.now(), Date.now() + 32 * 864e5).find(e => e.q === want && dayKey(e.t) !== dayKey(Date.now()));
-  return ['Moon', `<span class="mv">${moonSvg(m.age)}<span>${m.name}</span></span>`, nx ? `${want ? 'Full' : 'New'} moon ${shortDay(nx.t)}` : ''];
+  return ['Moon', `<span class="mv">${moonSvg(m.age)}<span>${m.name}</span></span>`, m.preview ? 'Preview' : nx ? `${want ? 'Full' : 'New'} moon ${shortDay(nx.t)}` : ''];
 }
 
 // The moon calendar below the first screen: this month (where the location is), each day with its moon, the main
 // phases named on their days, and the next full and new moons.
 let moonCalKey = '';
 function renderMoonCal() {
-  const now = Date.now(), today = dayKey(now), key = [today, S.lat, S.lon, tz(), S.clock].join();
+  const now = Date.now(), today = dayKey(now), key = [today, S.lat, S.lon, tz(), S.clock, S.moonPreview].join();
   if (key === moonCalKey) return;
   moonCalKey = key;
   const [y, mo] = today.split('-').map(Number), first = Date.UTC(y, mo - 1, 1, 12), days = new Date(Date.UTC(y, mo, 0)).getUTCDate();
@@ -91,10 +91,10 @@ function renderMoonCal() {
   }
   const up = moonEvents(now, now + 60 * 864e5), nf = up.find(e => e.q === .5), nn = up.find(e => e.q === 0);
   const when = e => `${fmt(e.t, { weekday: 'short', month: 'short', day: 'numeric' })}, ${fmtTime(e.t)}`;
-  const m = moonOn(now);
+  const m = moonNow();
   $('#moonWhen').textContent = fmt(first, { month: 'long', year: 'numeric', timeZone: 'UTC' });
   $('#moonCal').innerHTML = `<div class="moonnow">${moonSvg(m.age, 'mo big')}<div><div class="nm">${m.name}</div>
-      <div class="sub">Today · ${Math.round((1 - Math.cos(2 * Math.PI * m.age)) * 50)}% lit</div></div>
+      <div class="sub">${m.preview ? 'Preview' : 'Today'} · ${Math.round((1 - Math.cos(2 * Math.PI * m.age)) * 50)}% lit</div></div>
       <div class="nxt">${nf ? `<div>Next full moon <b>${when(nf)}</b></div>` : ''}${nn ? `<div>Next new moon <b>${when(nn)}</b></div>` : ''}</div></div>
     <div class="mcal">${cells}</div>
     <p class="src">Worked out on your device using Jean Meeus's formulas from <i>Astronomical Algorithms</i>, the method astronomers and almanacs use.</p>`;

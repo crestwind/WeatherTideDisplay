@@ -6,7 +6,7 @@ const $ = s => document.querySelector(s);
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 /* ======================= settings ======================= */
-const DEFAULTS = { name: '', lat: null, lon: null, units: 'imperial', clock: '12', tideStation: '', motion: 'full', scene: 'auto', tod: 'auto', alertPreview: '', soePreview: '', display: 'normal', holiday: 'auto', textSize: '1' };   // the Normal (sky) style is the default for new visitors; holidays come on in their season
+const DEFAULTS = { name: '', lat: null, lon: null, units: 'imperial', clock: '12', tideStation: '', motion: 'full', scene: 'auto', tod: 'auto', alertPreview: '', soePreview: '', display: 'normal', holiday: 'auto', textSize: '1', moonPreview: '' };   // the Normal (sky) style is the default for new visitors; holidays come on in their season
 let S = loadSettings();
 function loadSettings() {
   let s = { ...DEFAULTS };
@@ -19,6 +19,7 @@ function loadSettings() {
   const q = new URLSearchParams(location.search);
   if (q.has('lat') && q.has('lon')) { s.lat = +q.get('lat'); s.lon = +q.get('lon'); s.name = q.get('name') || s.name || `${s.lat}, ${s.lon}`; }
   for (const k of ['units', 'scene', 'tod', 'motion', 'display', 'holiday', 'textSize']) if (q.has(k)) s[k] = q.get(k);
+  if (q.has('moon')) s.moonPreview = q.get('moon');   // ?moon=0.5 previews a full moon (see MOON_PREVIEW)
   // older settings and links used mirror=on for smart mirror mode
   if (s.mirror === 'on' || q.get('mirror') === 'on') s.display = 'mirror';
   delete s.mirror;
@@ -457,6 +458,14 @@ function moonOn(ms) {
   // the moon's speed varies, so count the age between the main phases either side, which are a quarter apart
   const age = (prev.q + .25 * (ms - prev.t) / (next.t - prev.t)) % 1;
   return { name: today ? MOON_EVENT[today.q] : MOON_BETWEEN[prev.q], age, event: today && today.q, prev, next, ev };
+}
+// The moon to show now: today's, or the one picked under Moon phase in Settings > Test & advanced (preview: true).
+const MOON_PREVIEW = { '0': 'New Moon', '0.125': 'Waxing Crescent', '0.25': 'First Quarter', '0.375': 'Waxing Gibbous',
+  '0.5': 'Full Moon', '0.625': 'Waning Gibbous', '0.75': 'Last Quarter', '0.875': 'Waning Crescent' };
+function moonNow() {
+  const p = S.moonPreview;
+  if (p != null && p !== '' && MOON_PREVIEW[p]) return { name: MOON_PREVIEW[p], age: +p, event: +p * 4 % 1 === 0 ? +p : undefined, preview: true };
+  return moonOn(Date.now());
 }
 // A little picture of the moon at age (0-1), lit on the right while it waxes (the left south of the equator).
 function moonSvg(age, cls = 'mo') {

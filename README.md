@@ -119,7 +119,7 @@ The first time it runs, a short welcome box asks only for your location: type yo
 
 ### Settings
 
-Settings has two tabs: **General** (everything below except the previews and the tide station) and **Test & advanced** (the Background scene, Time of day, Test alert notice and Test state of emergency previews, and the Tide station). The Test & advanced tab shows an orange dot while any preview is on.
+Settings has two tabs: **General** (everything below except the previews and the tide station) and **Test & advanced** (the Background scene, Time of day, Moon phase, Test alert notice and Test state of emergency previews, and the Tide station). The Test & advanced tab shows an orange dot while any preview is on.
 
 - **Location:** a town, ZIP code or `lat,lon`. You can add the state or country with or without a comma: "Cape May NJ", "Cape May, New Jersey", "Portland Maine" and "Paris France" all work. Any US ZIP code works, also ZIP+4 like 08807-1234.
 - **Units:** °F, mph and ft, or °C, km/h and metres.

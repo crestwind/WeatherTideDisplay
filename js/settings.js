@@ -13,7 +13,7 @@ function openSettings(msg, welcome = false) {   // (welcome: a first visit, so j
   $('#unitsSel').value = S.units; $('#clockSel').value = S.clock; $('#stationInput').value = S.tideStation;
   $('#motionSel').value = S.motion; $('#sceneSel').value = S.scene; $('#todSel').value = S.tod; $('#displaySel').value = S.display; $('#holidaySel').value = S.holiday;
   $('#alertSel').value = S.alertPreview; $('#soeSel').value = S.soePreview;
-  $('#textSizeSel').value = S.textSize;
+  $('#textSizeSel').value = S.textSize; $('#moonSel').value = S.moonPreview || '';
   updateTestDot();
   box.innerHTML = msg ? `<div class="msg">${msg}</div>` : '';
   $('#setForm').classList.toggle('welcome', welcome);
@@ -38,14 +38,14 @@ function showTab(which, focus = false) {
   if (focus) $(test ? '#tabTest' : '#tabMain').focus();
 }
 function updateTestDot() {
-  $('#testDot').hidden = $('#sceneSel').value === 'auto' && $('#todSel').value === 'auto' && !$('#alertSel').value && !$('#soeSel').value;
+  $('#testDot').hidden = $('#sceneSel').value === 'auto' && $('#todSel').value === 'auto' && !$('#alertSel').value && !$('#soeSel').value && !$('#moonSel').value;
 }
 $('#tabMain').onclick = () => showTab('main');
 $('#tabTest').onclick = () => showTab('test');
 $('.tabs').addEventListener('keydown', e => {   // arrow keys move between the tabs
   if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) { e.preventDefault(); showTab(e.key === 'ArrowRight' || e.key === 'End' ? 'test' : 'main', true); }
 });
-['#sceneSel', '#todSel', '#alertSel', '#soeSel'].forEach(id => $(id).addEventListener('change', updateTestDot));
+['#sceneSel', '#todSel', '#moonSel', '#alertSel', '#soeSel'].forEach(id => $(id).addEventListener('change', updateTestDot));
 const closeSettings = () => {
   $('#settings').hidden = true;
   const back = settingsFrom && settingsFrom !== document.body && document.contains(settingsFrom) ? settingsFrom : null;
@@ -182,7 +182,7 @@ $('#setForm').addEventListener('submit', e => {
   S.units = $('#unitsSel').value; S.clock = $('#clockSel').value; S.tideStation = $('#stationInput').value.trim();
   S.motion = $('#motionSel').value; S.scene = $('#sceneSel').value; S.tod = $('#todSel').value; S.display = $('#displaySel').value; S.holiday = $('#holidaySel').value; applyMirror();
   S.alertPreview = $('#alertSel').value; S.soePreview = $('#soeSel').value;
-  S.textSize = $('#textSizeSel').value; applyTextSize();
+  S.textSize = $('#textSizeSel').value; applyTextSize(); S.moonPreview = $('#moonSel').value;
   saveSettings(); closeSettings();
   // Settings are now the source of truth: drop preview options from the address so a reload can't bring them back.
   if (location.search) try { history.replaceState(null, '', location.pathname); } catch (e) {}

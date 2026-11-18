@@ -5,7 +5,7 @@
 function moonSprite() {
   const r = Hd * .048, R = Math.round(r * 6), [c, x] = mk(R * 2, R * 2);
   // Real moon phase (the same one as the Moon tile, see moonOn): 0 = new, .5 = full.
-  const p = moonOn(Date.now()).age, k = Math.cos(2 * Math.PI * p), waxing = p < .5;
+  const p = moonNow().age, k = Math.cos(2 * Math.PI * p), waxing = p < .5;
   const south = S.lat != null && S.lat < 0;   // south of the equator the moon looks upside down: lit on the left while it waxes
   const lit = (1 - k) / 2;   // fraction of the disc that's lit
   const halo = x.createRadialGradient(R, R, r * .9, R, R, r * 2.4);
@@ -356,7 +356,7 @@ function setBg(kind, tod) {
 
 function set(kind, tod) {
   setBg(kind, tod);
-  const s = [kind, tod, Wd, Hd, S.motion, S.display, holidayNow(), S.lat < 0].join('|');   // (south of the equator the moon turns over)
+  const s = [kind, tod, Wd, Hd, S.motion, S.display, holidayNow(), S.lat < 0, S.moonPreview].join('|');   // (south of the equator the moon turns over)
   if (s === sig) return;
   sig = s; mode = { kind, tod }; sc = SCENES[kind] || SCENES.clear;
   build(); start();
