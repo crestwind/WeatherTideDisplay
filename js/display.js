@@ -87,7 +87,7 @@ function renderMoonCal() {
   for (let d = 1; d <= days; d++) {
     const t = first + (d - 1) * 864e5, k = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`, e = byDay[k];
     const m = moonOn(t), cls = [k < today ? 'past' : '', k === today ? 'today' : '', e ? 'main' : ''].join(' ').trim();
-    cells += `<span class="${cls}"><b>${d}</b>${moonSvg(e ? e.q : m.age)}<small>${e ? `<span class="lg">${MOON_EVENT[e.q]}</span><span class="sh">${MOON_SHORT[e.q]}</span>` : ''}</small></span>`;
+    cells += `<span class="${cls}"><b>${d}</b>${moonSvg(e ? e.q : m.age)}<small>${e ? `<span class="lg">${MOON_EVENT[e.q]}</span><span class="sh">${MOON_SHORT[e.q]}</span>` : ''}</small>${e ? '' : `<span class="sr">${m.name}</span>`}${k === today ? '<span class="sr">, today</span>' : ''}</span>`;
   }
   const up = moonEvents(now, now + 60 * 864e5), nf = up.find(e => e.q === .5), nn = up.find(e => e.q === 0);
   const when = e => `${fmt(e.t, { weekday: 'short', month: 'short', day: 'numeric' })}, ${fmtTime(e.t)}`;
@@ -118,7 +118,7 @@ function render() {
   const todayAmt = [todayRain && `${todayRain} rain`, todaySnow && `${todaySnow} snow`].filter(Boolean).join(' · ');
   // today's chance of rain or snow after the high and low: a blue raindrop, or a white snowflake on a snowy day
   const snowy = ['flurries', 'snow', 'heavysnow'].includes(KIND(d.weather_code[0])) || (d.snowfall_sum[0] > 0 && !(add(d.rain_sum[0], d.showers_sum[0]) > 0));
-  const pop = `<span class="pop${snowy ? ' sn' : ''}">${snowy ? FLAKE : '<svg viewBox="0 0 12 16" aria-hidden="true"><path d="M6 1C6 1 1 7.5 1 10.5a5 5 0 0 0 10 0C11 7.5 6 1 6 1z"/></svg>'}${r0(d.precipitation_probability_max[0] ?? 0)}%</span>`;
+  const pop = `<span class="pop${snowy ? ' sn' : ''}">${snowy ? FLAKE : '<svg viewBox="0 0 12 16" aria-hidden="true"><path d="M6 1C6 1 1 7.5 1 10.5a5 5 0 0 0 10 0C11 7.5 6 1 6 1z"/></svg>'}${r0(d.precipitation_probability_max[0] ?? 0)}%<span class="sr"> chance of ${snowy ? 'snow' : 'rain'}</span></span>`;
   $('#hl').innerHTML = `H: ${r0(d.temperature_2m_max[0])}°   L: ${r0(d.temperature_2m_min[0])}°${pop}` + (todayAmt ? `   ·   ${todayAmt} today` : '');
 
   // hourly
@@ -128,8 +128,8 @@ function render() {
   for (let i = i0; i < Math.min(i0 + 12, h.time.length); i++) {
     const first = i === i0, p = h.precipitation_probability[i];
     hours += `<div><div class="t">${first ? 'Now' : fmtHour(h.time[i] * 1000)}</div>
-      <div class="p">${p >= 20 ? p + '%' : ''}</div>
-      ${icon(first ? c.weather_code : h.weather_code[i], first ? day : !!h.is_day[i])}
+      <div class="p">${p >= 20 ? p + '%<span class="sr"> chance of rain</span>' : ''}</div>
+      ${icon(first ? c.weather_code : h.weather_code[i], first ? day : !!h.is_day[i], true)}
       <div class="d">${r0(first ? c.temperature_2m : h.temperature_2m[i])}°</div>
       <div class="a">${fmtSnow(h.snowfall[i]) ? amtHtml(0, h.snowfall[i]) : fmtAmt(add(h.rain[i], h.showers[i]))}</div></div>`;
   }
@@ -140,10 +140,10 @@ function render() {
   $('#days').innerHTML = d.time.map((t, i) => {
     const a = d.temperature_2m_min[i], b = d.temperature_2m_max[i], p = d.precipitation_probability_max[i];
     const dot = i === 0 ? `<b style="left:${(c.temperature_2m - lo) / span * 100}%"></b>` : '';
-    return `<div class="day"><div>${i === 0 ? 'Today' : fmt((t + 43200) * 1000, { weekday: 'short' })}</div>${icon(d.weather_code[i])}
-      <div class="p">${p >= 20 ? p + '%' : ''}${(a => a ? `<small>${a}</small>` : '')(amtHtml(add(d.rain_sum[i], d.showers_sum[i]), d.snowfall_sum[i]))}</div><div class="lo">${r0(a)}°</div>
-      <div class="bar"><i style="left:${(a - lo) / span * 100}%;right:${(hi - b) / span * 100}%;background:linear-gradient(90deg,${tempColor(a)},${tempColor(b)})"></i>${dot}</div>
-      <div>${r0(b)}°</div></div>`;
+    return `<div class="day"><div>${i === 0 ? 'Today' : fmt((t + 43200) * 1000, { weekday: 'short' })}</div>${icon(d.weather_code[i], true, true)}
+      <div class="p">${p >= 20 ? p + '%<span class="sr"> chance of rain</span>' : ''}${(a => a ? `<small>${a}</small>` : '')(amtHtml(add(d.rain_sum[i], d.showers_sum[i]), d.snowfall_sum[i]))}</div><div class="lo"><span class="sr">low </span>${r0(a)}°</div>
+      <div class="bar" aria-hidden="true"><i style="left:${(a - lo) / span * 100}%;right:${(hi - b) / span * 100}%;background:linear-gradient(90deg,${tempColor(a)},${tempColor(b)})"></i>${dot}</div>
+      <div><span class="sr">high </span>${r0(b)}°</div></div>`;
   }).join('');
 
   // stat tiles
@@ -152,10 +152,10 @@ function render() {
   const tiles = [
     ['Feels like', r0(c.apparent_temperature) + '°'],
     ['Humidity', r0(c.relative_humidity_2m) + '%'],
-    ['Wind', `<span class="arrow" style="transform:rotate(${c.wind_direction_10m + 180}deg)">↑</span> ${r0(c.wind_speed_10m)}`,
+    ['Wind', `<span class="arrow" aria-hidden="true" style="transform:rotate(${c.wind_direction_10m + 180}deg)">↑</span> ${r0(c.wind_speed_10m)}`,
       `${COMPASS[Math.round(c.wind_direction_10m / 22.5) % 16]} · gusts ${r0(c.wind_gusts_10m)} ${imp() ? 'mph' : 'km/h'}`],
     ['UV index', r0(uv), uvL],
-    ['Sun', `<span class="two"><span><i class="up">↑</i>${fmtTime(nextOf(d.sunrise))}</span><span><i class="dn">↓</i>${fmtTime(nextOf(d.sunset))}</span></span>`],
+    ['Sun', `<span class="two"><span><i class="up" aria-hidden="true">↑</i><span class="sr">Sunrise </span>${fmtTime(nextOf(d.sunrise))}</span><span><i class="dn" aria-hidden="true">↓</i><span class="sr">Sunset </span>${fmtTime(nextOf(d.sunset))}</span></span>`],
     moonTile(),
   ];
   const mi = M ? M.hourly.time.findIndex(t => t + 3600 > nowS) : -1;
@@ -202,8 +202,8 @@ function renderTide() {
   body.innerHTML = `
     <div class="tide-sum"><b>${rising ? '▲ Rising' : '▼ Falling'}</b> <span class="dim">· ${fv(vNow)} now</span>
       ${next ? `<span class="dim">· ${next.type === 'high' ? 'High' : 'Low'} tide in</span> <b>${inTxt}</b>` : ''}</div>
-    <div class="tide-scroll" id="tideScroll"><div class="tide-inner" id="tideInner">
-      <div class="chart"><svg id="tideSvg"></svg></div>
+    <div class="tide-scroll" id="tideScroll" tabindex="0" role="region" aria-label="Tide chart and times, scrolls sideways"><div class="tide-inner" id="tideInner">
+      <div class="chart" aria-hidden="true"><svg id="tideSvg"></svg></div>
       <div class="tide-marks" id="tideMarks"></div>
     </div></div>`;
 

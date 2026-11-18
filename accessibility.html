@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Accessibility · Tidal Weather</title>
+<meta name="description" content="How Tidal Weather works for everyone, and how to tell us when it doesn't.">
+<link rel="icon" href="icon.png">
+<meta name="theme-color" content="#0b1a3a">
+<style>
+  :root { --fg: #fff; --dim: rgba(255,255,255,.78); --line: rgba(255,255,255,.16); --link: #8fd3ff; --card: rgba(255,255,255,.05); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0b1a3a; color: var(--fg); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  a { color: var(--link); }
+  a:focus-visible { outline: 3px solid #ffd166; outline-offset: 2px; border-radius: 3px; }
+  .back { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--fg); font-weight: 600; margin-bottom: 24px; }
+  .back img { width: 64px; height: auto; }
+  h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 4px; }
+  .when { color: var(--dim); margin: 0 0 24px; }
+  h2 { font-size: 1.25rem; margin: 36px 0 8px; padding-top: 16px; border-top: 1px solid var(--line); }
+  p, li { color: var(--dim); }
+  strong { color: var(--fg); }
+  ul { padding-left: 1.3em; }
+  li { margin: 6px 0; }
+  .short { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 4px 20px; }
+  .short li { color: var(--fg); }
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px 8px 0; border-top: 1px solid var(--line); }
+  th { color: var(--fg); font-weight: 600; }
+  td { color: var(--dim); }
+  @media (max-width: 560px) { table, tbody, tr, th, td { display: block; } tr { border-top: 1px solid var(--line); padding: 6px 0; } th, td { border: 0; padding: 2px 0; } thead { display: none; } td:first-child { color: var(--fg); font-weight: 600; } }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="./"><img src="logo.png" alt="">Back to Tidal Weather</a>
+  <h1>Accessibility</h1>
+  <p class="when">Last updated November 18, 2026</p>
+
+  <p>Tidal Weather should be easy to use for everyone, including people who use a screen reader, a keyboard instead of a mouse, larger text, or who are sensitive to motion. We aim to meet the <strong>Web Content Accessibility Guidelines (WCAG) 2.1, level AA</strong>, the standard most websites in the United States are measured against.</p>
+
+  <h2>What's built in</h2>
+  <ul>
+    <li><strong>Text size:</strong> Settings has a Text size option (Normal, 125%, 150% and 200%). Your browser's own zoom works too.</li>
+    <li><strong>Motion:</strong> the moving sky and scenes are decoration only. You can slow them down or switch them off under Background animation in Settings, which leaves a still picture. If your device is set to reduce motion, Tidal Weather starts with the animation off.</li>
+    <li><strong>No flashing:</strong> lightning in storm scenes flashes no more than three times a second, below the level known to trigger seizures. Turning the animation off removes it completely.</li>
+    <li><strong>Keyboard:</strong> everything can be reached with Tab and used with Enter. A yellow outline shows where you are. Shortcuts: S or Enter opens Settings, Esc closes it, F switches full screen on or off, and R refreshes the weather.</li>
+    <li><strong>Screen readers:</strong> the page has headings for each section. Weather pictures, arrows and the moon are described in words, chances of rain are read as such, and weather alerts are announced when they appear.</li>
+    <li><strong>Contrast:</strong> text is light on dark panels, and the smaller grey text was made brighter so it can be read on the daytime sky.</li>
+    <li><strong>No sound unless you ask:</strong> sounds only play when you pick one in the Sounds menu, and there's a Stop button and a volume control.</li>
+    <li><strong>No time limits:</strong> nothing on the site needs to be done in a set time.</li>
+  </ul>
+
+  <h2>Known limits</h2>
+  <ul>
+    <li><strong>The rain and snow map</strong> is a picture and can't be fully described in words. The hourly and 7-day forecasts give the same information as text.</li>
+    <li><strong>The tide chart</strong> is a picture too. The tide times and heights are written underneath it, and the tide tables further down the page list the highs and lows for every day.</li>
+    <li><strong>The animated scenes</strong> (the fisherman, the camper, the planes, the animals and the rest) are just for fun and aren't described to screen readers. They don't carry any weather information.</li>
+  </ul>
+
+  <h2>Tell us about a problem</h2>
+  <p>If something on Tidal Weather is hard or impossible for you to use, please tell us. Use <strong>Send feedback</strong> in Settings (the button in the bottom right corner of the screen, or press S), and say what you were trying to do and what device and browser you use. We'll do our best to fix it, or to get you the information another way.</p>
+
+  <p style="margin-top:40px"><a href="./">← Back to Tidal Weather</a> · <a href="privacy.html">Privacy policy</a></p>
+</main>
+</body>
+</html>

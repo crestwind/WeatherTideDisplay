@@ -9,6 +9,7 @@ A full-screen weather, tide and emergency-alert display for a TV, published as a
 | `index.html` | The page itself: the boxes on the screen and the settings panel. |
 | `style.css` | How everything looks (colours, sizes, layout). |
 | `privacy.html` | The privacy policy page (linked at the bottom of the page and in settings). Update it, and its date, whenever the site starts keeping or sending something new. |
+| `accessibility.html` | The accessibility statement (linked next to the privacy policy): what is built in for screen readers, keyboards, larger text and motion, the known limits, and how to report a problem. |
 | `js/` | The display's code, one file per topic: `core.js` (settings, weather and tide data), `sky.js` (the animated sky and weather), `ocean.js`, `forest.js`, `tropical.js` (the display styles), `holidays.js` (holiday themes), `events.js` (random events), `scene.js` (draws it all), `display.js` (the weather and tide boxes), `settings.js` (the settings panel), `below.js` (radar, history and tides below the first screen, feedback), `start.js`. |
 | `nj-emergency.sh` | Checks New Jersey's state-of-emergency orders. The website runs it every 30 minutes. |
 | `nj-emergency.js` | Written by `nj-emergency.sh`. Don't edit it. It isn't uploaded; the website makes its own. |

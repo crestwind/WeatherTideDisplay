@@ -19,15 +19,15 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="bg" id="bgA"></div>
-<div class="bg" id="bgB"></div>
-<canvas id="sky"></canvas>
+<div class="bg" id="bgA" aria-hidden="true"></div>
+<div class="bg" id="bgB" aria-hidden="true"></div>
+<canvas id="sky" aria-hidden="true"></canvas>
 <div id="shade"></div>
 
 <main id="app">
   <section class="left">
     <div class="top">
-      <div><img class="logo" src="logo.png" alt="Tidal Weather"><div class="clock" id="clock">--:--</div><div class="date" id="date"></div></div>
+      <div><h1 class="logo-h"><img class="logo" src="logo.png" alt="Tidal Weather"></h1><div class="clock" id="clock">--:--</div><div class="date" id="date"></div></div>
       <div class="notices">
         <div class="notice alert" id="alert" hidden></div>
         <div class="notice soe" id="soe" hidden></div>
@@ -43,18 +43,18 @@
   </section>
 
   <section class="right">
-    <div class="card"><h3>Hourly forecast <span>Open-Meteo</span></h3><div class="hours" id="hours"></div></div>
-    <div class="card" id="tideCard"><h3>Tides <span id="tideSrc"></span></h3><div id="tideBody" style="display:flex;flex-direction:column;flex:1;min-height:0"></div></div>
-    <div class="card"><h3>7-day forecast <span>Open-Meteo</span></h3><div class="days" id="days"></div></div>
+    <div class="card"><h2>Hourly forecast <span>Open-Meteo</span></h2><div class="hours" id="hours"></div></div>
+    <div class="card" id="tideCard"><h2>Tides <span id="tideSrc"></span></h2><div id="tideBody" style="display:flex;flex-direction:column;flex:1;min-height:0"></div></div>
+    <div class="card"><h2>7-day forecast <span>Open-Meteo</span></h2><div class="days" id="days"></div></div>
   </section>
-  <div class="more-hint" id="moreHint">▼ Radar &amp; history</div>
+  <button type="button" class="more-hint" id="moreHint">▼ Radar &amp; history</button>
 </main>
 
 <div class="more" id="more">
   <div class="card">
-    <h3>Rain &amp; snow forecast · next 24 hours</h3>
+    <h2>Rain &amp; snow forecast · next 24 hours</h2>
     <div class="radar" id="radar">
-      <canvas id="radarMap"></canvas><canvas id="radarRain"></canvas>
+      <canvas id="radarMap" aria-hidden="true"></canvas><canvas id="radarRain" role="img" aria-label="Map of forecast rain and snow over the next 24 hours"></canvas>
       <div class="pin"></div>
       <div class="stamp" id="radarStamp"></div>
       <div class="hint" id="radarHint"></div>
@@ -69,27 +69,27 @@
     </div>
   </div>
   <div class="card">
-    <h3>Weather history <span id="histWhere"></span></h3>
+    <h2>Weather history <span id="histWhere"></span></h2>
     <div id="hist"><div class="empty">Loading history…</div></div>
   </div>
   <div class="card">
-    <h3>Tides this month and this year <span id="tideYearSrc"></span></h3>
+    <h2>Tides this month and this year <span id="tideYearSrc"></span></h2>
     <div id="tideYear"><div class="empty">Loading tides…</div></div>
   </div>
   <div class="card">
-    <h3>Moon phases <span id="moonWhen"></span></h3>
+    <h2>Moon phases <span id="moonWhen"></span></h2>
     <div id="moonCal"><div class="empty">Loading…</div></div>
   </div>
-  <p class="foot"><a href="privacy.html">Privacy policy</a></p>
+  <p class="foot"><a href="privacy.html">Privacy policy</a> · <a href="accessibility.html">Accessibility</a></p>
 </div>
 
-<canvas id="glass"></canvas>
+<canvas id="glass" aria-hidden="true"></canvas>
 <div id="vbar" aria-hidden="true"><div id="vthumb"></div></div>
 
-<button id="sndBtn" aria-label="Sounds" title="Sounds">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor" stroke-width="1.5"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+<button id="sndBtn" aria-label="Sounds" title="Sounds" aria-expanded="false" aria-controls="sndPanel">
+  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor" stroke-width="1.5"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
 </button>
-<div id="sndPanel" hidden>
+<div id="sndPanel" role="dialog" aria-label="Sounds" hidden>
   <h4>Sounds <button type="button" id="sndClose" aria-label="Close">×</button></h4>
   <div id="sndList"></div>
   <div class="sndrow"><span>Volume</span><input type="range" id="sndVol" min="0" max="100" value="60" aria-label="Volume"><button type="button" id="sndStop">Stop</button></div>
@@ -97,16 +97,16 @@
 </div>
 <button id="fsBtn" aria-label="Full screen" title="Full screen (F)"></button>
 <button id="gear" aria-label="Settings" title="Settings (S)">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
 </button>
 
-<div class="modal" id="settings" hidden>
+<div class="modal" id="settings" role="dialog" aria-modal="true" aria-labelledby="setTitle" hidden>
   <form class="panel" id="setForm" autocomplete="off">
     <h2 id="setTitle">Settings</h2>
     <label class="keep">Location
       <input id="locInput" placeholder="City or town, ZIP code, or lat,lon">
     </label>
-    <div id="locResults"></div>
+    <div id="locResults" aria-live="polite"></div>
     <div class="row">
       <label>Units
         <select id="unitsSel"><option value="imperial">°F · mph · ft</option><option value="metric">°C · km/h · m</option></select>
@@ -123,6 +123,9 @@
         <select id="motionSel"><option value="full">Full (30 fps)</option><option value="light">Light (15 fps, fewer particles)</option><option value="off">Off (still image)</option></select>
       </label>
     </div>
+    <label>Text size
+      <select id="textSizeSel"><option value="1">Normal</option><option value="1.25">Large (125%)</option><option value="1.5">Larger (150%)</option><option value="2">Largest (200%)</option></select>
+    </label>
     <label>Display style
       <select id="displaySel"><option value="normal">Sky (default)</option><option value="ocean">Ocean</option><option value="forest">Forest</option><option value="tropical" disabled>Tropical (coming soon)</option><option value="city" disabled>City (coming soon)</option><option value="waterfall" disabled>Waterfall (coming soon)</option><option value="village" disabled>Village (coming soon)</option><option value="mirror">Smart mirror (black background, no animation)</option></select>
     </label>
@@ -175,7 +178,7 @@
           <input id="fbReply" type="email" maxlength="200" placeholder="you@example.com">
         </label>
         <input id="fbTrap" class="trap" tabindex="-1" autocomplete="off" aria-hidden="true">
-        <div class="fbrow"><button type="button" id="fbSend">Send</button><span id="fbStatus"></span></div>
+        <div class="fbrow"><button type="button" id="fbSend">Send</button><span id="fbStatus" role="status"></span></div>
       </div>
     </details>
     <div class="buttons"><button type="button" class="left" id="fsSetBtn">Full screen</button><button type="button" id="cancelBtn">Cancel</button><button type="submit" id="saveBtn">Save</button></div>
@@ -183,10 +186,11 @@
     <button type="button" id="moreSetBtn" class="keep">Show all settings ▾</button>
     <p class="hint">Keys: S or Enter opens settings · Esc closes · R refreshes · F toggles full screen.</p>
     <p class="hint" id="verLine"></p>
-    <p class="hint keep"><a href="privacy.html">Privacy policy</a></p>
+    <p class="hint keep"><a href="privacy.html">Privacy policy</a> · <a href="accessibility.html">Accessibility</a></p>
   </form>
 </div>
-<div id="toast"></div>
+<div id="toast" role="status"></div>
+<div id="srSay" class="sr" aria-live="polite"></div><!-- new weather alerts, read out once by screen readers -->
 
 <!-- version.js is written when the website is published; the test copy on the PC has none -->
 <script src="version.js"></script>

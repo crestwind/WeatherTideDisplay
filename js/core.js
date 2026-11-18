@@ -6,15 +6,19 @@ const $ = s => document.querySelector(s);
 const rnd = (a, b) => a + Math.random() * (b - a);
 
 /* ======================= settings ======================= */
-const DEFAULTS = { name: '', lat: null, lon: null, units: 'imperial', clock: '12', tideStation: '', motion: 'full', scene: 'auto', tod: 'auto', alertPreview: '', soePreview: '', display: 'normal', holiday: 'auto' };   // the Normal (sky) style is the default for new visitors; holidays come on in their season
+const DEFAULTS = { name: '', lat: null, lon: null, units: 'imperial', clock: '12', tideStation: '', motion: 'full', scene: 'auto', tod: 'auto', alertPreview: '', soePreview: '', display: 'normal', holiday: 'auto', textSize: '1' };   // the Normal (sky) style is the default for new visitors; holidays come on in their season
 let S = loadSettings();
 function loadSettings() {
   let s = { ...DEFAULTS };
-  try { s = { ...s, ...JSON.parse(localStorage.getItem('wt-settings') || '{}') }; } catch (e) {}
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('wt-settings') || '{}') || {}; } catch (e) {}
+  s = { ...s, ...saved };
+  // someone who has asked their device to reduce motion gets the still picture, until they pick something else in settings
+  if (!saved.motion && matchMedia('(prefers-reduced-motion: reduce)').matches) s.motion = 'off';
   // URL parameters win, e.g. index.html?lat=38.93&lon=-74.91&name=Cape%20May
   const q = new URLSearchParams(location.search);
   if (q.has('lat') && q.has('lon')) { s.lat = +q.get('lat'); s.lon = +q.get('lon'); s.name = q.get('name') || s.name || `${s.lat}, ${s.lon}`; }
-  for (const k of ['units', 'scene', 'tod', 'motion', 'display', 'holiday']) if (q.has(k)) s[k] = q.get(k);
+  for (const k of ['units', 'scene', 'tod', 'motion', 'display', 'holiday', 'textSize']) if (q.has(k)) s[k] = q.get(k);
   // older settings and links used mirror=on for smart mirror mode
   if (s.mirror === 'on' || q.get('mirror') === 'on') s.display = 'mirror';
   delete s.mirror;
@@ -26,6 +30,12 @@ function loadSettings() {
 function saveSettings() { try { localStorage.setItem('wt-settings', JSON.stringify(S)); } catch (e) {} }
 // Smart mirror mode is a class on <html>, so it can also change the text size (rem).
 function applyMirror() { document.documentElement.classList.toggle('mirror', S.display === 'mirror'); }
+// Text size (Settings): scales everything, since all sizes are in rem. 1 = normal, up to 2 = twice the size.
+function applyTextSize() {
+  const ts = [1, 1.25, 1.5, 2].includes(+S.textSize) ? +S.textSize : 1, html = document.documentElement;
+  html.style.setProperty('--ts', ts);
+  html.classList.toggle('big', ts > 1 && S.display !== 'mirror');   // larger text uses the stacked, scrolling layout (not on a mirror, which can't scroll)
+}
 // Display styles still being built are greyed out ("coming soon") on tidalweather.com but can be picked on the test site.
 if (window.TW_SHOWCASE) for (const v of ['tropical']) { const o = document.querySelector(`#displaySel option[value=${v}]`); o.disabled = false; o.textContent = o.textContent.replace(' (coming soon)', ' (test site)'); }
 // On a tall mirror (which can't scroll), shrink the text until everything fits on the screen, then redraw the tide chart at the new size.
@@ -281,10 +291,14 @@ const dayTime = ms => (sameDay(ms, Date.now()) ? '' : fmt(ms, { weekday: 'short'
 const DECL = { EM: 'Federal emergency', DR: 'Major disaster', FM: 'Fire emergency' };
 const ALERT_INK = { warning: '#c41c28', watch: '#ce6810', advisory: '#b0880a' };
 
+const alertSaid = new Set();
 function renderAlert() {
   const box = $('#alert'), now = Date.now();
   const list = [...alerts, ...quakes].filter(a => !(a.ends < now)).sort((a, b) => LEVEL[a.level] - LEVEL[b.level]);
   if (!list.length) { box.hidden = true; return; }
+  // screen readers hear each alert once, when it first appears (the box itself changes every 8 seconds)
+  const fresh = list.filter(a => !alertSaid.has(a.event + '|' + a.start));
+  if (fresh.length) { fresh.forEach(a => alertSaid.add(a.event + '|' + a.start)); $('#srSay').textContent = fresh.map(a => (a.preview ? 'Preview: ' : '') + a.event).join('. '); }
   const i = alertIdx % list.length, a = list[i];
   let when;
   if (a.quake) when = [`${distTxt(a.km)} away`, `at ${dayTime(a.start)}`];
@@ -293,7 +307,7 @@ function renderAlert() {
   const count = tags.length ? `<div class="cnt">${tags.join(' · ')}</div>` : '';
   box.hidden = false;
   box.className = 'notice alert ' + a.level;
-  box.innerHTML = `<svg viewBox="0 0 24 24"><path d="M12 2.5 1.5 21h21z" fill="#fff"/><path d="M12 9v5.5" stroke="${ALERT_INK[a.level]}" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.4" fill="${ALERT_INK[a.level]}"/></svg>
+  box.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 1.5 21h21z" fill="#fff"/><path d="M12 9v5.5" stroke="${ALERT_INK[a.level]}" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.4" fill="${ALERT_INK[a.level]}"/></svg>
     <div><div class="ev">${esc(a.event)}</div><div class="when">${when.filter(Boolean).join(' · ')}</div>${count}</div>`;
 }
 
@@ -308,7 +322,7 @@ function renderSoe() {
     ? [esc(d.reason), esc(d.scope), d.effective ? 'effective ' + esc(d.effective) : ''].filter(Boolean).join(' · ')
     : `${esc(titleCase(d.title))} · ${DECL[d.type] || 'Emergency'} declared ${date}`;
   const tags = [d.stateEo ? `nj.gov · Executive Order ${d.eo}` : 'FEMA', d.preview ? 'Preview' : '', decls.length > 1 ? `+${decls.length - 1} more` : ''].filter(Boolean);
-  el.innerHTML = `<svg viewBox="0 0 24 24"><path d="M5 21V3.5M5 4h12l-2.5 4L17 12H5" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>
+  el.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V3.5M5 4h12l-2.5 4L17 12H5" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>
     <div><div class="ev">${title}</div><div class="when">${details}</div>${tags.length ? `<div class="cnt">${tags.join(' · ')}</div>` : ''}</div>`;
 }
 
@@ -364,7 +378,7 @@ const fmtSnow = v => {
   if (v == null || v < (imp() ? .1 : .2)) return '';
   return imp() ? v.toFixed(1) + '″' : (v < 10 ? v.toFixed(1) : Math.round(v)) + ' cm';
 };
-const FLAKE = '<svg class="fl" viewBox="0 0 24 24"><path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
+const FLAKE = '<svg class="fl" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
 const amtHtml = (rain, snow) => [fmtAmt(rain), fmtSnow(snow) && `<span class="sn">${fmtSnow(snow)}${FLAKE}</span>`].filter(Boolean).join(' ');
 const add = (a, b) => (a || 0) + (b || 0);
 const COMPASS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
@@ -467,7 +481,7 @@ function sunIc(cx, cy, r) {
 const moonIc = (cx, cy, r) => `<path d="M${cx} ${cy - r}A${r} ${r} 0 0 0 ${cx} ${cy + r}A${r * 1.3} ${r * 1.3} 0 0 1 ${cx} ${cy - r}z" fill="#ECEAF6" transform="translate(${r * .35} 0)"/>`;
 const drops = (xs, len, col = '#7cc4ff') => `<g stroke="${col}" stroke-width="3.5" stroke-linecap="round">${xs.map(x => `<line x1="${x}" y1="44" x2="${x - 3}" y2="${44 + len}"/>`).join('')}</g>`;
 const flakesIc = (pts, r) => `<g fill="#fff">${pts.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g>`;
-function icon(code, day = true) {
+function icon(code, day = true, label = false) {   // label: screen readers hear the condition (otherwise the picture is skipped, when the words are next to it)
   let b;
   switch (KIND(code)) {
     case 'clear': b = day ? sunIc(32, 32, 12) : moonIc(30, 32, 15); break;
@@ -482,6 +496,6 @@ function icon(code, day = true) {
     case 'heavysnow': b = cloud('#c3ccd8', 0, -8) + flakesIc([[17,45],[27,45],[37,45],[47,45],[22,52],[32,52],[42,52],[17,59],[27,59],[37,59],[47,59]], 2.6); break;
     case 'storm': b = cloud('#9aa6b4', 0, -8) + drops([20, 46], 10) + '<polygon points="34,36 25,50 32,50 28,62 41,45 34,45 38,36" fill="#FFD84A"/>'; break;
   }
-  return `<svg class="ic" viewBox="0 0 64 64">${b}</svg>`;
+  return `<svg class="ic" viewBox="0 0 64 64" ${label ? `role="img" aria-label="${condText(code, day)}"` : 'aria-hidden="true"'}>${b}</svg>`;
 }
 

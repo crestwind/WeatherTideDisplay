@@ -6,7 +6,7 @@
 let resizeT = 0;
 addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { Sky.resize(); render(); Radar.refresh(); }, 200); });
 
-applyMirror();
+applyMirror(); applyTextSize();
 Sky.resize();
 applyScene();
 tick(); render(); wake();

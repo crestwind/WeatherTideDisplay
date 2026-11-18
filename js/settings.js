@@ -12,6 +12,7 @@ function openSettings(msg, welcome = false) {   // (welcome: a first visit, so j
   $('#unitsSel').value = S.units; $('#clockSel').value = S.clock; $('#stationInput').value = S.tideStation;
   $('#motionSel').value = S.motion; $('#sceneSel').value = S.scene; $('#todSel').value = S.tod; $('#displaySel').value = S.display; $('#holidaySel').value = S.holiday;
   $('#alertSel').value = S.alertPreview; $('#soeSel').value = S.soePreview;
+  $('#textSizeSel').value = S.textSize;
   box.innerHTML = msg ? `<div class="msg">${msg}</div>` : '';
   $('#setForm').classList.toggle('welcome', welcome);
   $('#setForm').classList.toggle('firstrun', welcome);
@@ -20,10 +21,17 @@ function openSettings(msg, welcome = false) {   // (welcome: a first visit, so j
   renderLog();
   const v = window.APP_VERSION;
   $('#verLine').textContent = v ? `Website · updated ${v.built}` : 'Test copy on this PC (not the live website)';
+  if ($('#settings').hidden) settingsFrom = document.activeElement;
   $('#settings').hidden = false;
   setTimeout(() => { $('#locInput').focus(); $('#locInput').select(); }, 50);
 }
-const closeSettings = () => { $('#settings').hidden = true; };
+let settingsFrom = null;   // where the keyboard was before settings opened, to go back there when it closes
+const closeSettings = () => {
+  $('#settings').hidden = true;
+  const back = settingsFrom && settingsFrom !== document.body && document.contains(settingsFrom) ? settingsFrom : null;
+  if (back) back.focus();
+  settingsFrom = null;
+};
 
 // Does a place-finder result match a state, province or country the person typed ("NJ", "New Jersey", "France", "FR")?
 const REGION_ABBR = {
@@ -138,6 +146,7 @@ function updateFsButtons() {
   const on = !!document.fullscreenElement;
   $('#fsBtn').innerHTML = on ? FS_ICON.exit : FS_ICON.enter;
   $('#fsBtn').title = (on ? 'Exit full screen' : 'Full screen') + ' (F)';
+  $('#fsBtn').setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen');
   $('#fsSetBtn').textContent = on ? 'Exit full screen' : 'Full screen';
 }
 $('#fsBtn').onclick = toggleFullscreen;
@@ -153,6 +162,7 @@ $('#setForm').addEventListener('submit', e => {
   S.units = $('#unitsSel').value; S.clock = $('#clockSel').value; S.tideStation = $('#stationInput').value.trim();
   S.motion = $('#motionSel').value; S.scene = $('#sceneSel').value; S.tod = $('#todSel').value; S.display = $('#displaySel').value; S.holiday = $('#holidaySel').value; applyMirror();
   S.alertPreview = $('#alertSel').value; S.soePreview = $('#soeSel').value;
+  S.textSize = $('#textSizeSel').value; applyTextSize();
   saveSettings(); closeSettings();
   // Settings are now the source of truth: drop preview options from the address so a reload can't bring them back.
   if (location.search) try { history.replaceState(null, '', location.pathname); } catch (e) {}
@@ -168,6 +178,7 @@ $('#setForm').addEventListener('submit', e => {
   if (units && !moved) { History.reset(); TideYear.reset(); }
   if (moved || units) refreshWeather();
   if (moved || units || prev.tideStation !== S.tideStation) refreshSea();
+  if (prev.textSize !== S.textSize) { Sky.resize(); Radar.refresh(); }   // the sky's sizes and the map follow the text size
   tick(); render(); applyScene();
 });
 
@@ -177,7 +188,19 @@ function toast(msg) {
 }
 
 addEventListener('keydown', e => {
-  if (!$('#settings').hidden) { if (e.key === 'Escape') closeSettings(); return; }
+  if (!$('#settings').hidden) {
+    if (e.key === 'Escape') closeSettings();
+    // keep Tab inside the settings box while it's open
+    if (e.key === 'Tab') {
+      const f = [...$('#setForm').querySelectorAll('a[href], button, input, select, textarea, summary, [tabindex="0"]')].filter(x => !x.disabled && x.tabIndex >= 0 && x.offsetParent);
+      if (f.length && e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (f.length && !e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+    return;
+  }
+  // no shortcuts while typing or in the Sounds box, and Enter still presses whatever button or link the keyboard is on
+  if (e.ctrlKey || e.metaKey || e.altKey || e.target.closest('input, select, textarea, #sndPanel')) return;
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('a, button, summary, [tabindex]')) return;
   const k = e.key.toLowerCase();
   if (k === 's' || k === 'm' || e.key === 'Enter' || e.key === 'ContextMenu') { e.preventDefault(); openSettings(); }
   else if (k === 'f') toggleFullscreen();
@@ -257,10 +280,12 @@ const Sounds = (() => {
     try { localStorage.setItem(VKEY, $('#sndVol').value); } catch (e) {}
   };
   $('#sndStop').onclick = stop;
-  $('#sndClose').onclick = () => { panel.hidden = true; };
+  const closePanel = () => { panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); btn.focus(); };
+  $('#sndClose').onclick = closePanel;
+  panel.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); closePanel(); } });
   btn.onclick = async () => {
-    if (!panel.hidden) { panel.hidden = true; return; }
-    panel.hidden = false; await loadList(); render();
+    if (!panel.hidden) { closePanel(); return; }
+    panel.hidden = false; btn.setAttribute('aria-expanded', 'true'); await loadList(); render(); const first = panel.querySelector('#sndList button'); if (first) first.focus();
   };
   return { stop };
 })();
@@ -268,5 +293,5 @@ const Sounds = (() => {
 // Hide the cursor and settings button when the mouse is idle.
 let idleT = 0;
 function wake() { document.body.classList.remove('idle'); clearTimeout(idleT); idleT = setTimeout(() => document.body.classList.add('idle'), 3000); }
-['mousemove', 'mousedown', 'touchstart'].forEach(ev => addEventListener(ev, wake, { passive: true }));
+['mousemove', 'mousedown', 'touchstart', 'keydown', 'focusin'].forEach(ev => addEventListener(ev, wake, { passive: true }));
 

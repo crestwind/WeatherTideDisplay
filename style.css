@@ -1,14 +1,14 @@
 :root {
   --fg: #fff;
-  --dim: rgba(255,255,255,.72);
-  --faint: rgba(255,255,255,.45);
+  --dim: rgba(255,255,255,.85);
+  --faint: rgba(255,255,255,.72);   /* (raised from .45 on 2026-11-18 so small text passes contrast checks on the daytime sky) */
   --card: rgba(6,12,22,.30);
   --line: rgba(255,255,255,.15);
   --water: #8fd3ff;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 /* Everything is sized in rem, and rem follows screen height, so it scales from 720p to 4K. */
-html { font-size: 1.85vh; background: #0b1a3a; }
+html { font-size: calc(1.85vh * var(--ts, 1)); background: #0b1a3a; }   /* --ts: the Text size setting */
 body {
   min-height: 100vh; overflow-x: hidden; overflow-y: auto; color: var(--fg); background: #0b1a3a;
   font-family: "Segoe UI", "Inter", "Helvetica Neue", Ubuntu, Roboto, "Noto Sans", Arial, sans-serif;
@@ -122,7 +122,7 @@ body.idle .chgloc, .mirror .chgloc { opacity: 0; pointer-events: none; }
 .mcal small { font-size: .72rem; color: #f1ead2; min-height: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .mcal .sh { display: none; }
 @media (max-width: 700px) { .mcal .lg { display: none; } .mcal .sh { display: inline; } }
-.mcal .past { opacity: .45; }
+.mcal .past { opacity: .6; }
 .mcal .today { background: rgba(255,255,255,.1); box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
 .mcal .today b { color: #fff; font-weight: 700; }
 .arrow { display: inline-block; font-weight: 700; }
@@ -133,12 +133,12 @@ body.idle .chgloc, .mirror .chgloc { opacity: 0; pointer-events: none; }
   background: var(--card); border: 1px solid var(--line); border-radius: 1.4rem;
   padding: .85rem 1.3rem; min-height: 0; display: flex; flex-direction: column;
 }
-.card h3 {
+.card h2 {
   font-size: .85rem; text-transform: uppercase; letter-spacing: .1em; color: var(--dim); font-weight: 600;
   padding-bottom: .55rem; margin-bottom: .6rem; border-bottom: 1px solid var(--line);
   display: flex; justify-content: space-between; gap: 1rem;
 }
-.card h3 span { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card h2 span { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .ic { width: 2.3rem; height: 2.3rem; display: block; margin: .2rem auto; overflow: visible; }
 
@@ -272,7 +272,7 @@ html::-webkit-scrollbar { display: none; }
 #vbar.drag #vthumb { background: rgba(255,255,255,.85); cursor: grabbing; }
 @media (hover: none), (pointer: coarse) { #vbar { display: none; } }   /* touch screens swipe instead */
 .mirror #vbar { display: none; }
-.more-hint {
+.more-hint { font: inherit; font-size: .9rem;
   position: absolute; left: 50%; bottom: .5rem; transform: translateX(-50%); z-index: 6; cursor: pointer;
   font-size: .9rem; color: var(--dim); background: var(--card); border: 1px solid var(--line); border-radius: 1rem; padding: .25rem .9rem; transition: opacity .6s;
 }
@@ -322,7 +322,7 @@ body.idle .more-hint { opacity: 0; }
 
 /* ---------- tall screens (phones held upright, portrait mirrors): one column ---------- */
 @media (max-aspect-ratio: 1/1) {
-  html { font-size: min(3.6vw, 2.2vh); }
+  html { font-size: calc(min(3.6vw, 2.2vh) * var(--ts, 1)); }
   body { height: auto; min-height: 100vh; overflow-x: hidden; overflow-y: auto; }
   #app { position: relative; inset: auto; height: auto; min-height: 100vh; display: flex; flex-direction: column; gap: 1.1rem; padding: 1.6rem 1.2rem 5rem; }
   .top { flex-direction: column; gap: 1rem; }
@@ -361,3 +361,44 @@ body.idle .more-hint { opacity: 0; }
 
 /* a portrait mirror can't scroll: everything shows on one screen (fitMirror shrinks the text to fit) and the hours don't need swiping */
 @media (max-aspect-ratio: 1/1) { .mirror body { overflow-y: hidden; } .mirror #app { padding-bottom: 1.6rem; min-height: 0; } .mirror .hours { grid-template-columns: repeat(12, 1fr); overflow: visible; } }
+
+/* ---------- accessibility (2026-11-18) ---------- */
+/* text only screen readers hear */
+.sr { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.logo-h { margin: 0; font-size: inherit; }
+/* a clear yellow ring around whatever the keyboard is on */
+:focus-visible { outline: 3px solid #ffd166 !important; outline-offset: 2px; }
+/* the corner buttons stay visible while the keyboard is on them, even when the mouse has gone idle */
+body.idle #gear:focus-visible, body.idle #fsBtn:focus-visible, body.idle #sndBtn:focus-visible, body.idle .more-hint:focus-visible, body.idle .chgloc:focus-visible { opacity: 1; pointer-events: auto; }
+.tide-scroll:focus-visible { outline-offset: -3px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+}
+
+/* Larger text (Text size above Normal): the stacked, scrolling layout phones use, since the one-screen layout has no room */
+html.big body { height: auto; min-height: 100vh; overflow-x: hidden; overflow-y: auto; }
+html.big #app { position: relative; inset: auto; height: auto; min-height: 100vh; display: flex; flex-direction: column; gap: 1.1rem; padding: 1.6rem 1.2rem 5rem; }
+html.big .top { flex-direction: column; gap: 1rem; }
+html.big .notice { flex: none; }
+html.big .spacer { display: none; }
+html.big .place { margin-top: .4rem; }
+html.big .stats { margin-top: 1.2rem; }
+html.big .right { display: flex; flex-direction: column; gap: 1.1rem; }
+html.big .hours { grid-template-columns: repeat(12, minmax(4.4rem, 1fr)); overflow-x: auto; scrollbar-width: none; }   /* swipe sideways for later hours */
+html.big .hours::-webkit-scrollbar { display: none; }
+html.big .chart { flex: none; height: 10rem; }
+html.big .day { grid-template-columns: 4rem 2.2rem 3.8rem 2.8rem 1fr 2.8rem; gap: .5rem; }
+html.big .more-hint { display: none; }
+html.big .more { padding: 0 1.2rem 5rem; }
+html.big .radar { height: 26rem; }
+html.big .radar-bar { flex-wrap: wrap; }
+html.big .hist { grid-template-columns: 1fr; gap: 1.4rem; }
+html.big .hist td:first-child { white-space: normal; }
+html.big .tidey { grid-template-columns: 1fr; gap: 1.4rem; }
+html.big .tidey td .sep { display: block; height: 0; overflow: hidden; margin: 0; }
+html.big .tidey td { white-space: normal; vertical-align: top; }
+html.big .legend { width: 100%; justify-content: flex-end; }
+html.big .hist table { font-size: .98rem; }
+html.big .hist td small { display: block; margin-left: 0; }
+html.big .logo { max-width: 100%; }
+html.big .statusrow { flex-wrap: wrap; }
