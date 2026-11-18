@@ -111,7 +111,7 @@ Set the TV computer's power settings so the screen never turns off or goes to sl
 
 Moving the mouse shows two buttons in the bottom-right corner: **full screen** and **settings**. The settings panel also has a **Full screen** button. The cursor and buttons hide again after 3 seconds.
 
-The first time it runs, a short welcome box asks only for your location: type your town or ZIP code, pick it from the list and press **Show my weather**. Everything else (display style, units, holiday theme and the rest) is in the settings button in the bottom right corner, whenever you want it. To change it later, click or tap **Change location** next to the "Updated" time under the town name (it shows when you move the mouse or touch the screen).
+The first time it runs, a short welcome box asks only for your location: type your town or ZIP code, pick it from the list and press **Show my weather**. Everything else (display style, units, holiday theme and the rest) is in the settings button in the bottom right corner, whenever you want it. If you would like to set them up right away, press **Show all settings** under the location box and they open below it. To change it later, click or tap **Change location** next to the "Updated" time under the town name (it shows when you move the mouse or touch the screen).
 
 ### Settings
 
