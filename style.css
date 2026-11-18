@@ -302,6 +302,8 @@ body.idle .more-hint { opacity: 0; }
 .hist td:first-child, .hist th:first-child { text-align: left; color: var(--dim); }
 .hist td small { margin-left: .35rem; font-size: .8rem; color: var(--faint); }
 .more .src { margin-top: 1rem; font-size: .85rem; color: var(--faint); }
+.more .foot { margin: .4rem 0 0; text-align: center; font-size: .9rem; }
+.more .foot a, #setForm .hint a { color: var(--dim); }
 .tidey { display: grid; grid-template-columns: 1.25fr 1fr; gap: 2.4rem; }
 .tidey h4 { font-size: 1.05rem; font-weight: 600; margin-bottom: .4rem; }
 .tidey .sum { font-size: 1rem; color: var(--dim); margin-bottom: .6rem; line-height: 1.5; }
