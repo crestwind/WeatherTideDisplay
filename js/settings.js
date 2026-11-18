@@ -8,11 +8,13 @@ const box = $('#locResults');
 
 function openSettings(msg, welcome = false) {   // (welcome: a first visit, so just the location box)
   pick = null;
+  showTab('main');
   $('#locInput').value = S.name;
   $('#unitsSel').value = S.units; $('#clockSel').value = S.clock; $('#stationInput').value = S.tideStation;
   $('#motionSel').value = S.motion; $('#sceneSel').value = S.scene; $('#todSel').value = S.tod; $('#displaySel').value = S.display; $('#holidaySel').value = S.holiday;
   $('#alertSel').value = S.alertPreview; $('#soeSel').value = S.soePreview;
   $('#textSizeSel').value = S.textSize;
+  updateTestDot();
   box.innerHTML = msg ? `<div class="msg">${msg}</div>` : '';
   $('#setForm').classList.toggle('welcome', welcome);
   $('#setForm').classList.toggle('firstrun', welcome);
@@ -26,6 +28,24 @@ function openSettings(msg, welcome = false) {   // (welcome: a first visit, so j
   setTimeout(() => { $('#locInput').focus(); $('#locInput').select(); }, 50);
 }
 let settingsFrom = null;   // where the keyboard was before settings opened, to go back there when it closes
+
+// Two tabs: General (everyday settings) and Test options (previews of other weather, times of day and alerts), kept
+// apart so the everyday settings stay simple. The Test options tab shows a dot while any of them is on.
+function showTab(which, focus = false) {
+  const test = which === 'test';
+  $('#mainPanel').hidden = test; $('#testPanel').hidden = !test;
+  for (const [id, on] of [['#tabMain', !test], ['#tabTest', test]]) { $(id).setAttribute('aria-selected', on); $(id).tabIndex = on ? 0 : -1; }
+  if (focus) $(test ? '#tabTest' : '#tabMain').focus();
+}
+function updateTestDot() {
+  $('#testDot').hidden = $('#sceneSel').value === 'auto' && $('#todSel').value === 'auto' && !$('#alertSel').value && !$('#soeSel').value;
+}
+$('#tabMain').onclick = () => showTab('main');
+$('#tabTest').onclick = () => showTab('test');
+$('.tabs').addEventListener('keydown', e => {   // arrow keys move between the tabs
+  if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) { e.preventDefault(); showTab(e.key === 'ArrowRight' || e.key === 'End' ? 'test' : 'main', true); }
+});
+['#sceneSel', '#todSel', '#alertSel', '#soeSel'].forEach(id => $(id).addEventListener('change', updateTestDot));
 const closeSettings = () => {
   $('#settings').hidden = true;
   const back = settingsFrom && settingsFrom !== document.body && document.contains(settingsFrom) ? settingsFrom : null;

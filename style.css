@@ -249,7 +249,7 @@ body.idle #gear, body.idle #fsBtn, body.idle #sndBtn { opacity: 0; }
 .buttons button[type=submit] { background: #2f7fd6; border-color: #2f7fd6; font-weight: 600; }
 .hint { margin-top: 1rem; font-size: .85rem; color: var(--faint); }
 /* first visit: just the location box (everything else waits in the settings button at the bottom right) */
-#setForm.welcome > :not(h2):not(.keep):not(#locResults):not(.buttons), #setForm.welcome #fsSetBtn, #setForm.welcome #cancelBtn { display: none; }
+#setForm.welcome > :not(h2):not(.keep):not(#mainPanel):not(.buttons), #setForm.welcome #mainPanel > :not(.keep):not(#locResults), #setForm.welcome #fsSetBtn, #setForm.welcome #cancelBtn { display: none; }
 .wonly { display: none; }
 #setForm.welcome .wonly { display: block; }
 #setForm.firstrun #cancelBtn { display: none; }   /* no location yet, so nothing to go back to */
@@ -405,3 +405,12 @@ html.big .statusrow { flex-wrap: wrap; }
 /* pale skies by day (set in setBg): darker panels and an even dimming over the sky, so text keeps 4.5:1 contrast */
 html.pale { --card: rgba(6,12,22,.6); }
 html.pale #shade { background: linear-gradient(90deg, rgba(4,10,20,.7), rgba(4,10,20,.58) 27%, rgba(4,10,20,0) 46%), radial-gradient(ellipse at 50% 35%, rgba(0,0,0,0) 55%, rgba(0,0,0,.32) 100%); }   /* a darker band behind the left-hand text */
+
+/* settings tabs: General and Test options (2026-11-18) */
+.tabs { display: flex; gap: .4rem; margin: -.4rem 0 1.2rem; border-bottom: 1px solid var(--line); }
+.tabs button { font: inherit; font-size: 1rem; color: var(--dim); background: none; border: 0; border-bottom: 3px solid transparent; padding: .45rem .9rem .5rem; margin-bottom: -1px; cursor: pointer; border-radius: .4rem .4rem 0 0; }
+.tabs button[aria-selected="true"] { color: #fff; font-weight: 600; border-bottom-color: var(--water); }
+.tabs button:hover { color: #fff; background: rgba(255,255,255,.05); }
+.tabs .dot { color: #ffb347; }
+#testPanel[hidden], #mainPanel[hidden] { display: none; }
+.tabnote { margin: 0 0 1rem; }

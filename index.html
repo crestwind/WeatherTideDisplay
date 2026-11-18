@@ -103,6 +103,8 @@
 <div class="modal" id="settings" role="dialog" aria-modal="true" aria-labelledby="setTitle" hidden>
   <form class="panel" id="setForm" autocomplete="off">
     <h2 id="setTitle">Settings</h2>
+    <div class="tabs" role="tablist" aria-label="Settings sections"><button type="button" role="tab" id="tabMain" aria-selected="true" aria-controls="mainPanel">General</button><button type="button" role="tab" id="tabTest" aria-selected="false" aria-controls="testPanel" tabindex="-1">Test options<span class="dot" id="testDot" hidden> ●<span class="sr"> (some are on)</span></span></button></div>
+    <div id="mainPanel" role="tabpanel" aria-labelledby="tabMain">
     <label class="keep">Location
       <input id="locInput" placeholder="City or town, ZIP code, or lat,lon">
     </label>
@@ -132,6 +134,26 @@
     <label>Holiday theme
       <select id="holidaySel"><option value="off">None</option><option value="auto">Automatic (each holiday in its season)</option><option value="newyear" disabled>New Year's (coming soon)</option><option value="valentine" disabled>Valentine's Day (coming soon)</option><option value="stpatrick" disabled>St. Patrick's Day (coming soon)</option><option value="easter" disabled>Easter (coming soon)</option><option value="july4" disabled>Fourth of July (coming soon)</option><option value="halloween">Halloween</option><option value="thanksgiving" disabled>Thanksgiving (coming soon)</option><option value="christmas" disabled>Christmas (coming soon)</option></select>
     </label>
+    <details class="logbox">
+      <summary>Alert history, last 30 days <span id="logCount"></span></summary>
+      <div id="logList"></div>
+    </details>
+    <details class="logbox" id="fbBox">
+      <summary>Send feedback</summary>
+      <div class="fb">
+        <label>Your message
+          <textarea id="fbMsg" rows="4" maxlength="2000" placeholder="Ideas, problems, anything about the website…"></textarea>
+        </label>
+        <label>Your email (optional, only if you'd like a reply)
+          <input id="fbReply" type="email" autocomplete="email" maxlength="200" placeholder="you@example.com">
+        </label>
+        <input id="fbTrap" class="trap" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="fbrow"><button type="button" id="fbSend">Send</button><span id="fbStatus" role="status"></span></div>
+      </div>
+    </details>
+    </div>
+    <div id="testPanel" role="tabpanel" aria-labelledby="tabTest" hidden>
+    <p class="hint tabnote">For trying things out: preview other weather, times of day and alerts. Set them back to the first choice to see the real weather again.</p>
     <div class="row">
       <label>Background scene
         <select id="sceneSel">
@@ -164,23 +186,7 @@
         <select id="soeSel"><option value="">Off</option><option value="nj">Preview: New Jersey state declaration</option><option value="on">Preview: federal (FEMA) declaration</option></select>
       </label>
     </div>
-    <details class="logbox">
-      <summary>Alert history, last 30 days <span id="logCount"></span></summary>
-      <div id="logList"></div>
-    </details>
-    <details class="logbox" id="fbBox">
-      <summary>Send feedback</summary>
-      <div class="fb">
-        <label>Your message
-          <textarea id="fbMsg" rows="4" maxlength="2000" placeholder="Ideas, problems, anything about the website…"></textarea>
-        </label>
-        <label>Your email (optional, only if you'd like a reply)
-          <input id="fbReply" type="email" autocomplete="email" maxlength="200" placeholder="you@example.com">
-        </label>
-        <input id="fbTrap" class="trap" tabindex="-1" autocomplete="off" aria-hidden="true">
-        <div class="fbrow"><button type="button" id="fbSend">Send</button><span id="fbStatus" role="status"></span></div>
-      </div>
-    </details>
+    </div>
     <div class="buttons"><button type="button" class="left" id="fsSetBtn">Full screen</button><button type="button" id="cancelBtn">Cancel</button><button type="submit" id="saveBtn">Save</button></div>
     <p class="hint wonly keep">You can change the display style, units and more anytime with the settings button in the bottom right corner.</p>
     <button type="button" id="moreSetBtn" class="keep">Show all settings ▾</button>
