@@ -437,6 +437,10 @@ function drawNeighbor(c, x, y, k, dir, gait, dim, pie, seated = false) {
     c.fillStyle = col('#2a2226'); for (const sg of [1, -1]) { c.beginPath(); c.ellipse(sg * 3 + sw * sg * 4 + 2, -1, 4, 2, 0, 0, 7); c.fill(); }
     c.fillStyle = col('#6a3a5a'); c.beginPath(); c.moveTo(-9, -46); c.lineTo(9, -46); c.lineTo(13, -14); c.lineTo(-13, -14); c.closePath(); c.fill();   // skirt
   }
+  c.save(); c.filter = 'brightness(.72)';   // her far arm, behind her (a little darker): both hands under the pie, or hanging down
+  c.strokeStyle = col('#c9a03a'); c.lineWidth = 5; c.beginPath(); c.moveTo(-2, -62); c.lineTo(pie ? 11 : -3, pie ? -50 : -44); c.stroke();
+  c.fillStyle = col('#f0c8a8'); c.beginPath(); c.arc(pie ? 12 : -3, pie ? -49.5 : -43, 2.6, 0, 7); c.fill();
+  c.restore();
   c.fillStyle = col('#c9a03a'); c.beginPath(); c.roundRect(-9, -66, 18, 24, 5); c.fill();   // cardigan
   c.fillStyle = col('#e6dccb'); c.fillRect(-1, -64, 2, 20);   // buttons' line
   c.strokeStyle = col('#c9a03a'); c.lineWidth = 5;   // arm, out in front
@@ -444,8 +448,8 @@ function drawNeighbor(c, x, y, k, dir, gait, dim, pie, seated = false) {
   c.fillStyle = col('#f0c8a8'); c.beginPath(); c.arc(pie ? 16 : 7, pie ? -51 : -43, 2.6, 0, 7); c.fill();   // hand
   c.beginPath(); c.arc(1, -74, 7.5, 0, 7); c.fill();   // head
   c.fillStyle = col('#d4d2cf'); c.beginPath(); c.arc(0, -77, 7.8, Math.PI * 1.05, Math.PI * 2.05); c.fill(); c.beginPath(); c.arc(-6, -78, 3.6, 0, 7); c.fill();   // grey hair and bun
-  c.strokeStyle = col('#3a3a3a'); c.lineWidth = .9; c.beginPath(); c.arc(4.5, -74, 2, 0, 7); c.stroke();   // glasses
-  c.fillStyle = '#222'; c.beginPath(); c.arc(4.5, -74, .7, 0, 7); c.fill();
+  c.fillStyle = '#222'; c.beginPath(); c.arc(4.6, -74.6, 1.05, 0, 7); c.fill();   // her eye, like the men's
+  c.strokeStyle = col('#9a8a7a'); c.lineWidth = .7; c.beginPath(); c.roundRect(2.6, -76.4, 4.4, 3.4, 1.2); c.moveTo(2.6, -75.2); c.lineTo(-3, -75.6); c.stroke();   // small, thin glasses and their arm to her ear
   c.strokeStyle = col('#a0504a'); c.lineWidth = 1; c.beginPath(); c.arc(5, -70.5, 1.6, .2, Math.PI - .2); c.stroke();   // smile
   if (pie) drawPie(c, 18, -52, 9, dim);
   c.restore();
