@@ -84,7 +84,7 @@ function thanksTick(dt, t) {
 const THANKS_EVENTS = ['turkey', 'football', 'pie', 'nap', 'piethief', 'raccoon'];   // (on Thanksgiving, 4 in 5 in-between events are these; the raccoon steals the pie)
 
 // ----- background events: drawing -----
-function drawBalloon(t) {   // the parade balloon: a giant puffed-up turkey, bobbing on its ropes
+function drawParadeBalloon(t) {   // the parade balloon: a giant puffed-up turkey, bobbing on its ropes
   const B = thanks.balloon, y = B.y + Math.sin(t * .7 + B.ph) * 8 * B.k / 2.6;
   g.save();
   g.strokeStyle = thanks.night ? 'rgba(200,200,210,.4)' : 'rgba(250,250,250,.7)'; g.lineWidth = Math.max(1, 1.4 * B.k / 2.6);
@@ -119,7 +119,7 @@ function drawMayflower(t) {   // like Halloween's pirate ship, but plain: cream 
   for (const wx of [-54, -46]) { g.fillStyle = thanks.night ? '#ffd98a' : col('#2a1a0e'); g.fillRect(wx, -29, 4, 4); }   // stern windows (lit at night)
   g.restore();
 }
-function drawSquirrel(c, x, y, k, dir, gait, sit, cheeks, dim) {   // a grey squirrel standing on (x, y); sit 0-1: up on its haunches
+function drawNutSquirrel(c, x, y, k, dir, gait, sit, cheeks, dim) {   // a grey squirrel standing on (x, y); sit 0-1: up on its haunches
   const col = h => tgCol(h, dim);
   c.save(); c.translate(x, y); c.scale(dir * k, k); c.lineCap = 'round';
   const hop = gait ? Math.abs(Math.sin(gait)) * 3 : 0;
@@ -155,7 +155,7 @@ function drawThanksForest(f, t) {   // the Forest: the squirrel, along the front
   const sq = thanks.squirrel;
   if (!sq) return;
   const s = f.s, a = squirrelAt(sq, -40 * s, f.fx + 60 * s);   // (along the far edge of the clearing, in front of the trees)
-  drawSquirrel(g, a.x, f.top + 40 * Hd / 1080, s * .8, sq.dir, a.gait ? t * 16 : 0, a.sit, a.cheeks, f.night ? .42 : f.golden ? .25 : 0);
+  drawNutSquirrel(g, a.x, f.top + 40 * Hd / 1080, s * .8, sq.dir, a.gait ? t * 16 : 0, a.sit, a.cheeks, f.night ? .42 : f.golden ? .25 : 0);
 }
 function drawGust() {
   for (const l of thanks.gust.list) {
@@ -267,7 +267,7 @@ function drawGoose(x, y, k, dir, flap, night) {   // a Canada goose from the sid
   g.restore();
 }
 function drawThanksSky(ts) {
-  if (thanks.balloon) drawBalloon(ts / 1000);
+  if (thanks.balloon) drawParadeBalloon(ts / 1000);
   const t = ts / 1000, G = thanks.geese;
   if (!G) return;
   for (let i = 0; i < G.n; i++) {   // the V: the leader in front, the others trailing back along both arms
@@ -329,7 +329,7 @@ function drawThanksGround(ts) {
     const x = lrp(from, to, walked / .75), fan = stopB ? Math.min(1, (u - .55) / .03, (.7 - u) / .03) : 0;
     drawTurkey(g, x, gy, k, s.dir, moving ? t * 8 : 0, fan, h.dim, stopA ? Math.min(1, (u - .3) / .02, (.4 - u) / .02) * (.6 + .4 * Math.abs(Math.sin(t * 6))) : 0);
   }
-  if (h.squirrel) { const a = squirrelAt(h.squirrel, x0 - 30 * h.k, x1 * .72 + x0 * .28); drawSquirrel(g, a.x, gy, h.k * .85, h.squirrel.dir, a.gait ? t * 16 : 0, a.sit, a.cheeks, h.dim); }
+  if (h.squirrel) { const a = squirrelAt(h.squirrel, x0 - 30 * h.k, x1 * .72 + x0 * .28); drawNutSquirrel(g, a.x, gy, h.k * .85, h.squirrel.dir, a.gait ? t * 16 : 0, a.sit, a.cheeks, h.dim); }
   harvestPile(g, lrp(x0, x1, .9), gy, h.k * .8, h.dim);
 }
 

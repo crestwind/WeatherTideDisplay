@@ -32,6 +32,10 @@ jobs:
 
       - name: Build the site
         run: |
+          # The script files share one set of names: the same top-level name in two files makes the later one replace
+          # the earlier (a function) or stops the page loading (a const or let). Refuse to publish if that happens.
+          dups=$(grep -ohE "^(async )?function [A-Za-z0-9_]+|^(const|let|var) [A-Za-z0-9_]+" fisherman-lines.js camper-lines.js beach-lines.js js/*.js | awk '{print $NF}' | sort | uniq -d)
+          if [ -n "$dups" ]; then echo "The same name is used in two script files: $dups"; exit 1; fi
           mkdir _site
           cp index.html privacy.html accessibility.html style.css icon.png icon.ico logo.png banner.txt sounds.json fisherman-lines.js camper-lines.js beach-lines.js manifest.webmanifest app-icon-180.png app-icon-192.png app-icon-512.png nj-emergency.sh _site/
           cp -r js _site/
