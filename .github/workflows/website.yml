@@ -33,7 +33,12 @@ jobs:
       - name: Build the site
         run: |
           mkdir _site
-          cp index.html icon.png icon.ico logo.png banner.txt sounds.json fisherman-lines.js camper-lines.js beach-lines.js manifest.webmanifest app-icon-180.png app-icon-192.png app-icon-512.png nj-emergency.sh _site/
+          cp index.html style.css icon.png icon.ico logo.png banner.txt sounds.json fisherman-lines.js camper-lines.js beach-lines.js manifest.webmanifest app-icon-180.png app-icon-192.png app-icon-512.png nj-emergency.sh _site/
+          cp -r js _site/
+          # tag the page's own files with this commit, so a browser never mixes a new page with old cached scripts
+          V=$(git rev-parse --short HEAD)
+          sed -i "s#src=\"js/\([a-z-]*\)\.js\"#src=\"js/\1.js?v=$V\"#; s#href=\"style.css\"#href=\"style.css?v=$V\"#" _site/index.html
+          grep -q "style.css?v=$V" _site/index.html && grep -q "js/start.js?v=$V" _site/index.html
           mkdir -p _site/sounds && cp sounds/*.mp3 sounds/*.m4a sounds/*.ogg sounds/*.wav _site/sounds/ 2>/dev/null || true   # ambient sounds, once added
           echo "window.APP_VERSION = { built: \"$(git log -1 --format=%cs)\" };" > _site/version.js
           # If nj.gov is down, publish without it; the page simply skips the NJ check
