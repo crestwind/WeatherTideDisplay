@@ -63,6 +63,42 @@ function tick() {
   $('#date').textContent = fmt(now, { weekday: 'long', month: 'long', day: 'numeric' });
 }
 
+// The Moon tile: today's phase, and the next full moon (on the day of a full moon, the next new moon instead).
+const shortDay = ms => fmt(ms, { month: 'short', day: 'numeric' });
+function moonTile() {
+  const m = moonOn(Date.now()), want = m.event === .5 ? 0 : .5;
+  const nx = moonEvents(Date.now(), Date.now() + 32 * 864e5).find(e => e.q === want && dayKey(e.t) !== dayKey(Date.now()));
+  return ['Moon', `<span class="mv">${moonSvg(m.age)}<span>${m.name}</span></span>`, nx ? `${want ? 'Full' : 'New'} moon ${shortDay(nx.t)}` : ''];
+}
+
+// The moon calendar below the first screen: this month (where the location is), each day with its moon, the main
+// phases named on their days, and the next full and new moons.
+let moonCalKey = '';
+function renderMoonCal() {
+  const now = Date.now(), today = dayKey(now), key = [today, S.lat, S.lon, tz(), S.clock].join();
+  if (key === moonCalKey) return;
+  moonCalKey = key;
+  const [y, mo] = today.split('-').map(Number), first = Date.UTC(y, mo - 1, 1, 12), days = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+  const ev = moonEvents(first - 3 * 864e5, first + 45 * 864e5), byDay = {};
+  for (const e of ev) byDay[dayKey(e.t)] = e;
+  const lead = new Date(first).getUTCDay();
+  let cells = '<span class="wd">Sun</span><span class="wd">Mon</span><span class="wd">Tue</span><span class="wd">Wed</span><span class="wd">Thu</span><span class="wd">Fri</span><span class="wd">Sat</span>';
+  cells += '<span class="blank"></span>'.repeat(lead);
+  for (let d = 1; d <= days; d++) {
+    const t = first + (d - 1) * 864e5, k = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`, e = byDay[k];
+    const m = moonOn(t), cls = [k < today ? 'past' : '', k === today ? 'today' : '', e ? 'main' : ''].join(' ').trim();
+    cells += `<span class="${cls}"><b>${d}</b>${moonSvg(e ? e.q : m.age)}<small>${e ? `<span class="lg">${MOON_EVENT[e.q]}</span><span class="sh">${MOON_SHORT[e.q]}</span>` : ''}</small></span>`;
+  }
+  const up = moonEvents(now, now + 60 * 864e5), nf = up.find(e => e.q === .5), nn = up.find(e => e.q === 0);
+  const when = e => `${fmt(e.t, { weekday: 'short', month: 'short', day: 'numeric' })}, ${fmtTime(e.t)}`;
+  const m = moonOn(now);
+  $('#moonWhen').textContent = fmt(first, { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  $('#moonCal').innerHTML = `<div class="moonnow">${moonSvg(m.age, 'mo big')}<div><div class="nm">${m.name}</div>
+      <div class="sub">Today · ${Math.round((1 - Math.cos(2 * Math.PI * m.age)) * 50)}% lit</div></div>
+      <div class="nxt">${nf ? `<div>Next full moon <b>${when(nf)}</b></div>` : ''}${nn ? `<div>Next new moon <b>${when(nn)}</b></div>` : ''}</div></div>
+    <div class="mcal">${cells}</div>`;
+}
+
 function render() {
   $('#place').textContent = S.name || 'Choose a location';
   const st = $('#status');
@@ -118,8 +154,8 @@ function render() {
     ['Wind', `<span class="arrow" style="transform:rotate(${c.wind_direction_10m + 180}deg)">↑</span> ${r0(c.wind_speed_10m)}`,
       `${COMPASS[Math.round(c.wind_direction_10m / 22.5) % 16]} · gusts ${r0(c.wind_gusts_10m)} ${imp() ? 'mph' : 'km/h'}`],
     ['UV index', r0(uv), uvL],
-    ['Sunrise', fmtTime(nextOf(d.sunrise))],
-    ['Sunset', fmtTime(nextOf(d.sunset))],
+    ['Sun', `<span class="two"><span><i class="up">↑</i>${fmtTime(nextOf(d.sunrise))}</span><span><i class="dn">↓</i>${fmtTime(nextOf(d.sunset))}</span></span>`],
+    moonTile(),
   ];
   const mi = M ? M.hourly.time.findIndex(t => t + 3600 > nowS) : -1;
   const sst = mi >= 0 ? M.hourly.sea_surface_temperature[mi] : null, wave = mi >= 0 ? M.hourly.wave_height[mi] : null;
@@ -130,6 +166,7 @@ function render() {
   $('#stats').innerHTML = tiles.map(([k, v, s]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div>${s ? `<div class="s">${s}</div>` : ''}</div>`).join('');
 
   renderTide();
+  renderMoonCal();
   fitMirror();
 }
 

@@ -393,6 +393,66 @@ function tempColor(t) {
   return `rgb(${TSTOPS[TSTOPS.length - 1][1]})`;
 }
 
+/* ======================= moon phases ======================= */
+// The times of new moon, first quarter, full moon and last quarter, from Jean Meeus, "Astronomical Algorithms"
+// (chapter 49), main terms only: good to a few minutes, far better than the day we show. q: 0 new, .25 first
+// quarter, .5 full, .75 last quarter. Returns [{ t (ms), q }] for every phase between t0 and t1, in order.
+function moonEvents(t0, t1) {
+  const R = Math.PI / 180, sin = d => Math.sin(d * R), cos = d => Math.cos(d * R), out = [];
+  const y0 = 2000 + (t0 - 946728000000) / 31556952000, y1 = 2000 + (t1 - 946728000000) / 31556952000;
+  for (let k0 = Math.floor((y0 - 2000) * 12.3685) - 1; k0 <= Math.ceil((y1 - 2000) * 12.3685) + 1; k0++) {
+    for (const q of [0, .25, .5, .75]) {
+      const k = k0 + q, T = k / 1236.85, T2 = T * T, T3 = T2 * T, T4 = T3 * T;
+      let jde = 2451550.09766 + 29.530588861 * k + .00015437 * T2 - .00000015 * T3 + .00000000073 * T4;
+      const E = 1 - .002516 * T - .0000074 * T2;
+      const M = 2.5534 + 29.1053567 * k - .0000014 * T2 - .00000011 * T3;
+      const Mp = 201.5643 + 385.81693528 * k + .0107582 * T2 + .00001238 * T3 - .000000058 * T4;
+      const F = 160.7108 + 390.67050284 * k - .0016118 * T2 - .00000227 * T3 + .000000011 * T4;
+      const Om = 124.7746 - 1.56375588 * k + .0020672 * T2 + .00000215 * T3;
+      if (q === 0 || q === .5) {
+        const n = q === 0;
+        jde += (n ? -.4072 : -.40614) * sin(Mp) + (n ? .17241 : .17302) * E * sin(M) + (n ? .01608 : .01614) * sin(2 * Mp)
+          + (n ? .01039 : .01043) * sin(2 * F) + (n ? .00739 : .00734) * E * sin(Mp - M) - (n ? .00514 : .00515) * E * sin(Mp + M)
+          + (n ? .00208 : .00209) * E * E * sin(2 * M) - .00111 * sin(Mp - 2 * F) - .00057 * sin(Mp + 2 * F)
+          + .00056 * E * sin(2 * Mp + M) - .00042 * sin(3 * Mp) + .00042 * E * sin(M + 2 * F) + .00038 * E * sin(M - 2 * F)
+          - .00024 * E * sin(2 * Mp - M) - .00017 * sin(Om);
+      } else {
+        jde += -.62801 * sin(Mp) + .17172 * E * sin(M) - .01183 * E * sin(Mp + M) + .00862 * sin(2 * Mp) + .00804 * sin(2 * F)
+          + .00454 * E * sin(Mp - M) + .00204 * E * E * sin(2 * M) - .0018 * sin(Mp - 2 * F) - .0007 * sin(Mp + 2 * F)
+          - .0004 * sin(3 * Mp) - .00034 * E * sin(2 * Mp - M) + .00032 * E * sin(M + 2 * F) + .00032 * E * sin(M - 2 * F)
+          - .00028 * E * E * sin(Mp + 2 * M) + .00027 * E * sin(2 * Mp + M) - .00017 * sin(Om);
+        const W = .00306 - .00038 * E * cos(M) + .00026 * cos(Mp) - .00002 * cos(Mp - M) + .00002 * cos(Mp + M) + .00002 * cos(2 * F);
+        jde += q === .25 ? W : -W;
+      }
+      const t = (jde - 2440587.5) * 864e5;
+      if (t >= t0 && t < t1) out.push({ t, q });
+    }
+  }
+  return out.sort((a, b) => a.t - b.t);
+}
+const MOON_EVENT = { 0: 'New Moon', .25: 'First Quarter', .5: 'Full Moon', .75: 'Last Quarter' };
+const MOON_BETWEEN = { 0: 'Waxing Crescent', .25: 'Waxing Gibbous', .5: 'Waning Gibbous', .75: 'Waning Crescent' };
+const MOON_SHORT = { 0: 'New', .25: '1st Qtr', .5: 'Full', .75: 'Last Qtr' };   // for narrow screens
+const dayKey = ms => new Intl.DateTimeFormat('en-CA', { timeZone: tz(), year: 'numeric', month: '2-digit', day: '2-digit' }).format(ms);   // YYYY-MM-DD where the location is
+// The moon on a given day (where the location is): its name (a main phase is named on the day it happens), how far
+// through the month it is (age 0-1, 0 = new, .5 = full), and the phases just before and after.
+function moonOn(ms) {
+  const ev = moonEvents(ms - 40 * 864e5, ms + 40 * 864e5), key = dayKey(ms);
+  const today = ev.find(e => dayKey(e.t) === key);
+  const prev = ev.filter(e => e.t <= ms).pop(), next = ev.find(e => e.t > ms);
+  // the moon's speed varies, so count the age between the main phases either side, which are a quarter apart
+  const age = (prev.q + .25 * (ms - prev.t) / (next.t - prev.t)) % 1;
+  return { name: today ? MOON_EVENT[today.q] : MOON_BETWEEN[prev.q], age, event: today && today.q, prev, next, ev };
+}
+// A little picture of the moon at age (0-1), lit on the right while it waxes (the left south of the equator).
+function moonSvg(age, cls = 'mo') {
+  const r = 10, c = 12, waxing = age < .5, rx = r * Math.abs(Math.cos(2 * Math.PI * age)), gib = Math.abs(age - .5) < .25;
+  const flip = (!waxing) !== (S.lat != null && S.lat < 0);
+  const lit = `M${c} ${c - r}A${r} ${r} 0 0 1 ${c} ${c + r}A${rx.toFixed(2)} ${r} 0 0 ${gib ? 1 : 0} ${c} ${c - r}z`;
+  return `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true"><circle cx="${c}" cy="${c}" r="${r}" fill="#2b3446" stroke="rgba(255,255,255,.18)" stroke-width=".8"/>`
+    + `<path d="${lit}" fill="#f1ead2"${flip ? ` transform="matrix(-1 0 0 1 ${2 * c} 0)"` : ''}/></svg>`;
+}
+
 /* ======================= icons ======================= */
 const CLOUD = 'M18 46h28a10 10 0 0 0 0-20 14 14 0 0 0-27-3A11 11 0 0 0 18 46z';
 const cloud = (fill, tx = 0, ty = 0, s = 1) => `<g transform="translate(${tx} ${ty}) scale(${s})"><path d="${CLOUD}" fill="${fill}"/></g>`;

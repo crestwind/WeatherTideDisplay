@@ -259,7 +259,6 @@ const TideYear = (() => {
   const tm = ms => f(ms, { hour: 'numeric', minute: '2-digit', hour12: S.clock === '12' });
   const md = ms => f(ms, { month: 'short', day: 'numeric' }), ymd = ms => new Date(ms).toISOString().slice(0, 10);
   const ht = v => (imp() ? v.toFixed(1) + ' ft' : v.toFixed(2) + ' m');
-  const moonAge = ms => ((ms - 947182440000) / 864e5 / 29.530588853 % 1 + 1) % 1;   // 0 = new moon, .5 = full
 
   async function gauges() {   // NOAA's tide stations that measure water levels (cached for a month)
     try { const c = JSON.parse(localStorage.getItem(GKEY) || 'null'); if (c && Date.now() - c.t < 30 * 864e5) return c.s; } catch (e) {}
@@ -316,10 +315,11 @@ const TideYear = (() => {
     const days = {};
     for (const p of inMonth) { const d = ymd(p[0]); (days[d] = days[d] || { H: [], L: [] })[p[2]].push(p); }
     const moons = { new: [], full: [] };
+    const mainMoon = {};   // the days of this month's new and full moons, where the location is (see moonEvents)
+    for (const e of moonEvents(Date.parse(month + '-01T00:00:00Z') - 2 * 864e5, Date.parse(month + '-01T00:00:00Z') + 34 * 864e5)) if (e.q === 0 || e.q === .5) mainMoon[dayKey(e.t)] = e.q ? 'full' : 'new';
     const cell = (list, top) => list.map(p => `<span class="${p === top ? 'top' : ''}">${tm(p[0])}<small>${ht(p[1])}</small></span>`).join('<span class="sep">·</span>');
     const rows = Object.keys(days).sort().map(d => {
-      const t0 = Date.parse(d + 'T00:00:00Z'), a = moonAge(t0), b = moonAge(t0 + 864e5);
-      const moon = b < a ? 'new' : a < .5 && b >= .5 ? 'full' : '';
+      const t0 = Date.parse(d + 'T00:00:00Z'), moon = mainMoon[d] || '';
       if (moon) moons[moon].push(t0);
       const cls = d < today ? 'past' : d === today ? 'today' : '';
       return `<tr class="${cls}"><td>${f(t0, { weekday: 'short' })} ${f(t0, { day: 'numeric' })}${moon ? `<span class="moon" title="${moon} moon">${moon === 'full' ? '●' : '○'}</span>` : ''}</td>

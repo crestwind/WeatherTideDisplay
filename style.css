@@ -101,6 +101,30 @@ body.idle .chgloc, .mirror .chgloc { opacity: 0; pointer-events: none; }
 .tile .k { font-size: .78rem; text-transform: uppercase; letter-spacing: .09em; color: var(--dim); white-space: nowrap; }
 .tile .v { font-size: 1.5rem; font-weight: 500; margin-top: .2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tile .s { font-size: .82rem; color: var(--faint); margin-top: .1rem; white-space: nowrap; }
+/* the Sun tile (sunrise and sunset on two lines) and the Moon tile (picture and phase name) */
+.tile .two { display: flex; flex-direction: column; font-size: 1.12rem; line-height: 1.3; }
+.tile .two i { font-style: normal; display: inline-block; width: 1.1em; color: #f5c451; }
+.tile .two i.dn { color: #f08a4b; }
+.tile .mv { display: flex; align-items: center; gap: .45rem; font-size: 1.05rem; line-height: 1.15; white-space: normal; }
+.tile .mv .mo { flex: none; width: 1.9rem; height: 1.9rem; }
+/* the moon calendar */
+.moonnow { display: flex; align-items: center; gap: 1.2rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.moonnow .big { width: 4.2rem; height: 4.2rem; }
+.moonnow .nm { font-size: 1.5rem; font-weight: 600; }
+.moonnow .sub { color: var(--dim); font-size: .95rem; margin-top: .15rem; }
+.moonnow .nxt { margin-left: auto; text-align: right; color: var(--dim); font-size: 1rem; line-height: 1.6; }
+.moonnow .nxt b { color: #fff; font-weight: 600; }
+.mcal { display: grid; grid-template-columns: repeat(7, 1fr); gap: .35rem; }
+.mcal > span { display: flex; flex-direction: column; align-items: center; gap: .2rem; padding: .45rem .2rem; border-radius: .7rem; min-width: 0; }
+.mcal .wd { font-size: .8rem; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; padding: 0 0 .2rem; }
+.mcal b { font-size: .95rem; font-weight: 500; color: var(--dim); }
+.mcal .mo { width: 1.9rem; height: 1.9rem; }
+.mcal small { font-size: .72rem; color: #f1ead2; min-height: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.mcal .sh { display: none; }
+@media (max-width: 700px) { .mcal .lg { display: none; } .mcal .sh { display: inline; } }
+.mcal .past { opacity: .45; }
+.mcal .today { background: rgba(255,255,255,.1); box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
+.mcal .today b { color: #fff; font-weight: 700; }
 .arrow { display: inline-block; font-weight: 700; }
 
 /* ---------- right column ---------- */

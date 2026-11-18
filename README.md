@@ -144,7 +144,7 @@ On a wide screen (TV, PC, laptop, phone turned sideways), the display is two col
   - the location and current temperature
   - the conditions (with "· Windy" added in strong wind), today's high and low, and today's chance of rain (blue, with a raindrop; white with a snowflake on a snowy day)
   - expected rain or snow for today
-  - eight tiles: feels like, humidity, wind (direction, speed and gusts), UV index, sunrise, sunset, and either water temperature and wave height on the coast or air pressure and rain chance inland
+  - eight tiles: feels like, humidity, wind (direction, speed and gusts), UV index, **Sun** (sunrise ↑ and sunset ↓), **Moon** (a little picture of tonight's moon, its phase, e.g. "Waxing Gibbous", and the date of the next full moon, or of the next new moon on the day of a full moon), and either water temperature and wave height on the coast or air pressure and rain chance inland
 - **Hourly forecast:** the next 12 hours, with temperature, rain chance and expected rain or snow amounts.
 - **Tides:**
   - whether the tide is rising or falling
@@ -155,9 +155,9 @@ On a wide screen (TV, PC, laptop, phone turned sideways), the display is two col
   - each day's chance of rain and expected rain amount (blue) and snowfall (white with a snowflake)
   - a temperature range bar: the grey track spans the week's coldest low to warmest high, the coloured part is that day's low-to-high range, and the white dot on Today is the temperature right now
 
-## Below the main screen: forecast map and weather history
+## Below the main screen: forecast map, weather history, tides and moon
 
-Scroll down (mouse wheel, or swipe on a phone) to see three more sections. On a computer you can also use the scrollbar on the right edge: it's invisible until you move the mouse onto that edge, then drag the handle or click above or below it to move a screen at a time. On a PC, a small **▼ Radar & history** button at the bottom of the screen jumps there when you move the mouse. The TV never needs to scroll: these sections only download anything when someone scrolls to them. They're hidden in smart mirror mode, since a mirror can't scroll.
+Scroll down (mouse wheel, or swipe on a phone) to see four more sections. On a computer you can also use the scrollbar on the right edge: it's invisible until you move the mouse onto that edge, then drag the handle or click above or below it to move a screen at a time. On a PC, a small **▼ Radar & history** button at the bottom of the screen jumps there when you move the mouse. The TV never needs to scroll: these sections only download anything when someone scrolls to them. They're hidden in smart mirror mode, since a mirror can't scroll.
 
 - **Rain & snow forecast, next 24 hours:** a dark map of the area around your location (the white dot), with forecast rain (green → yellow → orange → red → purple as it gets heavier) and snow (blue → white). It starts paused on the current time. **Click or tap the map** (or the play button) to play through the next 24 hours in 15-minute steps, and again to stop. The slider jumps to a particular time. The map is fixed: no zooming or dragging. This is a **forecast model**, not live radar, so it shows where rain and snow are *expected*.
 - **Weather history** for your location, back to 1940:
@@ -169,6 +169,7 @@ Scroll down (mouse wheel, or swipe on a phone) to see three more sections. On a 
 - **Tides this month and this year** (coastal locations with a NOAA tide station):
   - **This month:** every day's high and low tides with times and heights (today highlighted, past days dimmed), the month's highest and lowest tide, and the full and new moons (marked ● and ○), when tides run strongest.
   - **This year:** a chart of each month's highest and lowest tide, the five highest and three lowest predicted tides of the year, and the highest and lowest water actually measured so far this year at the nearest NOAA gauge. NOAA publishes checked measurements about a month late, so that part runs a few weeks behind.
+- **Moon phases:** today's moon (its phase and how much of it is lit), the date and time of the next full and new moons, and a calendar of this month with each night's moon, the four main phases (New Moon, First Quarter, Full Moon, Last Quarter) named on their days and today outlined. South of the equator the moon is drawn lit on the other side, as it looks there. Nothing is downloaded, so it always shows.
 
 ## Backgrounds
 
@@ -352,6 +353,7 @@ All of these are free and need no API keys.
 - **Tides:** NOAA tide predictions from the nearest station within about 37 miles. Elsewhere the display uses Open-Meteo's ocean model, which is approximate.
 - **Forecast map:** Open-Meteo's 15-minute forecast for a grid of points, on Esri's dark grey map (© Esri, HERE, Garmin, © OpenStreetMap contributors).
 - **Weather history:** Open-Meteo's historical weather archive (ERA5, 1940 to a few days ago).
+- **Moon phases:** worked out on the device itself with standard astronomy formulas (Jean Meeus, *Astronomical Algorithms*), accurate to a few minutes; nothing is downloaded.
 - **Alerts and earthquakes:** the National Weather Service, the US Geological Survey and FEMA (OpenFEMA).
 - **New Jersey emergencies:** the governor's Executive Orders list on nj.gov.
 
