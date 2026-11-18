@@ -184,7 +184,7 @@ function update(dt, ts) {
   if (birds) updateBirds(dt, t);
   eventsTick(t);
   if (tornado) for (const d of [...tornado.debris, ...tornado.spray]) d.a += d.sp * dt;   // whirling round the base
-  if (sea && sea.pose === 'fish') { if (!saluting() && !rodDown()) fishingTick(dt); jumpTick(dt); }   // he stops to salute the flag (and on Thanksgiving for the football and his nap)
+  if (sea && sea.pose === 'fish') { if (!saluting() && !rodDown() && !pieRod()) fishingTick(dt); jumpTick(dt); }   // he stops to salute the flag (and on Thanksgiving for the football and his nap)
   if (sea || forest || tropic) talkTick(t);
   if (sea && sea.dolphinsOk) podTick(dt);
   if (sea) { diverTick(dt); yachtTick(dt); }

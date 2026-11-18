@@ -343,6 +343,17 @@ function drawFisher(x, t) {
     limb(coat, 4, [-1, -34], [-5, -24], [-4, -15]);   // left arm straight down
     limb(coat, 4, [1, -35], [11, -40], [8, -47]);     // right hand up at the brim
     x.fillStyle = skin; x.beginPath(); x.arc(8, -47, 2.2, 0, 7); x.fill();
+  } else if (pieRod()) {   // Thanksgiving: fishing the new pie up from his neighbour's kayak and lowering it onto the deck
+    const r = pieRodPose(t), d = [Math.cos(r.a), -Math.sin(r.a)], at = k => [r.hand[0] + d[0] * k, r.hand[1] + d[1] * k], low = at(-7), butt = at(-11);
+    limb(pants, 5, [-6, 0], [-3, -18]); limb(pants, 5, [6, 0], [3, -18]);
+    x.strokeStyle = '#3b2f2a'; x.lineWidth = 2; x.beginPath(); x.moveTo(butt[0], butt[1]); x.lineTo(r.tip[0], r.tip[1]); x.stroke();   // rod
+    body(0, -18, 0, -38); head(1, -45, r.look);
+    limb(coat, 4, [1, -34], [(1 + r.hand[0]) / 2 + 3, (-34 + r.hand[1]) / 2 + 3], r.hand);   // hands on the handle, as when fishing
+    limb(coat, 4, [0, -32], [low[0] / 2 + 2, (-32 + low[1]) / 2 + 5], low);
+    x.fillStyle = skin; for (const h of [r.hand, low]) { x.beginPath(); x.arc(h[0], h[1], 2.3, 0, 7); x.fill(); }
+    x.strokeStyle = 'rgba(240,240,240,.85)'; x.lineWidth = .8; x.beginPath(); x.moveTo(r.tip[0], r.tip[1]);   // the line
+    x.quadraticCurveTo((r.tip[0] + r.end[0]) / 2, Math.max(r.tip[1], r.end[1]) + (r.hooked ? 0 : 6), r.end[0], r.end[1]); x.stroke();
+    if (r.hooked) drawHangingPie(x, r.end, r.sway, 0);   // (tinted with the boat)
   } else if (rodDown()) {   // Thanksgiving: his rod leaning on the rail, for the football and his nap
     const e = stage.ev, nap = e.kind === 'nap', bite = nap && e.p > .72 ? Math.sin(t * 28) : 0;   // (a fish takes the bait just before he wakes)
     x.strokeStyle = '#3b2f2a'; x.lineWidth = 2; x.beginPath(); x.moveTo(20, 0); x.lineTo(62 + bite * 1.5, -64 + Math.abs(bite) * 3); x.stroke();

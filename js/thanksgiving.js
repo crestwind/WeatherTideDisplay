@@ -511,12 +511,12 @@ function forestPie(f, e, t, lx, spot) {
 }
 // Ocean: she paddles up in a red kayak from the left, lifts the pie up onto the deck where the old one was (.38-.46),
 // and paddles off. spot: where it goes on the deck.
-function seaPie(e, t, bl, spot) {
+function seaPie(e, t, bl, boatY) {
   const k = sea.bs * 1.4, x1 = sea.bx - 140 * sea.bs - 42 * k, inn = ease(ramp(e.p, 0, .3)) - ease(ramp(e.p, .62, .92)), x = x1 - (x1 + 60 * k) * (1 - inn);
   const y = waveY(bl, x, t) + 2 * k, slope = (waveY(bl, x + 20, t) - waveY(bl, x - 20, t)) / 40, dim = thanks.dim, col = h => tgCol(h, dim), moving = e.p < .3 || e.p > .62;
   g.save(); g.translate(x, y); g.rotate(Math.atan(slope) * .8);
   g.save(); g.beginPath(); g.rect(-60 * k, -90 * k, 120 * k, 81 * k); g.clip();   // (sitting in the kayak: nothing of her below its rim)
-  drawNeighbor(g, 0, 2 * k, k * .8, e.p > .62 ? -1 : 1, 0, dim, e.p < .38, true);
+  drawNeighbor(g, 0, 2 * k, k * .8, e.p > .62 ? -1 : 1, 0, dim, e.p < .4, true);   // (holding it up until it's on his hook)
   g.restore();
   const a = moving ? Math.sin(t * 3) * .6 : .9;   // the paddle, dipping side to side while she paddles
   g.strokeStyle = col('#3a3a3a'); g.lineWidth = 2 * k; g.lineCap = 'round';
@@ -528,11 +528,9 @@ function seaPie(e, t, bl, spot) {
   }
   g.fillStyle = col('#d0402e'); g.beginPath(); g.moveTo(-46 * k, -6 * k); g.quadraticCurveTo(0, -12 * k, 46 * k, -6 * k); g.quadraticCurveTo(0, 8 * k, -46 * k, -6 * k); g.fill();   // the kayak
   g.restore();
-  if (e.p >= .38 && e.p < .46) {   // the pie, lifted up onto the deck
-    const u = ease((e.p - .38) / .08);
-    drawPie(g, lrp(x + 12 * k, spot[0], u), lrp(y - 22 * k, spot[1], u) - Math.sin(Math.PI * u) * 40 * k, lrp(7 * k, 7.5 * sea.bs, u), dim);
-  }
-  if (e.p >= .46) tgPie.gone = false;   // (back on the deck, drawn with the boat)
+  // where the pie in her hands is, in the fisherman's units (see pieRodPose; his rod hooks it there)
+  const hx = x + 13.6 * k, hy = y - 6.8 * k;
+  e.handsAt = [(hx - sea.bx) / sea.bs - 25, (hy - (boatY + 4 * sea.bs)) / sea.bs + 31];
   if (e.p > .28 && e.p < .4) drawSpeech('Happy Thanksgiving, dear!', x + 4 * k, y - 36 * k, Math.min(1, (e.p - .28) / .01, (.4 - e.p) / .01));
 }
 // Ocean pie thief: a seagull swoops down to the pie on the deck (at .42), grabs it and flies off with it.
@@ -555,7 +553,7 @@ function seaPieThief(e, t, pie) {
 // The Ocean's events, drawn by drawSea: a point on the boat (in its own units, as in drawBoatSprite) on the screen
 const boatPt = (u, v, y, roll) => [sea.bx + (u * Math.cos(roll) - v * Math.sin(roll)) * sea.bs, y + 4 * sea.bs + (u * Math.sin(roll) + v * Math.cos(roll)) * sea.bs];
 function thanksSeaBack(e, t, bl, y, roll) {   // in the water, in front of the boat: the kayak
-  if (e.kind === 'pie') seaPie(e, t, bl, boatPt(32, -33, y, roll));   // (to the pie's place on the deck, see drawBoatSprite)
+  if (e.kind === 'pie') seaPie(e, t, bl, y);   // (he fishes the pie up from her with his rod: see pieRodPose)
 }
 function thanksSeaFront(e, t, y, roll, hx, hy) {   // over everything: the football, the Zzz, the seagull
   if (e.kind === 'football') {   // (to his hands where he'll catch it, in them while he holds it, from where he throws it)
@@ -604,4 +602,37 @@ function forestFootball(f, e, t, lx) {
   reach = footballReach(p);
   const [hx, hy] = reachPt(reach);   // (as drawCamperOnFoot puts his hands)
   return { x, dir, gait, reach, hand: [x + dir * hx * s, f.gy - 36 * s + hy * s], head: [x + dir * 4 * s, f.gy - 81 * s] };
+}
+// Ocean pie delivery: he fishes the new pie up from her kayak with his rod and lowers it onto the deck. She paddles in
+// by .3 ("Happy Thanksgiving, dear!"); he swings his rod round toward the stern and lets the line out to her (.3-.38);
+// she hooks the pie on (.38-.46); he reels it in and lifts it over the rail, swinging the rod up (.46-.6); lowers it
+// onto its place on the deck (.6-.66), unhooks it, and swings back to fishing (.66-.76). All in his own units (as in
+// drawFisher; the deck pie's place, (32, -33) on the boat, is (7, -2) to him).
+const pieRod = () => { const e = tgEv('pie'); return !!thanks && !!sea && sea.pose === 'fish' && !!e && e.p > .28 && e.p < .76 && !!e.handsAt; };
+function pieRodPose(t) {
+  const e = tgEv('pie'), p = e.p, hand = [12, -30], L = 74, K = e.handsAt, D = [7, -2], hang = 9;   // (hang: hook to the pie's bottom)
+  const sway = (u, a, b) => lrp(a, b, ease(Math.max(0, Math.min(1, u))));
+  const aStern = 2.25, aUp = 1.62, aFish = .75;
+  let a, end, hooked = p >= .4 && p < .66;
+  if (p < .38) { a = sway((p - .28) / .08, aFish, aStern); }
+  else if (p < .46) a = aStern;
+  else if (p < .6) a = sway((p - .46) / .14, aStern, aUp);
+  else if (p < .66) a = aUp;
+  else a = sway((p - .66) / .1, aUp, aFish);
+  const tip = [hand[0] + Math.cos(a) * L, hand[1] - Math.sin(a) * L];
+  const top = [D[0], D[1] - hang - 34];   // just above its place, before lowering it
+  if (p < .3) end = [tip[0], tip[1] + 14];
+  else if (p < .38) { const u = (p - .3) / .08; end = [lrp(tip[0], K[0], u), lrp(tip[1] + 14, K[1] - hang, u) - Math.sin(Math.PI * u) * 20]; }   // the line out to her
+  else if (p < .46) end = [K[0], K[1] - hang];
+  else if (p < .6) { const u = ease((p - .46) / .14); end = [lrp(K[0], top[0], u), lrp(K[1] - hang, top[1], u) - Math.sin(Math.PI * u) * 30]; }   // reeled in, up and over the rail
+  else if (p < .66) end = [top[0], lrp(top[1], D[1] - hang, ease((p - .6) / .06))];   // down onto the deck
+  else end = [lrp(D[0], tip[0], ease((p - .66) / .06)), lrp(D[1] - hang, tip[1] + 14, ease((p - .66) / .06))];   // (unhooked, the line back up)
+  if (p >= .66) tgPie.gone = false;   // (on the deck now, drawn with the boat)
+  return { a, tip, end, hooked, hand, L, look: p < .6 ? -.85 : .3, sway: Math.sin(t * 2.4) * (hooked && p < .6 ? 2 : 0) };
+}
+function drawHangingPie(x, end, sway, dim) {   // the pie hanging from his hook by two strings
+  const pb = [end[0] + sway, end[1] + 9];
+  x.strokeStyle = 'rgba(240,240,240,.85)'; x.lineWidth = .6;
+  x.beginPath(); x.moveTo(end[0], end[1]); x.lineTo(pb[0] - 6, pb[1] - 2.5); x.moveTo(end[0], end[1]); x.lineTo(pb[0] + 6, pb[1] - 2.5); x.stroke();
+  drawPie(x, pb[0], pb[1], 7.5, dim);
 }

@@ -37,7 +37,7 @@ function eligible(kind) {
     case 'nessie': return !!sea && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind);
     case 'bigfoot': return !!forest && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind);
     case 'bear': case 'raccoon': case 'skunk': case 'ranger': return !!forest && !forest.inside;   // he has to be out by the fire
-    case 'pie': if (!tgPie.gone && !tgEv('pie')) return false;   // Thanksgiving: she only comes when his pie's been stolen
+    case 'pie': if (!tgPie.gone && !tgEv('pie') || sea && sea.pose !== 'fish') return false;   // Thanksgiving: she only comes when his pie's been stolen (in the Ocean he needs his rod to take it)
     // falls through
     case 'football': case 'nap': return !!thanks && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind) && (sea ? sea.pose === 'fish' || sea.pose === 'mug' : !!forest && !forest.inside);   // Thanksgiving
     case 'piethief': return !!thanks && !!sea && (sea.pose === 'fish' || sea.pose === 'mug') && flyOK() && (deckPie() || !!tgEv('piethief'));   // (still going once it's taken the pie)   // Thanksgiving, Ocean (the Forest's raccoon steals his pie)
