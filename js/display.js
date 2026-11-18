@@ -165,10 +165,11 @@ function render() {
   if (wave != null) tiles.push(['Waves', (wave * (imp() ? 3.28084 : 1)).toFixed(1) + ' ' + lenU()]);
   else tiles.push(['Rain chance', r0(d.precipitation_probability_max[0]) + '%', 'today']);
   $('#stats').innerHTML = tiles.map(([k, v, s]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div>${s ? `<div class="s">${s}</div>` : ''}</div>`).join('');
+  fitTiles();
 
   renderTide();
   renderMoonCal();
-  fitMirror();
+  fitMirror(); fitTiles();   // (again, in case the mirror's text size changed)
 }
 
 function smoothPath(p) {
@@ -276,3 +277,18 @@ function dragScroll(el) {
   };
 }
 
+
+// Shrink a tile's words to fit when they're too long for it (e.g. "WNW · gusts 10 mph" on a narrow tile), down to
+// a bit over half their usual size; anything still too long is cut off with "…". Runs after every render, so it
+// follows resizing and the text size setting.
+function fitTiles() {
+  for (const el of document.querySelectorAll('#stats .tile .s, #stats .tile .k, #stats .tile .v')) {
+    el.style.fontSize = '';
+    if (el.querySelector('.mv')) continue;   // (the moon's name wraps onto two lines instead)
+    const base = parseFloat(getComputedStyle(el).fontSize), avail = el.clientWidth;
+    // (scrollWidth doesn't count text cut off with "…", so measure the words at their natural width instead)
+    const natural = () => { el.style.width = 'max-content'; const w = el.getBoundingClientRect().width; el.style.width = ''; return w; };
+    let size = base;
+    while (avail && natural() > avail + 1 && size > base * .55) { size *= .94; el.style.fontSize = size + 'px'; }
+  }
+}
