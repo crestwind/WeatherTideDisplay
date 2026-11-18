@@ -29,8 +29,8 @@ function openSettings(msg, welcome = false) {   // (welcome: a first visit, so j
 }
 let settingsFrom = null;   // where the keyboard was before settings opened, to go back there when it closes
 
-// Two tabs: General (everyday settings) and Test options (previews of other weather, times of day and alerts), kept
-// apart so the everyday settings stay simple. The Test options tab shows a dot while any of them is on.
+// Two tabs: General (everyday settings) and Test & advanced (previews of other weather, times of day and alerts, and the tide station), kept
+// apart so the everyday settings stay simple. That tab shows a dot while any preview is on.
 function showTab(which, focus = false) {
   const test = which === 'test';
   $('#mainPanel').hidden = test; $('#testPanel').hidden = !test;

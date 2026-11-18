@@ -103,7 +103,7 @@
 <div class="modal" id="settings" role="dialog" aria-modal="true" aria-labelledby="setTitle" hidden>
   <form class="panel" id="setForm" autocomplete="off">
     <h2 id="setTitle">Settings</h2>
-    <div class="tabs" role="tablist" aria-label="Settings sections"><button type="button" role="tab" id="tabMain" aria-selected="true" aria-controls="mainPanel">General</button><button type="button" role="tab" id="tabTest" aria-selected="false" aria-controls="testPanel" tabindex="-1">Test options<span class="dot" id="testDot" hidden> ●<span class="sr"> (some are on)</span></span></button></div>
+    <div class="tabs" role="tablist" aria-label="Settings sections"><button type="button" role="tab" id="tabMain" aria-selected="true" aria-controls="mainPanel">General</button><button type="button" role="tab" id="tabTest" aria-selected="false" aria-controls="testPanel" tabindex="-1">Test &amp; advanced<span class="dot" id="testDot" hidden> ●<span class="sr"> (some are on)</span></span></button></div>
     <div id="mainPanel" role="tabpanel" aria-labelledby="tabMain">
     <label class="keep">Location
       <input id="locInput" placeholder="City or town, ZIP code, or lat,lon">
@@ -118,16 +118,13 @@
       </label>
     </div>
     <div class="row">
-      <label>Tide station (NOAA ID, blank = nearest)
-        <input id="stationInput" placeholder="auto">
-      </label>
       <label>Background animation
         <select id="motionSel"><option value="full">Full (30 fps)</option><option value="light">Light (15 fps, fewer particles)</option><option value="off">Off (still image)</option></select>
       </label>
+      <label>Text size
+        <select id="textSizeSel"><option value="1">Normal</option><option value="1.25">Large (125%)</option><option value="1.5">Larger (150%)</option><option value="2">Largest (200%)</option></select>
+      </label>
     </div>
-    <label>Text size
-      <select id="textSizeSel"><option value="1">Normal</option><option value="1.25">Large (125%)</option><option value="1.5">Larger (150%)</option><option value="2">Largest (200%)</option></select>
-    </label>
     <label>Display style
       <select id="displaySel"><option value="normal">Sky (default)</option><option value="ocean">Ocean</option><option value="forest">Forest</option><option value="tropical" disabled>Tropical (coming soon)</option><option value="city" disabled>City (coming soon)</option><option value="waterfall" disabled>Waterfall (coming soon)</option><option value="village" disabled>Village (coming soon)</option><option value="mirror">Smart mirror (black background, no animation)</option></select>
     </label>
@@ -153,7 +150,7 @@
     </details>
     </div>
     <div id="testPanel" role="tabpanel" aria-labelledby="tabTest" hidden>
-    <p class="hint tabnote">For trying things out: preview other weather, times of day and alerts. Set them back to the first choice to see the real weather again.</p>
+    <p class="hint tabnote">For trying things out: preview other weather, times of day and alerts. Set them back to the first choice to see the real weather again. Most people never need anything on this tab.</p>
     <div class="row">
       <label>Background scene
         <select id="sceneSel">
@@ -186,6 +183,10 @@
         <select id="soeSel"><option value="">Off</option><option value="nj">Preview: New Jersey state declaration</option><option value="on">Preview: federal (FEMA) declaration</option></select>
       </label>
     </div>
+    <h3 class="subhead">Advanced</h3>
+    <label>Tide station (NOAA station ID; leave blank to use the nearest one)
+      <input id="stationInput" placeholder="Nearest station">
+    </label>
     </div>
     <div class="buttons"><button type="button" class="left" id="fsSetBtn">Full screen</button><button type="button" id="cancelBtn">Cancel</button><button type="submit" id="saveBtn">Save</button></div>
     <p class="hint wonly keep">You can change the display style, units and more anytime with the settings button in the bottom right corner.</p>

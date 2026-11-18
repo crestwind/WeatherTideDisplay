@@ -119,10 +119,12 @@ The first time it runs, a short welcome box asks only for your location: type yo
 
 ### Settings
 
+Settings has two tabs: **General** (everything below except the previews and the tide station) and **Test & advanced** (the Background scene, Time of day, Test alert notice and Test state of emergency previews, and the Tide station). The Test & advanced tab shows an orange dot while any preview is on.
+
 - **Location:** a town, ZIP code or `lat,lon`. You can add the state or country with or without a comma: "Cape May NJ", "Cape May, New Jersey", "Portland Maine" and "Paris France" all work. Any US ZIP code works, also ZIP+4 like 08807-1234.
 - **Units:** °F, mph and ft, or °C, km/h and metres.
 - **Clock:** 12-hour or 24-hour.
-- **Tide station:** leave it blank to use the nearest NOAA station, or enter a station ID.
+- **Tide station** (Test & advanced tab): leave it blank to use the nearest NOAA station, or enter a station ID.
 - **Display style** (Sky is the default for new visitors):
   - **Sky:** the animated sky.
   - **Ocean:** the sky over open sea, with a small fishing boat riding the waves right of the temperature. The sea follows the weather (calm and glassy on nice days, choppy in rain and snow, big swells with whitecaps in storms) and the sky (blue by day, warm at sunrise and sunset, dark with moonlight at night), with a sparkling path of sun or moonlight. The fisherman fishes on nice days: every so often he gets a bite, reels in a catch picked at random (striped bass, bluefish, mackerel, red snapper, flounder or black sea bass, each a different colour, and once in a while an old boot) and casts again, while fish leap out of the sea every few seconds with a splash. He also wears a yellow raincoat in rain, sits with a steaming mug in snow, holds his hat on in high wind, and holds on tight in heavy rain, thunderstorms and hurricanes. A lantern is lit at night and in fog. A lighthouse in the style of Barnegat Light (white below, red above) stands on a little jetty on the horizon, right of the boat: its lantern glows at sunset, and at night and in fog its light turns, sweeping a beam across the sky. On nice days a small pod of dolphins swims across now and then, arcing out of the water.
@@ -376,7 +378,7 @@ If the internet drops, the display keeps showing the last data it got and says i
 - **The animation is choppy:** in settings, set **Background animation** to **Light**. Older or slower TV computers may need this.
 - **The TV goes dark:** turn off screen sleep and automatic sleep in the TV computer's power settings.
 - **The settings were lost:** the browser's history or site data was cleared. Set the location again, or use an address with the location in it (see [Settings are kept per browser](#settings-are-kept-per-browser)).
-- **A test alert won't go away:** open settings, set both test options to **Off** and press **Save**. Saving also clears any test options from the page address.
+- **A test alert won't go away:** open settings, go to the **Test & advanced** tab, set both test options to **Off** and press **Save**. Saving also clears any test options from the page address.
 - **The NJ banner never appears:** that's normal when there's no active NJ weather or safety emergency. To check the NJ check is working, open `https://tidalweather.com/nj-emergency.js`. Its `"checked"` time (in UTC) should be within the last hour.
 - **Previewing from the address bar:** you can add test options to the end of the page address:
   - `?scene=hurricane&tod=night` previews a background

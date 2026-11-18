@@ -414,3 +414,4 @@ html.pale #shade { background: linear-gradient(90deg, rgba(4,10,20,.7), rgba(4,1
 .tabs .dot { color: #ffb347; }
 #testPanel[hidden], #mainPanel[hidden] { display: none; }
 .tabnote { margin: 0 0 1rem; }
+.panel .subhead { font-size: .85rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); margin: .4rem 0 .8rem; padding-top: 1rem; border-top: 1px solid var(--line); }
