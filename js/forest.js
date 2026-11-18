@@ -448,6 +448,9 @@ function drawCamper(f, t, lx) {   // sitting on the log, facing the fire on his 
 }
 // The camper on his feet: walking or running (gait is the stride phase, 0 standing), facing dir (-1 left, 1 right),
 // leaning in when he runs; dive (0-1) tips him headfirst and fades him out through the tent door; alpha fades him in.
+// Where his hands go when he reaches (r 0-1), in his upper body's units: out in front of his chest at .5 (holding
+// something), up in front of his face at 1 (catching)
+const reachPt = r => r < .5 ? [lrp(3, 15, r * 2), lrp(-8, -20, r * 2)] : [lrp(15, 18, (r - .5) * 2), lrp(-20, -44, (r - .5) * 2)];
 function drawCamperOnFoot(f, t, x, y, k, dir, gait, run, dive, alpha, reach = 0) {   // (reach 0-1: both hands up, to catch)
   const C = f.C, sw = gait ? Math.sin(gait) : 0, bob = gait ? Math.abs(Math.cos(gait)) * (run ? 3 : 1.5) : 0;
   g.save(); g.globalAlpha = alpha * (1 - dive * .9); g.translate(x, y); g.scale(dir * k, k); g.lineCap = g.lineJoin = 'round';
@@ -462,7 +465,8 @@ function drawCamperOnFoot(f, t, x, y, k, dir, gait, run, dive, alpha, reach = 0)
   g.save(); g.translate(0, -36); g.rotate(run ? .25 : .05);   // the upper body, leaning forward when he runs
   // his arms swing against his legs: the far one behind his body (a little darker), the near one in front
   const arm = sg => {
-    const hx = lrp(sg * sw * (run ? 14 : 9) + 3, 9 + sg * 1.5, reach), hy = lrp(run ? -14 : -8, -52, reach);
+    const [rx, ry] = reachPt(reach), up = Math.min(1, reach * 4);   // (reaching: both hands to the same place, a little apart)
+    const hx = lrp(sg * sw * (run ? 14 : 9) + 3, rx + sg * 2.5, up), hy = lrp(run ? -14 : -8, ry + sg * 1.5, up);
     g.beginPath(); g.moveTo(2, -30); g.lineTo(hx, hy); g.stroke();
     g.fillStyle = C.skin; g.beginPath(); g.arc(hx, hy, 3.2, 0, 7); g.fill();
   };
@@ -474,9 +478,9 @@ function drawCamperOnFoot(f, t, x, y, k, dir, gait, run, dive, alpha, reach = 0)
   for (let yy = -33; yy < 2; yy += 8) { g.moveTo(-12, yy); g.lineTo(14, yy); }
   for (let xx = -6; xx < 12; xx += 7) { g.moveTo(xx, -40); g.lineTo(xx, 4); }
   g.stroke(); g.restore();
+  g.save(); g.translate(4, -45); drawCamperHead(f, t, .9, 1, false); g.restore();
   g.strokeStyle = C.jacket; g.lineWidth = 6;
-  arm(-1);
-  g.translate(4, -45); drawCamperHead(f, t, .9, 1, false);
+  arm(-1);   // (after his head, so his hands show in front of his face when he catches)
   g.restore(); g.restore();
 }
 function drawCampfire(f, t) {

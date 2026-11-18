@@ -445,52 +445,67 @@ function drawZzz(x, y, k, t) {   // "Z z z" floating up from his head while he n
 }
 function napZzz(t, head, k) { if (napping()) drawZzz(head[0], head[1], k, t); }
 // The neighbour who brings the pie: in a long skirt and cardigan, grey hair in a bun, glasses; standing on (x, y)
-// (seated: just the top half, for her kayak)
-function drawNeighbor(c, x, y, k, dir, gait, dim, pie, seated = false) {
-  const col = h => tgCol(h, dim), sw = gait ? Math.sin(gait) : 0;
+// (seated: just the top half, for her kayak). pie: carrying one in both hands. bend (0-1): bending over at the waist,
+// knees a little bent, to set it down. Returns where the pie is (its bottom middle), in her own units, if she has one.
+const NB_BEND = 1.15, NB_SQUAT = 10;   // (fully bent: how far she leans, in radians, and how far her hips drop)
+function neighborPiePt(bend) {   // the pie's place relative to her feet: held out in front, then lowered as she bends
+  const a = bend * NB_BEND, hip = -46 + bend * NB_SQUAT, dx = 17, dy = -51 + 46;
+  return [Math.cos(a) * dx - Math.sin(a) * dy, hip + Math.sin(a) * dx + Math.cos(a) * dy];
+}
+function drawNeighbor(c, x, y, k, dir, gait, dim, pie, seated = false, bend = 0) {
+  const col = h => tgCol(h, dim), sw = gait ? Math.sin(gait) : 0, sq = bend * NB_SQUAT;
   c.save(); c.translate(x, y); c.scale(dir * k, k); c.lineCap = c.lineJoin = 'round';
   if (seated) c.translate(0, 40);
   else {
     c.translate(0, -(gait ? Math.abs(Math.cos(gait)) * 1.2 : 0));
     c.strokeStyle = col('#3a3036'); c.lineWidth = 4;
-    for (const sg of [1, -1]) { c.beginPath(); c.moveTo(sg * 3, -18); c.lineTo(sg * 3 + sw * sg * 4, -1); c.stroke(); }
+    for (const sg of [1, -1]) {   // legs (knees bending forward as she stoops)
+      c.beginPath(); c.moveTo(sg * 3, -18 + sq); c.lineTo(sg * 3 + bend * 6 + sw * sg * 2, -9 + sq / 2); c.lineTo(sg * 3 + sw * sg * 4, -1); c.stroke();
+    }
     c.fillStyle = col('#2a2226'); for (const sg of [1, -1]) { c.beginPath(); c.ellipse(sg * 3 + sw * sg * 4 + 2, -1, 4, 2, 0, 0, 7); c.fill(); }
-    c.fillStyle = col('#6a3a5a'); c.beginPath(); c.moveTo(-9, -46); c.lineTo(9, -46); c.lineTo(13, -14); c.lineTo(-13, -14); c.closePath(); c.fill();   // skirt
+    c.fillStyle = col('#6a3a5a'); c.beginPath(); c.moveTo(-9, -46 + sq); c.lineTo(9 + bend * 4, -46 + sq); c.lineTo(13 + bend * 6, -14 + sq * .6); c.lineTo(-13, -14 + sq * .6); c.closePath(); c.fill();   // skirt
   }
-  c.save(); c.filter = 'brightness(.72)';   // her far arm, behind her (a little darker): both hands under the pie, or hanging down
-  c.strokeStyle = col('#c9a03a'); c.lineWidth = 5; c.beginPath(); c.moveTo(-2, -62); c.lineTo(pie ? 11 : -3, pie ? -50 : -44); c.stroke();
-  c.fillStyle = col('#f0c8a8'); c.beginPath(); c.arc(pie ? 12 : -3, pie ? -49.5 : -43, 2.6, 0, 7); c.fill();
+  c.save(); c.translate(0, -46 + sq); c.rotate(bend * NB_BEND); c.translate(0, 46);   // her upper body, leaning over from the hips
+  const hands = pie ? [[11, -50], [16, -51]] : [[-3, -43], [7, -43]];
+  c.save(); c.filter = 'brightness(.72)';   // her far arm, behind her (a little darker)
+  c.strokeStyle = col('#c9a03a'); c.lineWidth = 5; c.beginPath(); c.moveTo(-2, -62); c.lineTo(...hands[0]); c.stroke();
+  c.fillStyle = col('#f0c8a8'); c.beginPath(); c.arc(...hands[0], 2.6, 0, 7); c.fill();
   c.restore();
   c.fillStyle = col('#c9a03a'); c.beginPath(); c.roundRect(-9, -66, 18, 24, 5); c.fill();   // cardigan
   c.fillStyle = col('#e6dccb'); c.fillRect(-1, -64, 2, 20);   // buttons' line
-  c.strokeStyle = col('#c9a03a'); c.lineWidth = 5;   // arm, out in front
-  c.beginPath(); c.moveTo(4, -62); c.lineTo(pie ? 15 : 7, pie ? -52 : -44); c.stroke();
-  c.fillStyle = col('#f0c8a8'); c.beginPath(); c.arc(pie ? 16 : 7, pie ? -51 : -43, 2.6, 0, 7); c.fill();   // hand
-  c.beginPath(); c.arc(1, -74, 7.5, 0, 7); c.fill();   // head
+  c.fillStyle = col('#f0c8a8'); c.beginPath(); c.arc(1, -74, 7.5, 0, 7); c.fill();   // head
   c.fillStyle = col('#d4d2cf'); c.beginPath(); c.arc(0, -77, 7.8, Math.PI * 1.05, Math.PI * 2.05); c.fill(); c.beginPath(); c.arc(-6, -78, 3.6, 0, 7); c.fill();   // grey hair and bun
   c.fillStyle = '#222'; c.beginPath(); c.arc(4.6, -74.6, 1.05, 0, 7); c.fill();   // her eye, like the men's
   c.strokeStyle = col('#9a8a7a'); c.lineWidth = .7; c.beginPath(); c.roundRect(2.6, -76.4, 4.4, 3.4, 1.2); c.moveTo(2.6, -75.2); c.lineTo(-3, -75.6); c.stroke();   // small, thin glasses and their arm to her ear
   c.strokeStyle = col('#a0504a'); c.lineWidth = 1; c.beginPath(); c.arc(5, -70.5, 1.6, .2, Math.PI - .2); c.stroke();   // smile
-  if (pie) drawPie(c, 18, -52, 9, dim);
+  c.strokeStyle = col('#c9a03a'); c.lineWidth = 5;   // her near arm, out in front
+  c.beginPath(); c.moveTo(4, -62); c.lineTo(...hands[1]); c.stroke();
+  c.fillStyle = col('#f0c8a8'); c.beginPath(); c.arc(...hands[1], 2.6, 0, 7); c.fill();
   c.restore();
+  let at = null;
+  if (pie) { at = neighborPiePt(bend); drawPie(c, at[0], at[1], 7, dim); }   // (kept level, not tilted with her; the size of the one on his log)
+  c.restore();
+  return at;
 }
 // The pie story: the raccoon (Forest) or a seagull (Ocean) steals his pie, and it stays gone (tgPie.gone) until
 // his neighbour brings a new one and puts it where the old one was. (Her visit only comes while the pie is gone.)
-// Forest: she walks in from the left (by .3), "Happy Thanksgiving, dear!", sets the pie on the end of his log (.36-.44),
+// Forest: she walks in from the left (by .3), "Happy Thanksgiving, dear!", bends over and sets the pie down on the end of
+// his log with both hands (.38-.48), straightens up (by .56),
 // and walks off. spot: where the pie goes (as for drawBag).
 function forestPie(f, e, t, lx, spot) {
-  const s = f.s, p = e.p, k = s * 1.3, stop = lx - 64 * s, off = -60 * k, y = f.gy + 4 * s, dim = f.night ? .42 : f.golden ? .25 : 0;
-  let x = stop, dir = 1, gait = 0;
+  const s = f.s, p = e.p, k = s * 1.3, dim = f.night ? .42 : f.golden ? .25 : 0;
+  // where she stands, so that bent right over, the pie in her hands is just on its place on the log
+  const [px, py] = neighborPiePt(1), stop = spot[0] - px * k, y = spot[1] - py * k, off = -60 * k;
+  let x = stop, dir = 1, gait = 0, bend = 0;
   if (p < .3) { x = lrp(off, stop, ease(p / .3)); gait = t * 8; }
-  else if (p > .5) { x = lrp(stop, off * 2, ease((p - .5) / .3)); dir = -1; gait = t * 8; }
-  const holding = p < .36;
-  if (p < .86) drawNeighbor(g, x, y, k, dir, gait, dim, holding);
-  if (p >= .36 && p < .44) {   // setting it down: from her hands to the log
-    const u = ease((p - .36) / .08);
-    drawPie(g, lrp(x + 18 * k, spot[0], u), lrp(y - 52 * k, spot[1], u) - Math.sin(Math.PI * u) * 8 * s, lrp(9 * k, 9 * s, u), dim);
-  }
-  if (p >= .44) tgPie.gone = false;   // (drawBag draws it from here on)
-  e.gob = p > .26 && p < .4 ? ['Happy Thanksgiving, dear!', x + 2 * k, y - 80 * k, Math.min(1, (p - .26) / .01, (.4 - p) / .01)] : null;
+  else if (p < .38) bend = 0;   // "Happy Thanksgiving, dear!"
+  else if (p < .46) bend = ease((p - .38) / .08);   // bending over to set it down with both hands
+  else if (p < .5) bend = 1;
+  else if (p < .56) bend = 1 - ease((p - .5) / .06);   // and straightening up again
+  else { x = lrp(stop, off * 2, ease((p - .56) / .3)); dir = -1; gait = t * 8; }
+  if (p >= .48) tgPie.gone = false;   // (let go of: drawBag draws it on the log from here on)
+  if (p < .9) drawNeighbor(g, x, y, k, dir, gait, dim, tgPie.gone, false, bend);
+  e.gob = p > .26 && p < .38 ? ['Happy Thanksgiving, dear!', x + 2 * k, y - 80 * k, Math.min(1, (p - .26) / .01, (.38 - p) / .01)] : null;
 }
 // Ocean: she paddles up in a red kayak from the left, lifts the pie up onto the deck where the old one was (.38-.46),
 // and paddles off. spot: where it goes on the deck.
@@ -555,6 +570,6 @@ function forestFootball(f, e, t, lx) {
   else if (p < .56) reach = .5;
   else if (p < .62) reach = .5 + Math.sin((p - .56) / .06 * Math.PI) * .5;   // the throw
   else reach = Math.max(0, .5 - (p - .62) / .06);
-  const hx = lrp(3, 9, reach), hy = lrp(-8, -52, reach);
+  const [hx, hy] = reachPt(reach);   // (as drawCamperOnFoot puts his hands)
   return { x, dir, gait, reach, hand: [x + dir * hx * s, f.gy - 36 * s + hy * s], head: [x + dir * 4 * s, f.gy - 81 * s] };
 }
