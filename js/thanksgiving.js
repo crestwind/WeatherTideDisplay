@@ -88,8 +88,9 @@ function drawParadeBalloon(t) {   // the parade balloon: a giant puffed-up turke
   const B = thanks.balloon, y = B.y + Math.sin(t * .7 + B.ph) * 8 * B.k / 2.6;
   g.save();
   g.strokeStyle = thanks.night ? 'rgba(200,200,210,.4)' : 'rgba(250,250,250,.7)'; g.lineWidth = Math.max(1, 1.4 * B.k / 2.6);
-  for (const [ox, sway] of [[-30, .6], [-6, 1], [16, .8], [34, .5]]) {   // the ropes, down to the handlers below the screen
-    g.beginPath(); g.moveTo(B.x + ox * B.k, y - 8 * B.k); g.quadraticCurveTo(B.x + (ox * 1.3 + Math.sin(t + ox) * 6 * sway) * B.k, y + 70 * B.k, B.x + ox * 1.6 * B.k, Hd + 20); g.stroke();
+  for (const [ox, oy, sway] of [[-9, -15, .6], [-3, -11.5, 1], [4, -11.5, .8], [9, -14, .5]]) {   // the ropes, from the underside of its body down to the handlers below the screen
+    const ax = B.x + ox * B.dir * B.k, ay = y + oy * B.k, bx = B.x + ox * B.dir * 4 * B.k;
+    g.beginPath(); g.moveTo(ax, ay); g.quadraticCurveTo(lrp(ax, bx, .4) + Math.sin(t + ox) * 6 * sway * B.k, lrp(ay, Hd, .45), bx, Hd + 20); g.stroke();
   }
   g.restore();
   drawTurkey(g, B.x, y, B.k, B.dir, 0, 1, thanks.dim * .6);
