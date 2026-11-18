@@ -29,7 +29,7 @@
     <div class="top">
       <div><h1 class="logo-h"><img class="logo" src="logo.png" alt="Tidal Weather"></h1><div class="clock" id="clock">--:--</div><div class="date" id="date"></div></div>
       <div class="notices">
-        <div class="notice alert" id="alert" hidden></div>
+        <div class="notice alert" id="alert" tabindex="0" role="region" aria-label="Weather alert" title="Pauses while the pointer or keyboard is on it; press or click for the next alert" hidden></div>
         <div class="notice soe" id="soe" hidden></div>
       </div>
     </div>
@@ -43,7 +43,7 @@
   </section>
 
   <section class="right">
-    <div class="card"><h2>Hourly forecast <span>Open-Meteo</span></h2><div class="hours" id="hours"></div></div>
+    <div class="card"><h2>Hourly forecast <span>Open-Meteo</span></h2><div class="hours" id="hours" tabindex="0" role="region" aria-label="Hourly forecast, scrolls sideways"></div></div>
     <div class="card" id="tideCard"><h2>Tides <span id="tideSrc"></span></h2><div id="tideBody" style="display:flex;flex-direction:column;flex:1;min-height:0"></div></div>
     <div class="card"><h2>7-day forecast <span>Open-Meteo</span></h2><div class="days" id="days"></div></div>
   </section>
@@ -175,7 +175,7 @@
           <textarea id="fbMsg" rows="4" maxlength="2000" placeholder="Ideas, problems, anything about the website…"></textarea>
         </label>
         <label>Your email (optional, only if you'd like a reply)
-          <input id="fbReply" type="email" maxlength="200" placeholder="you@example.com">
+          <input id="fbReply" type="email" autocomplete="email" maxlength="200" placeholder="you@example.com">
         </label>
         <input id="fbTrap" class="trap" tabindex="-1" autocomplete="off" aria-hidden="true">
         <div class="fbrow"><button type="button" id="fbSend">Send</button><span id="fbStatus" role="status"></span></div>

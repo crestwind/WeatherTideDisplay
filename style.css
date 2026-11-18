@@ -1,7 +1,7 @@
 :root {
   --fg: #fff;
-  --dim: rgba(255,255,255,.85);
-  --faint: rgba(255,255,255,.72);   /* (raised from .45 on 2026-11-18 so small text passes contrast checks on the daytime sky) */
+  --dim: rgba(255,255,255,.92);
+  --faint: rgba(255,255,255,.85);   /* (raised from .45 on 2026-11-18 so small text passes contrast checks on the daytime sky) */
   --card: rgba(6,12,22,.30);
   --line: rgba(255,255,255,.15);
   --water: #8fd3ff;
@@ -67,7 +67,7 @@ body.idle { cursor: none; }
 .logbox summary { cursor: pointer; font-size: 1rem; color: var(--dim); }
 .fb { margin-top: .8rem; }
 .fb textarea { display: block; width: 100%; margin-top: .35rem; font: inherit; font-size: 1.05rem; color: #fff; resize: vertical;
-  background: #0c121b; border: 1px solid rgba(255,255,255,.22); border-radius: .6rem; padding: .55rem .75rem; }
+  background: #0c121b; border: 1px solid rgba(255,255,255,.45); border-radius: .6rem; padding: .55rem .75rem;   /* border .45: 3:1 against the panel (WCAG non-text contrast) */ }
 .fb .trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }   /* only robots fill this in */
 .fbrow { display: flex; align-items: center; gap: 1rem; }
 #fbSend { font: inherit; font-size: 1.05rem; padding: .45rem 1.3rem; border-radius: .6rem; cursor: pointer; border: 0; background: #2f7fd6; color: #fff; font-weight: 600; }
@@ -82,7 +82,7 @@ body.idle { cursor: none; }
 #logList .m { color: var(--faint); font-size: .84rem; }
 .place { font-size: 2rem; font-weight: 600; }
 .statusrow { display: flex; align-items: baseline; gap: .7rem; margin-top: .25rem; }
-.status { font-size: .95rem; color: var(--faint); }
+.status { font-size: .95rem; color: var(--dim); }
 /* opens settings at the location box; fades out with the corner buttons when the mouse is idle */
 .chgloc { font: inherit; font-size: .95rem; color: var(--water); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: .15em; transition: opacity .6s; }
 body.idle .chgloc, .mirror .chgloc { opacity: 0; pointer-events: none; }
@@ -229,7 +229,7 @@ body.idle #gear, body.idle #fsBtn, body.idle #sndBtn { opacity: 0; }
 .panel label { display: block; font-size: .95rem; color: var(--dim); margin-bottom: 1rem; }
 .panel input, .panel select {
   display: block; width: 100%; margin-top: .35rem; font: inherit; font-size: 1.15rem; color: #fff;
-  background: #0c121b; border: 1px solid rgba(255,255,255,.22); border-radius: .6rem; padding: .55rem .75rem;
+  background: #0c121b; border: 1px solid rgba(255,255,255,.45); border-radius: .6rem; padding: .55rem .75rem;   /* border .45: 3:1 against the panel (WCAG non-text contrast) */
 }
 .panel input:focus, .panel select:focus, .panel button:focus { outline: 2px solid var(--water); outline-offset: 2px; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -295,7 +295,7 @@ body.idle .more-hint { opacity: 0; }
 .legend { display: flex; align-items: center; gap: .5rem; font-size: .85rem; color: var(--dim); white-space: nowrap; }
 .legend i { display: inline-block; width: 4.5rem; height: .6rem; border-radius: 1rem; }
 .hist { display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 2rem; }
-.hist h4 { font-size: 1.05rem; font-weight: 600; margin-bottom: .4rem; }
+.hist h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: .4rem; }
 .hist table { width: 100%; border-collapse: collapse; font-size: 1.05rem; }
 .hist td, .hist th { padding: .38rem .4rem; border-top: 1px solid rgba(255,255,255,.07); text-align: right; white-space: nowrap; }
 .hist th { border-top: 0; font-size: .8rem; font-weight: 600; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
@@ -305,7 +305,7 @@ body.idle .more-hint { opacity: 0; }
 .more .foot { margin: .4rem 0 0; text-align: center; font-size: .9rem; }
 .more .foot a, #setForm .hint a { color: var(--dim); }
 .tidey { display: grid; grid-template-columns: 1.25fr 1fr; gap: 2.4rem; }
-.tidey h4 { font-size: 1.05rem; font-weight: 600; margin-bottom: .4rem; }
+.tidey h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: .4rem; }
 .tidey .sum { font-size: 1rem; color: var(--dim); margin-bottom: .6rem; line-height: 1.5; }
 .tidey .sum b { color: var(--fg); font-weight: 600; }
 .tidey table { width: 100%; border-collapse: collapse; font-size: 1rem; }
@@ -402,3 +402,6 @@ html.big .hist table { font-size: .98rem; }
 html.big .hist td small { display: block; margin-left: 0; }
 html.big .logo { max-width: 100%; }
 html.big .statusrow { flex-wrap: wrap; }
+/* pale skies by day (set in setBg): darker panels and an even dimming over the sky, so text keeps 4.5:1 contrast */
+html.pale { --card: rgba(6,12,22,.6); }
+html.pale #shade { background: linear-gradient(90deg, rgba(4,10,20,.7), rgba(4,10,20,.58) 27%, rgba(4,10,20,0) 46%), radial-gradient(ellipse at 50% 35%, rgba(0,0,0,0) 55%, rgba(0,0,0,.32) 100%); }   /* a darker band behind the left-hand text */

@@ -190,7 +190,7 @@ const History = (() => {
     const rec = (label, i, key, f) => D(i) ? `<tr><td>${label}</td><td>${f(D(i)[key])}<small>${mdy(D(i).t)}</small></td></tr>` : '';
     const ly = D(s.day.lastYear);
     $('#hist').innerHTML = `<div class="hist">
-      <div><h4>This year so far vs last year <span style="font-weight:400;color:var(--faint)">(Jan 1 – ${md(s.end)})</span></h4><table>
+      <div><h3>This year so far vs last year <span style="font-weight:400;color:var(--faint)">(Jan 1 – ${md(s.end)})</span></h3><table>
         <tr><th></th><th>${s.year}</th><th>${s.year - 1}</th></tr>
         ${row('Average high', t(a.avgHi), t(b.avgHi))}
         ${row('Average low', t(a.avgLo), t(b.avgLo))}
@@ -201,14 +201,14 @@ const History = (() => {
         ${row('Wet days', n(a.wetDays), n(b.wetDays))}
         ${row('Strongest gust', withDate(a.gust, w), withDate(b.gust, w))}
       </table></div>
-      <div><h4>On this date (${md(localDay())})</h4><table>
+      <div><h3>On this date (${md(localDay())})</h3><table>
         ${D(s.day.hi) ? `<tr><td>Record high</td><td>${t(D(s.day.hi).hi)}<small>${yr(s.day.hi)}</small></td></tr>` : ''}
         ${D(s.day.lo) ? `<tr><td>Record low</td><td>${t(D(s.day.lo).lo)}<small>${yr(s.day.lo)}</small></td></tr>` : ''}
         <tr><td>Normal high / low</td><td>${t(s.day.avgHi)} / ${t(s.day.avgLo)}</td></tr>
         ${D(s.day.wet) ? `<tr><td>Most precipitation</td><td>${p(D(s.day.wet).pr)}<small>${yr(s.day.wet)}</small></td></tr>` : ''}
         ${ly ? `<tr><td>Last year's high / low</td><td>${t(ly.hi)} / ${t(ly.lo)}</td></tr>` : ''}
       </table></div>
-      <div><h4>All-time records since ${s.first}</h4><table>
+      <div><h3>All-time records since ${s.first}</h3><table>
         ${rec('Hottest day', s.rec.hot, 'hi', t)}${rec('Coldest day', s.rec.cold, 'lo', t)}
         ${rec('Wettest day', s.rec.wet, 'pr', p)}${rec('Snowiest day', s.rec.snow, 'sn', sn)}${rec('Strongest gust', s.rec.gust, 'gu', w)}
         ${s.yrs.wet ? `<tr><td>Wettest / driest year</td><td>${p(s.yrs.wet.rain)}<small>${s.yrs.wet.y}</small> · ${p(s.yrs.dry.rain)}<small>${s.yrs.dry.y}</small></td></tr>` : ''}
@@ -349,18 +349,18 @@ const TideYear = (() => {
       const mh = meas.pts.filter(p => p[2].startsWith('H')).reduce((m, p) => !m || p[1] > m[1] ? p : m, null);
       const ml = meas.pts.filter(p => p[2].startsWith('L')).reduce((m, p) => !m || p[1] < m[1] ? p : m, null);
       const last = meas.pts[meas.pts.length - 1][0];
-      measured = `<h4>Measured so far this year</h4>
+      measured = `<h3>Measured so far this year</h3>
         <div class="sum">Highest <b>${ht(mh[1])}</b> on ${md(mh[0])} · lowest <b>${ht(ml[1])}</b> on ${md(ml[0])}<br>
         At the ${esc(meas.name)} gauge, through ${md(last)}.</div>`;
     }
     box.innerHTML = `<div class="tidey">
-      <div><h4>${f(Date.parse(month + '-01T00:00:00Z'), { month: 'long', year: 'numeric' })}</h4>
+      <div><h3>${f(Date.parse(month + '-01T00:00:00Z'), { month: 'long', year: 'numeric' })}</h3>
         <div class="sum">Highest <b>${ht(mHi[1])}</b> on ${md(mHi[0])} at ${tm(mHi[0])} · lowest <b>${ht(mLo[1])}</b> on ${md(mLo[0])} at ${tm(mLo[0])}${moonTxt ? `<br>Tides run strongest around the ${moonTxt}` : ''}</div>
         <table><tr><th>Day</th><th>High tides</th><th>Low tides</th></tr>${rows}</table></div>
-      <div><h4>${y} at a glance <span style="font-weight:400;color:var(--faint)">(each month's highest and lowest tide, ${imp() ? 'ft' : 'm'})</span></h4>
+      <div><h3>${y} at a glance <span style="font-weight:400;color:var(--faint)">(each month's highest and lowest tide, ${imp() ? 'ft' : 'm'})</span></h3>
         <svg viewBox="0 0 ${W} ${H}">${zero}${bars}</svg>
-        <h4>Highest predicted tides this year</h4><table>${lst(kings)}</table>
-        <h4 style="margin-top:1rem">Lowest predicted tides this year</h4><table>${lst(minus)}</table>
+        <h3>Highest predicted tides this year</h3><table>${lst(kings)}</table>
+        <h3 style="margin-top:1rem">Lowest predicted tides this year</h3><table>${lst(minus)}</table>
         <div style="margin-top:1rem">${measured}</div></div>
     </div>
     <p class="src">From NOAA Tides &amp; Currents.</p>`;

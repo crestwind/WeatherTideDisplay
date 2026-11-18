@@ -16,7 +16,11 @@ setInterval(refreshWeather, 10 * 60e3);
 setInterval(refreshSea, 60 * 60e3);
 setInterval(refreshAlerts, 2 * 60e3);
 setInterval(refreshDeclarations, 30 * 60e3);
-setInterval(() => { alertIdx++; renderAlert(); }, 8000);   // rotate when there's more than one alert
+// rotate when there's more than one alert, pausing while the pointer or keyboard is on it (WCAG: moving content can be paused);
+// a click, Enter or space shows the next one
+setInterval(() => { if (!$('#alert').matches(':hover, :focus')) { alertIdx++; renderAlert(); } }, 8000);
+$('#alert').onclick = () => { alertIdx++; renderAlert(); };
+$('#alert').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alertIdx++; renderAlert(); } };
 // Nudge the layout a few pixels every few minutes so nothing sits on the same pixels forever.
 setInterval(() => { $('#app').style.transform = `translate(${rnd(-6, 6).toFixed(1)}px, ${rnd(-5, 5).toFixed(1)}px)`; }, 5 * 60e3);
 

@@ -346,6 +346,8 @@ function setBg(kind, tod) {
   const key = kind + tod;
   if (key === bgKey) return;
   bgKey = key;
+  // daytime skies (light, often with white clouds): dim them a little more so the text stays readable (WCAG contrast)
+  document.documentElement.classList.toggle('pale', tod !== 'night');
   const p = (tod === 'golden' && SKY_COLORS.golden[kind]) || SKY_COLORS[tod === 'night' ? 'night' : 'day'][kind];
   const back = layers[1 - front];
   back.style.background = `linear-gradient(180deg, ${p[0]} 0%, ${p[1]} 55%, ${p[2]} 100%)`;
