@@ -4,8 +4,9 @@
 
 function moonSprite() {
   const r = Hd * .048, R = Math.round(r * 6), [c, x] = mk(R * 2, R * 2);
-  // Real moon phase: 0 = new, .5 = full.
-  const p = ((Date.now() - 947182440000) / 864e5 / 29.530588853) % 1, k = Math.cos(2 * Math.PI * p), waxing = p < .5;
+  // Real moon phase (the same one as the Moon tile, see moonOn): 0 = new, .5 = full.
+  const p = moonOn(Date.now()).age, k = Math.cos(2 * Math.PI * p), waxing = p < .5;
+  const south = S.lat != null && S.lat < 0;   // south of the equator the moon looks upside down: lit on the left while it waxes
   const lit = (1 - k) / 2;   // fraction of the disc that's lit
   const halo = x.createRadialGradient(R, R, r * .9, R, R, r * 2.4);
   halo.addColorStop(0, `rgba(228,234,255,${.32 * (.3 + .7 * lit)})`); halo.addColorStop(1, 'rgba(228,234,255,0)');
@@ -21,6 +22,7 @@ function moonSprite() {
   m.ellipse(0, 0, r * Math.abs(k), r, 0, Math.PI / 2, -Math.PI / 2, waxing ? k > 0 : k < 0); m.fill();
   const [lc, l] = mk(N, N);
   l.drawImage(tex, 0, 0); l.globalCompositeOperation = 'destination-in'; l.drawImage(mc, 0, 0);
+  if (south) { x.translate(R, R); x.rotate(Math.PI); x.translate(-R, -R); }
   x.globalAlpha = .06; x.drawImage(tex, at, at); x.globalAlpha = 1;   // earthshine on the dark side
   x.drawImage(lc, at, at);
   return c;
@@ -352,7 +354,7 @@ function setBg(kind, tod) {
 
 function set(kind, tod) {
   setBg(kind, tod);
-  const s = [kind, tod, Wd, Hd, S.motion, S.display, holidayNow()].join('|');
+  const s = [kind, tod, Wd, Hd, S.motion, S.display, holidayNow(), S.lat < 0].join('|');   // (south of the equator the moon turns over)
   if (s === sig) return;
   sig = s; mode = { kind, tod }; sc = SCENES[kind] || SCENES.clear;
   build(); start();

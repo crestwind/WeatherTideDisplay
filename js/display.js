@@ -96,7 +96,8 @@ function renderMoonCal() {
   $('#moonCal').innerHTML = `<div class="moonnow">${moonSvg(m.age, 'mo big')}<div><div class="nm">${m.name}</div>
       <div class="sub">Today · ${Math.round((1 - Math.cos(2 * Math.PI * m.age)) * 50)}% lit</div></div>
       <div class="nxt">${nf ? `<div>Next full moon <b>${when(nf)}</b></div>` : ''}${nn ? `<div>Next new moon <b>${when(nn)}</b></div>` : ''}</div></div>
-    <div class="mcal">${cells}</div>`;
+    <div class="mcal">${cells}</div>
+    <p class="src">Worked out on your device using Jean Meeus's formulas from <i>Astronomical Algorithms</i>, the method astronomers and almanacs use.</p>`;
 }
 
 function render() {

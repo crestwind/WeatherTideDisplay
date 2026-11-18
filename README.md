@@ -169,7 +169,7 @@ Scroll down (mouse wheel, or swipe on a phone) to see four more sections. On a c
 - **Tides this month and this year** (coastal locations with a NOAA tide station):
   - **This month:** every day's high and low tides with times and heights (today highlighted, past days dimmed), the month's highest and lowest tide, and the full and new moons (marked ● and ○), when tides run strongest.
   - **This year:** a chart of each month's highest and lowest tide, the five highest and three lowest predicted tides of the year, and the highest and lowest water actually measured so far this year at the nearest NOAA gauge. NOAA publishes checked measurements about a month late, so that part runs a few weeks behind.
-- **Moon phases:** today's moon (its phase and how much of it is lit), the date and time of the next full and new moons, and a calendar of this month with each night's moon, the four main phases (New Moon, First Quarter, Full Moon, Last Quarter) named on their days and today outlined. South of the equator the moon is drawn lit on the other side, as it looks there. Nothing is downloaded, so it always shows.
+- **Moon phases:** today's moon (its phase and how much of it is lit), the date and time of the next full and new moons, and a calendar of this month with each night's moon, the four main phases (New Moon, First Quarter, Full Moon, Last Quarter) named on their days and today outlined. South of the equator the moon is drawn lit on the other side, as it looks there. Nothing is downloaded, so it always shows. The card credits the method (Jean Meeus, *Astronomical Algorithms*).
 
 ## Backgrounds
 
@@ -189,7 +189,7 @@ The background changes on its own to match the current weather, the time of day 
 | High wind | Racing clouds, gusts, streaks of wind, and tumbling leaves and twigs |
 | Hurricane | Giant spiral storm bands turning around the eye, sideways rain, sheets of rain sweeping across, flying debris and leaves |
 
-**The moon** shows its real current phase, with:
+**The moon** shows its real current phase (the same one as the Moon tile; south of the equator it's turned over, lit on the other side, as it looks there), with:
 - grey "seas", craters and the bright crater Tycho
 - a soft edge between the lit and dark parts, with the dark part faintly visible
 - a cool halo that's brighter around a full moon
