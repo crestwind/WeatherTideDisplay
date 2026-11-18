@@ -26,6 +26,7 @@ const ease = u => { u = Math.min(1, Math.max(0, u)); return u * u * (3 - 2 * u);
 const randFish = () => FISH[Math.floor(Math.random() * FISH.length)];
 function eligible(kind) {
   if (S.display === 'mirror') return false;
+  if (kind === 'raccoon' && thanks && tgPie.gone && !tgEv('raccoon')) return false;   // (Thanksgiving: nothing left for it to steal)
   const fishing = !!sea && sea.pose === 'fish';
   switch (kind) {
     case 'biplane': return !!(window.TW_BANNERS || []).length;               // the biplane flies in any weather, in both styles
@@ -36,8 +37,10 @@ function eligible(kind) {
     case 'nessie': return !!sea && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind);
     case 'bigfoot': return !!forest && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind);
     case 'bear': case 'raccoon': case 'skunk': case 'ranger': return !!forest && !forest.inside;   // he has to be out by the fire
-    case 'football': case 'pie': case 'nap': return !!thanks && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind) && (sea ? sea.pose === 'fish' || sea.pose === 'mug' : !!forest && !forest.inside);   // Thanksgiving
-    case 'piethief': return !!thanks && !!sea && (sea.pose === 'fish' || sea.pose === 'mug') && flyOK() && (deckPie(performance.now() / 1000) || !!tgEv('piethief'));   // (still going once it's taken the pie)   // Thanksgiving, Ocean (the Forest's raccoon steals his pie)
+    case 'pie': if (!tgPie.gone && !tgEv('pie')) return false;   // Thanksgiving: she only comes when his pie's been stolen
+    // falls through
+    case 'football': case 'nap': return !!thanks && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind) && (sea ? sea.pose === 'fish' || sea.pose === 'mug' : !!forest && !forest.inside);   // Thanksgiving
+    case 'piethief': return !!thanks && !!sea && (sea.pose === 'fish' || sea.pose === 'mug') && flyOK() && (deckPie() || !!tgEv('piethief'));   // (still going once it's taken the pie)   // Thanksgiving, Ocean (the Forest's raccoon steals his pie)
     case 'turkey': return !!thanks && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind) && (sea ? sea.pose === 'fish' || sea.pose === 'mug' : !!forest && !forest.inside);   // Thanksgiving: he has to be out to see it
     case 'reaper': return !!hallo && !!(sea ? (sea.pose === 'fish' || sea.pose === 'mug') : forest && !forest.inside);   // Halloween: he has to be out to be pointed at
     case 'trickortreat': return !!hallo && (sea ? (sea.pose === 'fish' || sea.pose === 'mug') && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind) : !!forest && !forest.inside);
@@ -62,7 +65,7 @@ function startMajor(kind, t) {
   else if (kind === 'batcloud') { e.dur = 16; e.say = "I've got a bat breath problem."; }
   else if (kind === 'trickortreat') { e.dur = 22; e.say = sea ? 'Swedish Fish are my favorite!' : "Nothing beats Halloween s'mores!"; e.kids = [...KID_COSTUMES].sort(() => Math.random() - .5).slice(0, 3).map(c => ({ c, s: rnd(.88, 1.05) })); }
   else if (kind === 'football') { e.dur = 14; e.say = 'Did you see that spiral?!'; }
-  else if (kind === 'pie') { e.dur = 22; e.say = "Best pie I've ever had!"; }
+  else if (kind === 'pie') { e.dur = 20; e.say = 'Thank you! You saved Thanksgiving!'; }
   else if (kind === 'nap') { e.dur = 16; e.say = "I wasn't sleeping!"; }
   else if (kind === 'piethief') { e.dur = 14; e.say = 'Hey! That was dessert!'; }
   else if (kind === 'turkey') { e.dur = sea ? 20 : 24; e.say = sea ? 'Was that turkey rowing a boat?!' : 'Next year, buddy. Next year.'; }
@@ -97,6 +100,7 @@ function eventsTick(t) {
     const pool = MAJORS.filter(k => k !== 'biplane' && k !== stage.lastOther && eligible(k));
     const spooky = pool.filter(k => k === 'werewolf' || k === 'batcloud' || k === 'trickortreat' || k === 'reaper');   // (on Halloween, 4 in 5 of the in-between events are spooky ones)
     if (spooky.length && Math.random() < .8) pool.splice(0, pool.length, ...spooky);
+    if (thanks && pool.includes('pie') && Math.random() < .6) pool.splice(0, pool.length, 'pie');   // (once his pie's gone, she's likely to come next)
     const festive = thanks ? pool.filter(k => THANKS_EVENTS.includes(k)) : [];   // (on Thanksgiving, 4 in 5 are Thanksgiving ones)
     if (festive.length && Math.random() < .8) pool.splice(0, pool.length, ...festive);
     // (only if nothing else can happen in this weather does the last one repeat)

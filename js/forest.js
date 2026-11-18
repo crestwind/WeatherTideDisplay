@@ -232,7 +232,8 @@ function drawForest(ts) {
   }
   drawTent(f, t, tx, tb, k, lit && !hiding ? null : hiding ? (bearX > tx ? 1 : -1) : 0);
   if (thanks) harvestPile(g, tx - 62 * k, tb + 2 * k, k * .9, thanks.dim);   // Thanksgiving: a corn shock, hay bale and pumpkins beside the tent
-  const lapPie = ev && ev.kind === 'pie' ? forestPie(f, ev, t, lx) : 0;   // Thanksgiving: his neighbour brings him a pie
+  const footy = ev && ev.kind === 'football' ? forestFootball(f, ev, t, lx) : null;   // Thanksgiving: up off his log to catch the football
+  if (ev && ev.kind === 'pie') forestPie(f, ev, t, lx, [lx - 30 * s, f.gy - 18 * s]);   // Thanksgiving: his neighbour brings him a new pie (to where drawBag puts it)
   const gobbler = ev && ev.kind === 'turkey' ? forestTurkey(f, ev, t, lx) : null;   // Thanksgiving: the wild turkey (and where he is, if he's up after it)
   if (f.rabbit) drawRabbit(f, t);
   if (ev && ev.kind === 'bear') drawBear(f, ev, t, lx);
@@ -247,7 +248,7 @@ function drawForest(ts) {
   const coon = ev && ev.kind === 'raccoon';
   // his bag of marshmallows on the end of the log; when the raccoon grabs it, he puts a new one there a few seconds later
   // (he waits until the raccoon's gone and he's finished saying something about it, then a few seconds more)
-  if (coon && ev.p > .5 && !ev.took) { ev.took = true; f.bagBack = Infinity; f.bagWait = true; }
+  if (coon && ev.p > .5 && !ev.took) { ev.took = true; if (thanks) tgPie.gone = true; else { f.bagBack = Infinity; f.bagWait = true; } }   // (Thanksgiving: the pie stays gone until his neighbour brings another)
   if (f.bagWait && !coon && !talk.line) { f.bagWait = false; f.bagBack = t + 3; }
   f.placing = lit && !hiding && !running && !coming && t > f.bagBack - 1 && t < f.bagBack ? 1 - (f.bagBack - t) : -1;
   if (lit && t >= f.bagBack - .3) drawBag(f, lx - 30 * s, f.gy - 18 * s, 1);   // (from the moment he sets it down)
@@ -257,6 +258,8 @@ function drawForest(ts) {
   } else if (coming) {   // crawls out of the door, stands up and walks back to his seat
     const u = (bp - .86) / .1, go = Math.max(0, (u - .25) / .75);
     drawCamperOnFoot(f, t, lrp(tx + 6 * k, lx, ease(go)), lrp(tb, f.gy, ease(go)), lrp(k, s, go), 1, go > 0 && go < 1 ? t * 9 : 0, false, 0, Math.min(1, u / .25));
+  } else if (footy) {   // Thanksgiving: up to catch the football
+    drawCamperOnFoot(f, t, footy.x, f.gy, s, footy.dir, footy.gait, false, 0, 1, footy.reach);
   } else if (gobbler) {   // Thanksgiving: up off his log, tiptoeing after the turkey (and back)
     drawCamperOnFoot(f, t, gobbler.x, f.gy, s, gobbler.dir, gobbler.gait, false, 0, 1);
   } else if (lit && !hiding) { g.save(); g.globalAlpha = batCloudAlpha(); drawCamper(f, t, lx); g.restore(); }   // (gone while he's a cloud of bats)
@@ -303,8 +306,10 @@ function drawForest(ts) {
   }
   if (ev && ev.gob) drawSpeech(...ev.gob);   // Thanksgiving: the turkey's gobble, his neighbour's greeting (over everything)
   if (thanks && ev) {   // Thanksgiving: the football, the pie on his lap, the Zzz while he naps
-    if (ev.kind === 'football') drawFootballEvent(ev, t, [lx + 16 * s, f.gy - 44 * s], [lx + 6 * s, f.gy - 69 * s], s);
-    if (lapPie > 0) drawPie(g, lx + 16 * s, f.gy - 30 * s, 9 * s, f.night ? .42 : f.golden ? .25 : 0, lapPie);
+    if (ev.kind === 'football') {   // (to his hands where he'll catch it, in them while he holds it, and from where he throws it)
+      const at = q => forestFootball(f, { p: q }, t, lx), now = footy || at(.3), hand = ev.p < .3 ? at(.3).hand : ev.p < .6 ? now.hand : at(.6).hand;
+      drawFootballEvent(ev, t, hand, now.head, s);
+    }
     if (ev.kind === 'nap') napZzz(t, [lx + 6 * s, f.gy - 80 * s], s);
   }
   if (ev && ev.kind === 'ranger' && ev.p > .6 && ev.p < .76) {   // the ranger's answer
@@ -443,7 +448,7 @@ function drawCamper(f, t, lx) {   // sitting on the log, facing the fire on his 
 }
 // The camper on his feet: walking or running (gait is the stride phase, 0 standing), facing dir (-1 left, 1 right),
 // leaning in when he runs; dive (0-1) tips him headfirst and fades him out through the tent door; alpha fades him in.
-function drawCamperOnFoot(f, t, x, y, k, dir, gait, run, dive, alpha) {
+function drawCamperOnFoot(f, t, x, y, k, dir, gait, run, dive, alpha, reach = 0) {   // (reach 0-1: both hands up, to catch)
   const C = f.C, sw = gait ? Math.sin(gait) : 0, bob = gait ? Math.abs(Math.cos(gait)) * (run ? 3 : 1.5) : 0;
   g.save(); g.globalAlpha = alpha * (1 - dive * .9); g.translate(x, y); g.scale(dir * k, k); g.lineCap = g.lineJoin = 'round';
   if (dive) { g.translate(0, -Math.sin(Math.PI * dive) * 16); g.rotate(dive * 1.3); }   // a headfirst hop through the door
@@ -457,7 +462,7 @@ function drawCamperOnFoot(f, t, x, y, k, dir, gait, run, dive, alpha) {
   g.save(); g.translate(0, -36); g.rotate(run ? .25 : .05);   // the upper body, leaning forward when he runs
   // his arms swing against his legs: the far one behind his body (a little darker), the near one in front
   const arm = sg => {
-    const hx = sg * sw * (run ? 14 : 9) + 3, hy = run ? -14 : -8;
+    const hx = lrp(sg * sw * (run ? 14 : 9) + 3, 9 + sg * 1.5, reach), hy = lrp(run ? -14 : -8, -52, reach);
     g.beginPath(); g.moveTo(2, -30); g.lineTo(hx, hy); g.stroke();
     g.fillStyle = C.skin; g.beginPath(); g.arc(hx, hy, 3.2, 0, 7); g.fill();
   };
@@ -664,7 +669,7 @@ function drawRabbit(f, t) {   // hops across behind the log, stretching mid-hop;
   g.restore();
 }
 function drawBag(f, x, y, sz) {   // his bag of marshmallows
-  if (thanks) { drawPie(g, x, y, 9 * f.s * sz, f.night ? .42 : f.golden ? .25 : 0); return; }   // (on Thanksgiving, a pumpkin pie)
+  if (thanks) { if (!tgPie.gone) drawPie(g, x, y, 9 * f.s * sz, f.night ? .42 : f.golden ? .25 : 0); return; }   // (on Thanksgiving, a pumpkin pie, unless it's been stolen)
   const C = f.C; g.save(); g.translate(x, y); g.scale(f.s * sz, f.s * sz);
   g.fillStyle = C.bag; g.beginPath(); g.moveTo(-7, 0); g.lineTo(-6, -15); g.lineTo(-4, -17); g.lineTo(4, -17); g.lineTo(6, -15); g.lineTo(7, 0); g.closePath(); g.fill();
   g.fillStyle = C.bagBand; g.fillRect(-6.5, -10, 13, 4); g.fillRect(-4, -19, 8, 2.2);

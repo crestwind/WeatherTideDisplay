@@ -13,6 +13,7 @@
 // Testing: ?holiday=thanksgiving turns it on; ?geese and ?strut bring those in a few seconds; ?event=turkey (Forest or
 // Ocean) starts the turkey event.
 let thanks = null;
+const tgPie = { gone: false };   // his pie: stolen and not yet replaced (kept outside thanks, so a scene change doesn't bring it back)
 // Thanksgiving (US): the fourth Thursday of November
 function thanksgivingDay(y) { return 1 + (4 - new Date(y, 10, 1).getDay() + 7) % 7 + 21; }
 
@@ -383,34 +384,53 @@ function drawThanksFront(ts) {
 // ----- the other major random events: football, the pie delivery, the nap, the pie thief -----
 const tgEv = kind => stage.ev && stage.ev.kind === kind ? stage.ev : null;
 const napping = () => { const e = tgEv('nap'); return !!e && e.p > .1 && e.p < .82; };
-function drawPie(c, x, y, r, dim, left = 1) {   // a pumpkin pie in its tin, seen from the side and a little above; left: how much is left (0-1)
-  if (left <= 0) return;
-  const col = h => tgCol(h, dim);
+// A pumpkin pie in a foil tin, seen a little from above, standing on (x, y), r its radius
+function drawPie(c, x, y, r, dim) {
+  const col = h => tgCol(h, dim), ry = .36, top = -r * .3;   // (the top is an ellipse ry of its width; top: above the tin's bottom)
   c.save(); c.translate(x, y);
-  c.fillStyle = col('#9aa0a6'); c.beginPath(); c.moveTo(-r, -r * .32); c.lineTo(r, -r * .32); c.lineTo(r * .85, 0); c.lineTo(-r * .85, 0); c.closePath(); c.fill();   // tin
-  c.save(); c.beginPath(); c.rect(-r * 1.1, -r, r * 2.2 * left, r * 1.2); c.clip();   // (slices gone from the right)
-  c.fillStyle = col('#d9a35a'); c.beginPath(); c.ellipse(0, -r * .34, r, r * .3, 0, 0, 7); c.fill();   // crust rim
-  c.fillStyle = col('#c8662a'); c.beginPath(); c.ellipse(0, -r * .36, r * .82, r * .22, 0, 0, 7); c.fill();   // filling
-  c.fillStyle = col('#f6efe2'); c.beginPath(); c.ellipse(-r * .1, -r * .42, r * .22, r * .09, 0, 0, 7); c.fill();   // a dollop of whipped cream
-  c.restore(); c.restore();
+  // the tin: fluted foil sides, shiny in the middle
+  const tin = c.createLinearGradient(-r, 0, r, 0); tin.addColorStop(0, col('#8e949a')); tin.addColorStop(.45, col('#e2e5e8')); tin.addColorStop(1, col('#7c8288'));
+  c.fillStyle = tin; c.beginPath(); c.moveTo(-r * 1.04, top); c.lineTo(-r * .88, 0); c.ellipse(0, 0, r * .88, r * ry * .88, 0, Math.PI, 0, true); c.lineTo(r * 1.04, top); c.closePath(); c.fill();
+  c.strokeStyle = col('#a6acb2'); c.lineWidth = Math.max(.5, r * .04);
+  for (let i = -5; i <= 5; i++) { const u = i / 5.6; c.beginPath(); c.moveTo(u * r * 1.02, top + Math.sqrt(1 - u * u) * r * ry); c.lineTo(u * r * .86, Math.sqrt(1 - u * u) * r * ry * .88); c.stroke(); }   // flutes
+  c.fillStyle = col('#d89a4e'); c.beginPath(); c.ellipse(0, top, r, r * ry, 0, 0, 7); c.fill();   // crust rim
+  c.fillStyle = col('#b7782f');   // its crimped edge
+  for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2; c.beginPath(); c.ellipse(Math.cos(a) * r * .93, top + Math.sin(a) * r * ry * .93, r * .09, r * ry * .12, a, 0, 7); c.fill(); }
+  const fill = c.createRadialGradient(-r * .2, top - r * .1, r * .05, 0, top, r * .9); fill.addColorStop(0, col('#d9853c')); fill.addColorStop(1, col('#a8521f'));
+  c.fillStyle = fill; c.beginPath(); c.ellipse(0, top - r * .02, r * .8, r * ry * .8, 0, 0, 7); c.fill();   // the pumpkin filling
+  c.fillStyle = 'rgba(255,240,215,.25)'; c.beginPath(); c.ellipse(-r * .28, top - r * .08, r * .3, r * ry * .18, -.2, 0, 7); c.fill();   // a soft shine
+  c.fillStyle = col('#fbf7ef');   // a swirl of whipped cream in the middle
+  c.beginPath(); c.ellipse(0, top - r * .05, r * .26, r * .1, 0, 0, 7); c.fill();
+  c.beginPath(); c.ellipse(0, top - r * .14, r * .17, r * .08, 0, 0, 7); c.fill();
+  c.beginPath(); c.moveTo(-r * .06, top - r * .18); c.quadraticCurveTo(0, top - r * .32, r * .05, top - r * .2); c.fill();
+  c.fillStyle = col('#ddd6c8'); c.beginPath(); c.ellipse(r * .05, top - r * .02, r * .16, r * .04, 0, 0, Math.PI); c.fill();   // its shadow side
+  c.restore();
 }
-function drawFootball(x, y, k, rot) {
-  g.save(); g.translate(x, y); g.rotate(rot); g.scale(k, k);
-  g.fillStyle = '#7a4320'; g.beginPath(); g.ellipse(0, 0, 8, 5, 0, 0, 7); g.fill();
-  g.strokeStyle = '#f4efe6'; g.lineWidth = 1; g.beginPath(); g.moveTo(-3, -1.6); g.lineTo(3, -1.6); g.stroke();
-  for (const lx2 of [-2, -.7, .7, 2]) { g.beginPath(); g.moveTo(lx2, -2.6); g.lineTo(lx2, -.6); g.stroke(); }
+// A football, its nose pointing at ang; spin turns it round its long axis, so the laces roll round (a spiral)
+function drawFootball(x, y, k, ang, spin = 0) {
+  g.save(); g.translate(x, y); g.rotate(ang); g.scale(k, k);
+  const sh = g.createLinearGradient(0, -5, 0, 5); sh.addColorStop(0, '#9a5a2c'); sh.addColorStop(1, '#5e3216');
+  g.fillStyle = sh; g.beginPath(); g.moveTo(-9, 0); g.bezierCurveTo(-6, -6, 6, -6, 9, 0); g.bezierCurveTo(6, 6, -6, 6, -9, 0); g.fill();
+  g.strokeStyle = 'rgba(240,235,225,.85)'; g.lineWidth = .9;   // the white stripes near each end
+  for (const sx of [-1, 1]) { g.beginPath(); g.moveTo(sx * 6, -2.6); g.quadraticCurveTo(sx * 6.6, 0, sx * 6, 2.6); g.stroke(); }
+  const ly = Math.sin(spin) * 2.6, show = Math.cos(spin);   // the laces, rolling round as it spins
+  if (show > -.2) {
+    g.globalAlpha = Math.min(1, show + .4); g.strokeStyle = '#f4efe6'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(-3, ly); g.lineTo(3, ly); g.stroke();
+    for (const lx2 of [-2, -.7, .7, 2]) { g.beginPath(); g.moveTo(lx2, ly - 1); g.lineTo(lx2, ly + 1); g.stroke(); }
+  }
   g.restore();
 }
 // The football: thrown in from off the left of the screen to his hands (by .3), held (with "Go long!") until .6, and thrown
-// back out (gone by .85). hand: [x, y]; head: [x, y] for the bubble; k: size
+// back out (gone by .85), nose first along its path, spiralling. hand: [x, y]; head: [x, y] for the bubble; k: size
 function drawFootballEvent(e, t, hand, head, k) {
   const p = e.p, far = [-60 * k, hand[1] - 120 * k];
-  let x, y, rot;
-  if (p < .3) { const u = p / .3; x = lrp(far[0], hand[0], u); y = lrp(far[1], hand[1], u) - Math.sin(Math.PI * u) * 140 * k; rot = t * 14; }
-  else if (p < .6) { x = hand[0]; y = hand[1]; rot = -.3; }
-  else if (p < .85) { const u = (p - .6) / .25; x = lrp(hand[0], far[0] - 200 * k, u); y = lrp(hand[1], far[1] - 60 * k, u) - Math.sin(Math.PI * u) * 180 * k; rot = t * 14; }
-  else return;
-  drawFootball(x, y, k * 1.6, rot);
+  const inAt = u => [lrp(far[0], hand[0], u), lrp(far[1], hand[1], u) - Math.sin(Math.PI * u) * 140 * k];
+  const outAt = u => [lrp(hand[0], far[0] - 200 * k, u), lrp(hand[1], far[1] - 60 * k, u) - Math.sin(Math.PI * u) * 180 * k];
+  const fly = (path, u) => { const [x, y] = path(u), [x2, y2] = path(Math.min(1, u + .01)), [x0, y0] = path(Math.max(0, u - .01)); drawFootball(x, y, k * 1.6, Math.atan2(y2 - y0, x2 - x0), t * 22); };
+  if (p < .3) fly(inAt, p / .3);
+  else if (p < .6) drawFootball(hand[0], hand[1], k * 1.6, -.5, 0);
+  else if (p < .85) fly(outAt, (p - .6) / .25);
   if (p > .4 && p < .58) drawSpeech('Go long!', head[0], head[1], Math.min(1, (p - .4) / .01, (.58 - p) / .01));
 }
 function drawZzz(x, y, k, t) {   // "Z z z" floating up from his head while he naps
@@ -454,19 +474,27 @@ function drawNeighbor(c, x, y, k, dir, gait, dim, pie, seated = false) {
   if (pie) drawPie(c, 18, -52, 9, dim);
   c.restore();
 }
-// Forest: she walks in from the left to him (by .3), hands him the pie (.3-.45, "Happy Thanksgiving, dear!"), and walks
-// off; he eats it on his lap, slice by slice. Returns how much pie is left in his lap (0: none to draw).
-function forestPie(f, e, t, lx) {
-  const s = f.s, p = e.p, k = s * 1.3, stop = lx - 58 * s, off = -60 * k, y = f.gy + 4 * s, dim = f.night ? .42 : f.golden ? .25 : 0;
+// The pie story: the raccoon (Forest) or a seagull (Ocean) steals his pie, and it stays gone (tgPie.gone) until
+// his neighbour brings a new one and puts it where the old one was. (Her visit only comes while the pie is gone.)
+// Forest: she walks in from the left (by .3), "Happy Thanksgiving, dear!", sets the pie on the end of his log (.36-.44),
+// and walks off. spot: where the pie goes (as for drawBag).
+function forestPie(f, e, t, lx, spot) {
+  const s = f.s, p = e.p, k = s * 1.3, stop = lx - 64 * s, off = -60 * k, y = f.gy + 4 * s, dim = f.night ? .42 : f.golden ? .25 : 0;
   let x = stop, dir = 1, gait = 0;
   if (p < .3) { x = lrp(off, stop, ease(p / .3)); gait = t * 8; }
   else if (p > .5) { x = lrp(stop, off * 2, ease((p - .5) / .3)); dir = -1; gait = t * 8; }
-  if (p < .86) drawNeighbor(g, x, y, k, dir, gait, dim, p < .42);
-  e.gob = p > .3 && p < .45 ? ['Happy Thanksgiving, dear!', x + 2 * k, y - 80 * k, Math.min(1, (p - .3) / .01, (.45 - p) / .01)] : null;
-  return p < .42 ? 0 : Math.max(.001, 1 - (p - .5) / .45);
+  const holding = p < .36;
+  if (p < .86) drawNeighbor(g, x, y, k, dir, gait, dim, holding);
+  if (p >= .36 && p < .44) {   // setting it down: from her hands to the log
+    const u = ease((p - .36) / .08);
+    drawPie(g, lrp(x + 18 * k, spot[0], u), lrp(y - 52 * k, spot[1], u) - Math.sin(Math.PI * u) * 8 * s, lrp(9 * k, 9 * s, u), dim);
+  }
+  if (p >= .44) tgPie.gone = false;   // (drawBag draws it from here on)
+  e.gob = p > .26 && p < .4 ? ['Happy Thanksgiving, dear!', x + 2 * k, y - 80 * k, Math.min(1, (p - .26) / .01, (.4 - p) / .01)] : null;
 }
-// Ocean: she paddles up in a red kayak from the left, tosses the pie up to him (.38-.46), and paddles off.
-function seaPie(e, t, bl, hand) {
+// Ocean: she paddles up in a red kayak from the left, lifts the pie up onto the deck where the old one was (.38-.46),
+// and paddles off. spot: where it goes on the deck.
+function seaPie(e, t, bl, spot) {
   const k = sea.bs * 1.4, x1 = sea.bx - 140 * sea.bs - 42 * k, inn = ease(ramp(e.p, 0, .3)) - ease(ramp(e.p, .62, .92)), x = x1 - (x1 + 60 * k) * (1 - inn);
   const y = waveY(bl, x, t) + 2 * k, slope = (waveY(bl, x + 20, t) - waveY(bl, x - 20, t)) / 40, dim = thanks.dim, col = h => tgCol(h, dim), moving = e.p < .3 || e.p > .62;
   g.save(); g.translate(x, y); g.rotate(Math.atan(slope) * .8);
@@ -476,12 +504,12 @@ function seaPie(e, t, bl, hand) {
   g.beginPath(); g.moveTo(-Math.cos(a) * 30 * k, -14 * k - Math.sin(a) * 14 * k); g.lineTo(Math.cos(a) * 30 * k, -14 * k + Math.sin(a) * 14 * k); g.stroke();
   g.fillStyle = col('#d0402e'); g.beginPath(); g.moveTo(-46 * k, -6 * k); g.quadraticCurveTo(0, -12 * k, 46 * k, -6 * k); g.quadraticCurveTo(0, 8 * k, -46 * k, -6 * k); g.fill();   // the kayak
   g.restore();
-  if (e.p >= .38 && e.p < .46) {   // the pie, tossed up to him
-    const u = (e.p - .38) / .08, px = lrp(x + 14 * k, hand[0], u), py = lrp(y - 20 * k, hand[1], u) - Math.sin(Math.PI * u) * 60 * k;
-    drawPie(g, px, py, 7 * k, dim);
+  if (e.p >= .38 && e.p < .46) {   // the pie, lifted up onto the deck
+    const u = ease((e.p - .38) / .08);
+    drawPie(g, lrp(x + 12 * k, spot[0], u), lrp(y - 22 * k, spot[1], u) - Math.sin(Math.PI * u) * 40 * k, lrp(7 * k, 7.5 * sea.bs, u), dim);
   }
-  if (e.p > .3 && e.p < .42) drawSpeech('Happy Thanksgiving, dear!', x + 4 * k, y - 36 * k, Math.min(1, (e.p - .3) / .01, (.42 - e.p) / .01));
-  return e.p < .46 ? 0 : Math.max(.001, 1 - (e.p - .5) / .45);   // how much pie is left in his hands
+  if (e.p >= .46) tgPie.gone = false;   // (back on the deck, drawn with the boat)
+  if (e.p > .28 && e.p < .4) drawSpeech('Happy Thanksgiving, dear!', x + 4 * k, y - 36 * k, Math.min(1, (e.p - .28) / .01, (.4 - e.p) / .01));
 }
 // Ocean pie thief: a seagull swoops down to the pie on the deck (at .42), grabs it and flies off with it.
 function seaPieThief(e, t, pie) {
@@ -503,12 +531,30 @@ function seaPieThief(e, t, pie) {
 // The Ocean's events, drawn by drawSea: a point on the boat (in its own units, as in drawBoatSprite) on the screen
 const boatPt = (u, v, y, roll) => [sea.bx + (u * Math.cos(roll) - v * Math.sin(roll)) * sea.bs, y + 4 * sea.bs + (u * Math.sin(roll) + v * Math.cos(roll)) * sea.bs];
 function thanksSeaBack(e, t, bl, y, roll) {   // in the water, in front of the boat: the kayak
-  if (e.kind === 'pie') e.left = seaPie(e, t, bl, boatPt(34, -56, y, roll));
+  if (e.kind === 'pie') seaPie(e, t, bl, boatPt(32, -33, y, roll));   // (to the pie's place on the deck, see drawBoatSprite)
 }
-function thanksSeaFront(e, t, y, roll, hx, hy) {   // over everything: the football, his pie, the Zzz, the seagull
+function thanksSeaFront(e, t, y, roll, hx, hy) {   // over everything: the football, the Zzz, the seagull
   if (e.kind === 'football') drawFootballEvent(e, t, boatPt(36, -56, y, roll), [hx, hy], sea.bs);
-  if (e.kind === 'pie' && e.left > 0) drawPie(g, ...boatPt(36, -52, y, roll), 7 * sea.bs, thanks.dim, e.left);
   if (e.kind === 'nap') napZzz(t, [hx, hy - 6 * sea.bs], sea.bs);
-  if (e.kind === 'piethief') { seaPieThief(e, t, boatPt(36, -36, y, roll)); if (e.p > .42) thanks.pieGone = t + 120; }
+  if (e.kind === 'piethief') { seaPieThief(e, t, boatPt(32, -36, y, roll)); if (e.p > .42) tgPie.gone = true; }
 }
-const deckPie = t => !(thanks.pieGone > t);   // (the pie on the deck is back a couple of minutes after the gull took it)
+const deckPie = () => !tgPie.gone;   // (gone from the deck after the gull takes it, until the neighbour brings a new one)
+// Forest football: he gets up off his log at .1 and steps forward, hands up to catch it at .3, holds it ("Go long!"),
+// throws it back at .6, and walks back to his log by .95. Returns his pose (or null while he's sitting), with where
+// his hands are on the screen and his head, for the ball and the bubble.
+function forestFootball(f, e, t, lx) {
+  const p = e.p, s = f.s;
+  if (p < .1 || p > .95) return null;
+  const x0 = lx, x1 = lx - 22 * s;
+  let x = x1, gait = 0, dir = -1, reach;
+  if (p < .2) { x = lrp(x0, x1, ease((p - .1) / .1)); gait = t * 8; }
+  else if (p > .85) { x = lrp(x1, x0, ease((p - .85) / .1)); gait = t * 8; dir = 1; }
+  if (p < .2) reach = 0;
+  else if (p < .3) reach = ease((p - .2) / .1);   // hands up for it
+  else if (p < .38) reach = 1 - ease((p - .3) / .08) * .5;   // caught: down to his chest
+  else if (p < .56) reach = .5;
+  else if (p < .62) reach = .5 + Math.sin((p - .56) / .06 * Math.PI) * .5;   // the throw
+  else reach = Math.max(0, .5 - (p - .62) / .06);
+  const hx = lrp(3, 9, reach), hy = lrp(-8, -52, reach);
+  return { x, dir, gait, reach, hand: [x + dir * hx * s, f.gy - 36 * s + hy * s], head: [x + dir * 4 * s, f.gy - 81 * s] };
+}
