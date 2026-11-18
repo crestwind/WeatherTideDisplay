@@ -455,6 +455,14 @@ function drawCamperOnFoot(f, t, x, y, k, dir, gait, run, dive, alpha) {
     g.fillStyle = C.boot; g.beginPath(); g.ellipse(fx + 3, -1.5, 6.5, 3.2, 0, 0, 7); g.fill();
   }
   g.save(); g.translate(0, -36); g.rotate(run ? .25 : .05);   // the upper body, leaning forward when he runs
+  // his arms swing against his legs: the far one behind his body (a little darker), the near one in front
+  const arm = sg => {
+    const hx = sg * sw * (run ? 14 : 9) + 3, hy = run ? -14 : -8;
+    g.beginPath(); g.moveTo(2, -30); g.lineTo(hx, hy); g.stroke();
+    g.fillStyle = C.skin; g.beginPath(); g.arc(hx, hy, 3.2, 0, 7); g.fill();
+  };
+  g.strokeStyle = C.jacket; g.lineWidth = 6;
+  g.save(); g.filter = 'brightness(.72)'; arm(1); g.restore();
   const body = new Path2D('M-8 2 L10 2 Q12 -18 10 -34 Q2 -39 -6 -35 Q-10 -18 -8 2 Z');
   g.fillStyle = C.jacket; g.fill(body);
   g.save(); g.clip(body); g.strokeStyle = C.plaid; g.globalAlpha *= .55; g.lineWidth = 2.2; g.beginPath();
@@ -462,11 +470,7 @@ function drawCamperOnFoot(f, t, x, y, k, dir, gait, run, dive, alpha) {
   for (let xx = -6; xx < 12; xx += 7) { g.moveTo(xx, -40); g.lineTo(xx, 4); }
   g.stroke(); g.restore();
   g.strokeStyle = C.jacket; g.lineWidth = 6;
-  for (const sg of [-1, 1]) {   // arms swinging against the legs
-    const hx = sg * sw * (run ? 14 : 9) + 3, hy = run ? -14 : -8;
-    g.beginPath(); g.moveTo(2, -30); g.lineTo(hx, hy); g.stroke();
-    g.fillStyle = C.skin; g.beginPath(); g.arc(hx, hy, 3.2, 0, 7); g.fill();
-  }
+  arm(-1);
   g.translate(4, -45); drawCamperHead(f, t, .9, 1, false);
   g.restore(); g.restore();
 }
