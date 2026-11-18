@@ -85,6 +85,7 @@ function build() {
   forest = buildForest();
   tropic = buildTropic();
   hallo = buildHalloween();
+  thanks = buildThanks();
   if (hallo) {   // Halloween's big orange moon, in every weather (peeking through the clouds, rain and storms)
     if (night) orb = { img: harvestMoonSprite(), x: Wd * .42, y: Hd * .18 };
     else hallo.moon = { img: harvestMoonSprite(), x: Wd * .27, y: Hd * .2 };   // (only with Preview: day; left of the sun)
@@ -190,6 +191,7 @@ function update(dt, ts) {
   if (forest) forestTick(dt, t);
   if (tropic) tropicTick(dt, t);
   if (hallo) halloTick(dt, t);
+  if (thanks) thanksTick(dt, t);
   updateGlass(dt, t);
   for (const c of clouds) {
     c.x += c.v * gust * dt;
@@ -257,6 +259,7 @@ function draw(ts) {
   if (flock.length) { g.globalAlpha = 1; drawBirds(); }
   if (plane) { g.globalAlpha = 1; drawPlane(ts); }
   if (hallo) { g.globalAlpha = 1; drawHalloSky(ts); }   // Halloween's bats and witch
+  if (thanks) { g.globalAlpha = 1; drawThanksSky(ts); }   // Thanksgiving's geese
   if (stage.ev) { g.globalAlpha = 1; drawMajorSky(ts); }   // the giant and the eagle
   g.globalAlpha = 1;
   if (swirl) {
@@ -273,6 +276,7 @@ function draw(ts) {
   if (forest) { g.globalAlpha = 1; drawForest(ts); }   // Forest display style, likewise
   if (tropic) { g.globalAlpha = 1; drawTropic(ts); }   // and Tropical
   if (hallo && hallo.lanterns.length) { g.globalAlpha = 1; drawHalloGround(ts); }   // the Sky style's jack-o'-lanterns
+  if (thanks && thanks.tiles) { g.globalAlpha = 1; drawThanksGround(ts); }   // the Sky style's Thanksgiving decorations and turkey
   for (const f of flares) { g.fillStyle = f.gr; g.beginPath(); g.arc(f.x, f.y, f.r, 0, 7); g.fill(); }
   if (windLines.length) {   // faint streaks of wind
     g.strokeStyle = 'rgb(255,255,255)'; g.lineWidth = Math.max(1, 1.4 * Hd / 1080); g.lineCap = 'round';

@@ -417,8 +417,12 @@ function nextBanner() {   // the message after the one this screen showed last (
   try { localStorage.setItem('wt-banner-last', text); } catch (e) {}
   return text;
 }
+// Thanksgiving: every other banner is "Happy Thanksgiving!" (the regular messages carry on in between)
+let holidayBannerNext = true;
 function startPlane(t) {
-  const text = nextBanner();
+  const holiday = holidayNow() === 'thanksgiving' && S.display !== 'mirror' ? 'Happy Thanksgiving!' : '';
+  const text = holiday && holidayBannerNext ? holiday : nextBanner();
+  holidayBannerNext = !(holiday && holidayBannerNext);
   if (!text) return false;
   const k = Hd / 1080 * (Hd > Wd ? .8 : 1.3);   // big enough to read the banner from across a room
   plane = { k, t0: t, x: Wd + 30 * k, y0: Hd * (Hd > Wd ? .48 : .36), v: 120 * Math.min(Wd / 1920, 1.2) + 40, text };

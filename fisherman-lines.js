@@ -295,4 +295,24 @@ window.TW_LINES = {
     "That ship's been out there a long time…",
     "Ahoy?…",
   ],
+
+  // ---------- Thanksgiving (when the Thanksgiving holiday theme is on) ----------
+  thanksgiving: [
+    "Happy Thanksgiving!",
+    "I'm thankful for a quiet day on the water.",
+    "Fish for Thanksgiving? Why not.",
+    "Somebody save me a slice of pumpkin pie.",
+    "I'll be home in time for the turkey. Probably.",
+    "Leftover turkey sandwiches are the best part.",
+    "Thankful for good friends and good fishing.",
+    "Happy Thanksgiving, {town}!",
+    "Is the game on yet?",
+    "Don't forget the cranberry sauce!",
+  ],
+  geese: [
+    "Look at those geese heading south!",
+    "Honk honk! Safe travels!",
+    "Even the geese are going home for the holidays.",
+    "Nice V, geese. Very organized.",
+  ],
 };

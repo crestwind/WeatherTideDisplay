@@ -280,4 +280,24 @@ window.TW_CAMP_LINES = {
     "Are those skeletons with them?!",
     "Look at those bones go!",
   ],
+
+  // ---------- Thanksgiving (when the Thanksgiving holiday theme is on) ----------
+  thanksgiving: [
+    "Happy Thanksgiving!",
+    "Thankful for a warm fire and a good marshmallow.",
+    "Pumpkin pie s'mores. Hear me out.",
+    "Somebody save me a drumstick.",
+    "I'm thankful the bear stayed away this year.",
+    "Leftovers taste better around a campfire.",
+    "Happy Thanksgiving, {town}!",
+    "I'm stuffed, and I only had marshmallows.",
+    "Is that the game on somebody's radio?",
+    "Gobble gobble!",
+  ],
+  geese: [
+    "Look at those geese heading south!",
+    "Honk honk! Safe travels!",
+    "Even the geese are going home for the holidays.",
+    "Nice V, geese. Very organized.",
+  ],
 };

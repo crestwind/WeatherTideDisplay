@@ -179,7 +179,7 @@ function forestMinorsTick(f, dt, t) {
 }
 function drawForest(ts) {
   const f = forest, t = ts / 1000, s = f.s, C = f.C, lit = !f.inside;
-  const ev = stage.ev && ['bigfoot', 'bear', 'raccoon', 'skunk', 'ranger'].includes(stage.ev.kind) ? stage.ev : null;
+  const ev = stage.ev && ['bigfoot', 'bear', 'raccoon', 'skunk', 'ranger', 'turkey'].includes(stage.ev.kind) ? stage.ev : null;
   if (f.balloon) drawBalloon(f, t);   // in the sky, behind the trees
   if (f.flock) drawForestBirds(f, t);
   g.drawImage(f.bg, 0, 0);
@@ -216,6 +216,7 @@ function drawForest(ts) {
   if (stage.ev && stage.ev.kind === 'batcloud' && stage.ev.p < .2) f.look = 0;   // (a look at us before he turns into bats)
   if (trickOrTreat()) f.look = -.9;   // (at the trick-or-treaters)
   if (reaperLook()) f.look = -.9;   // (at the Grim Reaper)
+  if (turkeyLook()) f.look = -.9;   // (at the turkey)
   if (ev && ev.p > .08 && ev.p < .9) {
     if (ev.kind === 'bigfoot') f.look = bigfootX(f, ev) < lx ? -.85 : .85;
     else if (ev.kind === 'raccoon' && ev.p > .25) f.look = -.9;
@@ -227,6 +228,8 @@ function drawForest(ts) {
     ev.said = true; talk.line = ev.kind === 'skunk' ? 'Nobody move…' : "Fire's under control, ranger!"; talk.isCatch = true; talk.start = t; talk.dur = 3.2;
   }
   drawTent(f, t, tx, tb, k, lit && !hiding ? null : hiding ? (bearX > tx ? 1 : -1) : 0);
+  if (thanks) harvestPile(g, tx - 62 * k, tb + 2 * k, k * .9, thanks.dim);   // Thanksgiving: a corn shock, hay bale and pumpkins beside the tent
+  const gobbler = ev && ev.kind === 'turkey' ? forestTurkey(f, ev, t, lx) : null;   // Thanksgiving: the wild turkey (and where he is, if he's up after it)
   if (f.rabbit) drawRabbit(f, t);
   if (ev && ev.kind === 'bear') drawBear(f, ev, t, lx);
   if (ev && ev.kind === 'ranger') { const r = rangerPos(f, ev); drawRanger(f, t, r.x, f.gy - 8 * s, s, r.d, r.gait, r.tip, r.a); }
@@ -250,6 +253,8 @@ function drawForest(ts) {
   } else if (coming) {   // crawls out of the door, stands up and walks back to his seat
     const u = (bp - .86) / .1, go = Math.max(0, (u - .25) / .75);
     drawCamperOnFoot(f, t, lrp(tx + 6 * k, lx, ease(go)), lrp(tb, f.gy, ease(go)), lrp(k, s, go), 1, go > 0 && go < 1 ? t * 9 : 0, false, 0, Math.min(1, u / .25));
+  } else if (gobbler) {   // Thanksgiving: up off his log, tiptoeing after the turkey (and back)
+    drawCamperOnFoot(f, t, gobbler.x, f.gy, s, gobbler.dir, gobbler.gait, false, 0, 1);
   } else if (lit && !hiding) { g.save(); g.globalAlpha = batCloudAlpha(); drawCamper(f, t, lx); g.restore(); }   // (gone while he's a cloud of bats)
   if (coon) drawRaccoon(f, ev, t, lx);
   drawCampfire(f, t);
@@ -264,6 +269,7 @@ function drawForest(ts) {
       drawReaper(stage.ev, t, lx - 175 * s, f.gy + 2 * s, s * .95);
     }
   }
+  if (thanks) { plainPumpkin(g, f.fx + 52 * s, f.gy + 3 * s, 12 * s, thanks.dim); gourd(g, f.fx + 70 * s, f.gy + 4 * s, 6 * s, thanks.dim, 'pear'); }   // Thanksgiving: by the fire
   if (ev && ev.kind === 'skunk') drawSkunk(f, ev, t, lx);   // in front of the log and the fire
   // the fire's warm glow over the clearing, the camper and the tent
   if (lit) {
@@ -291,6 +297,7 @@ function drawForest(ts) {
     if (wolf.howl) drawSpeech('Awooooo!', lx + 6 * s, f.gy - 84 * s, Math.min(1, ramp(stage.ev.p, .34, .36), 1 - ramp(stage.ev.p, .54, .56)));
     drawBatCloud(lx + 4 * s, f.gy - 52 * s, s, t);
   }
+  if (ev && ev.kind === 'turkey' && ev.gob) drawSpeech('Gobble gobble!', ...ev.gob);   // Thanksgiving: the turkey's gobble, over everything
   if (ev && ev.kind === 'ranger' && ev.p > .6 && ev.p < .76) {   // the ranger's answer
     const r = rangerPos(f, ev);
     drawSpeech('Keep it that way!', r.x + 4 * s * r.d, f.gy - 8 * s - 92 * s,   // (from the top of his head, under the hat)
@@ -366,6 +373,7 @@ function drawCamperHead(f, t, look, sc2, chew) {
   if (chew) { g.fillStyle = '#3a2214'; g.beginPath(); g.ellipse(ex + look * 2, 5, 2.2, .8 + Math.abs(Math.sin(t * 10)) * 1.2, 0, 0, 7); g.fill(); }
   const wolf = forest ? wolfState(forest.fx - 100 * forest.s) : { k: 0 };   // Halloween: the werewolf
   if (wolf.k < .45 && hallo) witchHat(g, 0, -6, 1.3, hallo.dim);   // Halloween: a witch hat instead of his beanie
+  else if (thanks) pilgrimHat(g, 0, -6.5, 1.25, thanks.dim);   // Thanksgiving: a pilgrim hat instead of his beanie
   else if (wolf.k < .45) {
     g.fillStyle = C.hat; g.beginPath(); g.arc(0, -4, 10.2, Math.PI * 1.02, Math.PI * 1.98); g.closePath(); g.fill();   // beanie
     g.fillRect(-10.4, -6.5, 20.8, 3.4);   // its folded brim, just above his eyes

@@ -242,4 +242,17 @@ window.TW_BEACH_LINES = {
     "Happy Halloween to you too!",
     "Fly safe up there!",
   ],
+
+  // ---------- Thanksgiving (when the Thanksgiving holiday theme is on) ----------
+  thanksgiving: [
+    "Happy Thanksgiving!",
+    "Thankful for sunshine and a hammock.",
+    "Pineapple stuffing. It's a thing.",
+    "Somebody save me some pie.",
+    "Happy Thanksgiving, {town}!",
+  ],
+  geese: [
+    "Geese! They know where the warm weather is.",
+    "Honk honk! Come on down!",
+  ],
 };

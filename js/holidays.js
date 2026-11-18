@@ -13,13 +13,13 @@
 // Testing: ?holiday=halloween turns it on; ?witch, ?bats, ?ghostship and ?ghost bring those in a few seconds.
 let hallo = null;
 // Automatic: each holiday runs from a week before its date to 3 days after. [name, month (0-11), day]; add the other
-// holidays here as they're built (ones that move, like Easter or Thanksgiving, will need their date worked out).
-const HOLIDAYS = [['halloween', 9, 31]];
+// holidays here as they're built (ones that move, like Easter, need a function that works out the day).
+const HOLIDAYS = [['halloween', 9, 31], ['thanksgiving', 10, y => thanksgivingDay(y)]];   // (day: a number, or a function of the year; thanksgivingDay is in thanksgiving.js, loaded later)
 function holidayNow() {
   if (S.holiday !== 'auto') return S.holiday || 'off';
   const now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate()), day = 864e5;
   for (const [name, m, d] of HOLIDAYS) for (const y of [today.getFullYear() - 1, today.getFullYear(), today.getFullYear() + 1]) {   // (windows can cross New Year)
-    const diff = Math.round((today - new Date(y, m, d)) / day);
+    const diff = Math.round((today - new Date(y, m, typeof d === 'function' ? d(y) : d)) / day);
     if (diff >= -7 && diff <= 3) return name;
   }
   return 'off';

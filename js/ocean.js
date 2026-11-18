@@ -152,6 +152,7 @@ function chooseThought() {
   if (forest) groups.push([forest.inside ? 'tent' : 'camping', 1]);
   if (tropic) groups.push([tropic.inside ? 'hut' : 'hammock', 1]);
   if (hallo && !holding()) groups.push(['halloween', 2]);
+  if (thanks && !holding()) groups.push(['thanksgiving', 2]);
   return pickLine(groups);
 }
 // in heavy rain, thunderstorms and hurricanes he's holding on (or in the tent), so he only talks about the weather
@@ -289,6 +290,7 @@ function drawBoatSprite(t) {
   x.save(); x.globalAlpha = batCloudAlpha(); drawFisher(x, t); x.restore();   // (gone while he's a cloud of bats)
   if (sea.tint) { x.globalCompositeOperation = 'source-atop'; x.fillStyle = sea.tint; x.fillRect(-ox, -oy, W, H); x.globalCompositeOperation = 'source-over'; }
   if (hallo) drawPumpkin(x, 58, -34, 10.5, true, hallo.dim, t);   // Halloween: a jack-o'-lantern on the deck at the bow
+  if (thanks) { plainPumpkin(x, 56, -34, 10, thanks.dim); gourd(x, 68, -35, 5, thanks.dim, 'stripe'); plainPumpkin(x, 46, -33.5, 6, thanks.dim, true); }   // Thanksgiving: pumpkins and a gourd at the bow
   if (sea.lantern) {   // the lantern and cabin windows stay bright after the tint
     const glow = x.createRadialGradient(-36, -96, 1, -36, -96, 26);
     glow.addColorStop(0, 'rgba(255,220,140,.9)'); glow.addColorStop(1, 'rgba(255,200,120,0)');
@@ -310,6 +312,7 @@ function drawFisher(x, t) {
     if (wolf.on) { look = wolf.side * .85; hx += wolf.shake * 1.2; }   // Halloween: looking up at the moon, then the werewolf
     if (trickOrTreat()) look = -.85;   // (and at the trick-or-treaters)
     if (reaperLook()) look = -.85;   // (and at the Grim Reaper)
+    if (turkeyLook()) look = -.85;   // (and at the turkey in its rowboat)
     if (wolf.k > .45) { wolfHead(x, hx, hy, 8, wolf.side, wolf.k, wolf.howl); return; }
     if (sea.coat === 'rain') { x.fillStyle = coat; x.beginPath(); x.arc(hx, hy - .5, 8.3, 0, 7); x.fill(); }                         // hood
     x.fillStyle = skin; x.beginPath(); x.arc(hx, hy, sea.coat === 'rain' ? 5.8 : 6.5, 0, 7); x.fill();
@@ -322,6 +325,7 @@ function drawFisher(x, t) {
     x.fillStyle = '#d99f78'; x.beginPath(); x.ellipse(ex + look * 1.8, hy + .7, 1.2, 1, 0, 0, 7); x.fill();                       // nose
     if (wolf.k > 0) wolfHead(x, hx, hy, 8, wolf.side, wolf.k, false);
     if (hallo) { witchHat(x, hx, hy - (sea.coat === 'rain' ? 7 : 5.5), .85); return; }                                          // Halloween
+    if (thanks) { pilgrimHat(x, hx, hy - (sea.coat === 'rain' ? 7 : 5.5), .8, 0); return; }   // Thanksgiving: a pilgrim hat (tinted with the boat)
     if (sea.coat === 'rain') return;
     if (sea.coat === 'snow') { x.fillStyle = '#e8e8e8'; x.beginPath(); x.arc(hx, hy - 2, 7.2, Math.PI, 0); x.fill(); x.beginPath(); x.arc(hx, hy - 10, 2.6, 0, 7); x.fill(); }   // beanie
     else { x.fillStyle = '#8a6d3b'; x.fillRect(hx - 10, hy - 6, 20, 2.5); x.fillRect(hx - 6, hy - 12, 12, 7); }                       // bucket hat
@@ -416,6 +420,7 @@ function drawSea(ts) {
     drawGhost(t, gx, wy + 30 * sea.bs, wy - 120 * sea.bs, sea.bs * .9, mode.tod === 'night');
   }
   if (stage.ev && stage.ev.kind === 'trickortreat') drawRowboat(stage.ev, t, bl);   // Halloween: trick-or-treaters rowing up
+  if (stage.ev && stage.ev.kind === 'turkey') seaTurkey(stage.ev, t, bl);   // Thanksgiving: a turkey rowing up
   for (let i = b + 1; i < L.length; i++) { drawLayer(L[i], t); drawDolphins(t, i); drawSwimmers(t, i); }
   if (sea.pose === 'fish') drawJumps(t);   // leaping fish, only where he's fishing
   drawGlint(t, y, Hd);

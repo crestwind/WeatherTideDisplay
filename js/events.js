@@ -20,7 +20,7 @@ const BAD_SKY = ['windy', 'storm', 'hurricane', 'tornado', 'heavy', 'heavysnow']
 const flyOK = () => !BAD_SKY.includes(mode.kind);
 const forced = (location.search.match(/[?&]event=(\w+)/) || [])[1] || (/[?&]plane\b/.test(location.search) ? 'biplane' : '');
 const stage = { ev: null, next: performance.now() / 1000 + (forced || SHOWCASE ? 2 : 30), last: '', lastOther: '', first: true };
-const MAJORS = ['biplane', 'giant', 'mermaid', 'ufo', 'eagle', 'nessie', 'bigfoot', 'bear', 'raccoon', 'skunk', 'ranger', 'werewolf', 'batcloud', 'trickortreat', 'reaper'];   // (bigfoot to ranger: Forest style; the last three: Halloween)
+const MAJORS = ['biplane', 'giant', 'mermaid', 'ufo', 'eagle', 'nessie', 'bigfoot', 'bear', 'raccoon', 'skunk', 'ranger', 'werewolf', 'batcloud', 'trickortreat', 'reaper', 'turkey'];   // (bigfoot to ranger: Forest style; the last three: Halloween)
 const saluting = () => !!(stage.ev && stage.ev.kind === 'eagle' && sea && (sea.pose === 'fish' || sea.pose === 'mug'));
 const ease = u => { u = Math.min(1, Math.max(0, u)); return u * u * (3 - 2 * u); };
 const randFish = () => FISH[Math.floor(Math.random() * FISH.length)];
@@ -36,6 +36,7 @@ function eligible(kind) {
     case 'nessie': return !!sea && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind);
     case 'bigfoot': return !!forest && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind);
     case 'bear': case 'raccoon': case 'skunk': case 'ranger': return !!forest && !forest.inside;   // he has to be out by the fire
+    case 'turkey': return !!thanks && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind) && (sea ? sea.pose === 'fish' || sea.pose === 'mug' : !!forest && !forest.inside);   // Thanksgiving: he has to be out to see it
     case 'reaper': return !!hallo && !!(sea ? (sea.pose === 'fish' || sea.pose === 'mug') : forest && !forest.inside);   // Halloween: he has to be out to be pointed at
     case 'trickortreat': return !!hallo && (sea ? (sea.pose === 'fish' || sea.pose === 'mug') && !['storm', 'hurricane', 'tornado', 'heavy'].includes(mode.kind) : !!forest && !forest.inside);
     case 'werewolf': case 'batcloud': return !!hallo && !!(sea ? (sea.pose === 'fish' || sea.pose === 'mug') : forest && !forest.inside) && (kind === 'werewolf' ? !!hallo.moonAt : flyOK());   // Halloween: the werewolf needs the moon out
@@ -58,6 +59,7 @@ function startMajor(kind, t) {
   else if (kind === 'werewolf') { e.dur = 15; e.say = '…Did I just howl?'; }
   else if (kind === 'batcloud') { e.dur = 16; e.say = "I've got a bat breath problem."; }
   else if (kind === 'trickortreat') { e.dur = 22; e.say = sea ? 'Swedish Fish are my favorite!' : "Nothing beats Halloween s'mores!"; e.kids = [...KID_COSTUMES].sort(() => Math.random() - .5).slice(0, 3).map(c => ({ c, s: rnd(.88, 1.05) })); }
+  else if (kind === 'turkey') { e.dur = sea ? 20 : 24; e.say = sea ? 'Was that turkey rowing a boat?!' : 'Next year, buddy. Next year.'; }
   else if (kind === 'reaper') { e.dur = 16; e.say = sea ? 'Not today! The fish are biting!' : 'Was he pointing at ME?!'; }
   return e;
 }
@@ -89,6 +91,7 @@ function eventsTick(t) {
     const pool = MAJORS.filter(k => k !== 'biplane' && k !== stage.lastOther && eligible(k));
     const spooky = pool.filter(k => k === 'werewolf' || k === 'batcloud' || k === 'trickortreat' || k === 'reaper');   // (on Halloween, 4 in 5 of the in-between events are spooky ones)
     if (spooky.length && Math.random() < .8) pool.splice(0, pool.length, ...spooky);
+    if (pool.includes('turkey') && Math.random() < .5) pool.splice(0, pool.length, 'turkey');   // (on Thanksgiving, every other in-between event is the turkey)
     // (only if nothing else can happen in this weather does the last one repeat)
     kind = pool[Math.floor(Math.random() * pool.length)] || (eligible(stage.lastOther) ? stage.lastOther : '') || (eligible('biplane') ? 'biplane' : '');
   }
