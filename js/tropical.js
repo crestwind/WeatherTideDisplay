@@ -130,7 +130,7 @@ function drawHammock(b, t) {
   const C = b.C, s = b.s, gy = b.gy, hh = 92 * s, H = 235 * s;
   const ta = palm(b, t, b.pa, gy, H, -28 * s, 0), tb = palm(b, t, b.pb, gy + 6 * s, H * .96, 30 * s, 1.3);
   const A = ta(hh / H), B = tb(hh / H * 1.04);
-  const empty = b.inside, swing = Math.sin(t * (empty ? 1.6 : .8)) * (empty ? 9 + b.wind * 200 : 4) * s, sag = 42 * s;
+  const empty = b.inside || S.motion === 'off', swing = Math.sin(t * (empty ? 1.6 : .8)) * (empty ? 9 + b.wind * 200 : 4) * s, sag = 42 * s;
   // the hammock: a striped cloth hanging in a curve between two rope ends
   const end = [lrp(A[0], B[0], .12), lrp(A[1], B[1], .12) + 12 * s], end2 = [lrp(A[0], B[0], .88), lrp(A[1], B[1], .88) + 12 * s];
   const P = u => { const m = [lrp(end[0], end2[0], u), lrp(end[1], end2[1], u)]; return [m[0] + swing * Math.sin(Math.PI * u) * .6, m[1] + Math.sin(Math.PI * u) * sag]; };
@@ -197,7 +197,7 @@ function drawHut(b, t) {   // a little thatched beach hut on stilts, its door fa
   if (glow) { const gd = g.createLinearGradient(0, -58, 0, -17); gd.addColorStop(0, '#ffcf7a'); gd.addColorStop(1, '#e8902e'); g.fillStyle = gd; } else g.fillStyle = C.door;
   g.fill(door);
   g.fillStyle = C.door; g.fillRect(-38, -56, 26, 16);                                                                                     // window
-  if (b.inside) {   // he sits just inside the doorway, peeking out, now and then sitting back into the shade
+  if (b.inside && S.motion !== 'off') {   // he sits just inside the doorway, peeking out, now and then sitting back into the shade (not in the still picture)
     const look = Math.max(-1, Math.min(1, Math.sin(t * .45) * 1.2)), back = Math.max(0, Math.sin(t * .17) - .6) / .4;
     g.save(); g.clip(door); g.translate(17, -17 - 3 * back); g.scale(1 - .12 * back, 1 - .12 * back);
     g.fillStyle = C.shirt; g.beginPath(); g.ellipse(0, 0, 15, 12, 0, Math.PI, 0); g.fill();

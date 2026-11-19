@@ -289,7 +289,7 @@ function drawBoatSprite(t) {
   x.restore();
   x.strokeStyle = '#8b939b'; x.lineWidth = 2; x.beginPath(); x.moveTo(-76, -33); x.lineTo(70, -44); x.stroke();
   for (let px = -66; px <= 60; px += 21) { x.beginPath(); x.moveTo(px, -25 - px * .074); x.lineTo(px, -33 - px * .074); x.stroke(); }
-  x.save(); x.globalAlpha = batCloudAlpha(); drawFisher(x, t); x.restore();   // (gone while he's a cloud of bats)
+  if (S.motion !== 'off') { x.save(); x.globalAlpha = batCloudAlpha(); drawFisher(x, t); x.restore(); }   // (gone while he's a cloud of bats; and not in the still picture, Background animation Off)
   if (sea.tint) { x.globalCompositeOperation = 'source-atop'; x.fillStyle = sea.tint; x.fillRect(-ox, -oy, W, H); x.globalCompositeOperation = 'source-over'; }
   if (hallo) drawPumpkin(x, 58, -34, 10.5, true, hallo.dim, t);   // Halloween: a jack-o'-lantern on the deck at the bow
   if (thanks) { plainPumpkin(x, 56, -34, 10, thanks.dim); gourd(x, 68, -35, 5, thanks.dim, 'stripe'); plainPumpkin(x, 46, -33.5, 6, thanks.dim, true); if (deckPie(t)) drawPie(x, 32, -33, 7.5, thanks.dim); }   // Thanksgiving: pumpkins, a gourd and a pie at the bow

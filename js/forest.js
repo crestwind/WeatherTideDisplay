@@ -231,7 +231,7 @@ function drawForest(ts) {
   if (ev && !ev.said && (ev.kind === 'skunk' && ev.p > .3 || ev.kind === 'ranger' && ev.p > .42)) {
     ev.said = true; talk.line = ev.kind === 'skunk' ? 'Nobody move…' : "Fire's under control, ranger!"; talk.isCatch = true; talk.start = t; talk.dur = 3.2;
   }
-  drawTent(f, t, tx, tb, k, lit && !hiding ? null : hiding ? (bearX > tx ? 1 : -1) : 0);
+  drawTent(f, t, tx, tb, k, S.motion === 'off' || lit && !hiding ? null : hiding ? (bearX > tx ? 1 : -1) : 0);   // (no camper in the doorway in the still picture)
   if (thanks) harvestPile(g, tx - 62 * k, tb + 2 * k, k * .9, thanks.dim);   // Thanksgiving: a corn shock, hay bale and pumpkins beside the tent
   const footy = ev && ev.kind === 'football' ? forestFootball(f, ev, t, lx) : null;   // Thanksgiving: up off his log to catch the football
   if (ev && ev.kind === 'pie') forestPie(f, ev, t, lx, [lx - 30 * s, f.gy - 18 * s]);   // Thanksgiving: his neighbour brings him a new pie (to where drawBag puts it)
@@ -253,7 +253,8 @@ function drawForest(ts) {
   if (f.bagWait && !coon && !talk.line) { f.bagWait = false; f.bagBack = t + 3; }
   f.placing = lit && !hiding && !running && !coming && t > f.bagBack - 1 && t < f.bagBack ? 1 - (f.bagBack - t) : -1;
   if (lit && t >= f.bagBack - .3) drawBag(f, lx - 30 * s, f.gy - 18 * s, 1);   // (from the moment he sets it down)
-  if (running) {   // up off the log, a quick dash to the tent, and a dive through the door
+  if (S.motion === 'off') {   // the still picture (Background animation Off): the campsite without him
+  } else if (running) {   // up off the log, a quick dash to the tent, and a dive through the door
     const u = (bp - .03) / .08, go = Math.max(0, (u - .12) / .88);
     drawCamperOnFoot(f, t, lrp(lx, tx + 6 * k, ease(go)), lrp(f.gy, tb, ease(go)), lrp(s, k, go), -1, go > 0 ? t * 16 : 0, true, Math.max(0, (u - .72) / .28), 1);
   } else if (coming) {   // crawls out of the door, stands up and walks back to his seat
