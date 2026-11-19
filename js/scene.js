@@ -308,7 +308,17 @@ function draw(ts) {
     g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1;
   }
   if (rain.length) {
-    for (const d of rain) {
+    if (S.motion === 'off') {   // a still picture: rain the way a camera sees it, long soft streaks in a light haze
+      const sy = Hd / 1080;
+      g.fillStyle = 'rgba(205,215,230,.07)'; g.fillRect(0, 0, Wd, Hd);
+      g.strokeStyle = 'rgb(214,226,244)'; g.lineCap = 'round';
+      for (const d of rain) {
+        const R = RAIN_LAYERS[d.L], len = (90 + 70 * d.L) * sy * d.s * R.len;
+        g.globalAlpha = R.a * .38; g.lineWidth = Math.max(.6, R.w * .7 * sy * d.s);
+        g.beginPath(); g.moveTo(d.x, d.y); g.lineTo(d.x + slant * len, d.y - len); g.stroke();
+      }
+      g.globalAlpha = 1;
+    } else for (const d of rain) {
       const { img, pad } = dropImgs[d.L], s = d.s;
       g.drawImage(img, d.x - pad * s, d.y - (img.height - pad) * s, img.width * s, img.height * s);
     }
