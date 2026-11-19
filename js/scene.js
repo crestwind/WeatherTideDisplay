@@ -358,7 +358,14 @@ let stillTs = 0, stillTimer = 0;
 function start() {
   cancelAnimationFrame(raf); clearInterval(stillTimer);
   if (S.display === 'mirror') { draw(performance.now()); return; }   // mirror mode hides the sky, so don't animate it
-  if (S.motion === 'off') { stillTs = performance.now(); draw(stillTs); stillTimer = setInterval(() => draw(stillTs), 4000); return; }
+  if (S.motion === 'off') {
+    // the still picture is a scene of its own: nothing carried over from the animation (the biplane, a random event
+    // in progress, far-off helicopters or a jet, a shooting star, a thought bubble); the scene itself (sea, forest,
+    // holiday decorations) has just been built fresh. Events pick up again 30 s after the animation is switched back on.
+    plane = null; stage.ev = null; stage.next = performance.now() / 1000 + 30; minor.heli = minor.jet = null; meteor = null;
+    talk.line = ''; talk.react = null;
+    stillTs = performance.now(); draw(stillTs); stillTimer = setInterval(() => draw(stillTs), 4000); return;
+  }
   last = performance.now(); raf = requestAnimationFrame(loop);
 }
 
