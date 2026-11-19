@@ -4,6 +4,8 @@
 // To add a line, copy an existing one, keep the quotes and the comma at the end, and change the words.
 // Any group can have a Day and a Night version next to it (like clear, clearDay and clearNight): lines in clearDay are
 // only said by day (sunshine, sunglasses, blue skies…), lines in clearNight only at night (stars, the moon…).
+// Weather groups can also have a Morning, Afternoon or Evening version (like clearMorning or partlyEvening): only said
+// in that weather at that time of day (the sunrise and sunset lines, which need a sky clear enough to see them).
 window.TW_BEACH_LINES = {
 
   // ---------- in the hammock in calm weather ----------
@@ -83,6 +85,13 @@ window.TW_BEACH_LINES = {
     "Clear skies. Good night for sleeping under the stars.",
     "The stars are out tonight.",
   ],
+  clearMorning: [
+    "Sunrise over the water. Not bad.",
+  ],
+  clearEvening: [
+    "Look at that sky tonight.",
+    "Sunset from a hammock. Unbeatable.",
+  ],
   partly: [
     "A few clouds, nothing to worry about.",
     "Pretty nice out, all things considered.",
@@ -98,6 +107,13 @@ window.TW_BEACH_LINES = {
     "Nice night, all things considered.",
     "The moon keeps ducking behind the clouds.",
     "A few stars peeking through.",
+  ],
+  partlyMorning: [
+    "Sunrise over the water. Not bad.",
+  ],
+  partlyEvening: [
+    "Look at that sky tonight.",
+    "Sunset from a hammock. Unbeatable.",
   ],
   cloudy: [
     "Bring a light jacket, just in case.",
@@ -115,6 +131,12 @@ window.TW_BEACH_LINES = {
     "Clouds are keeping it nice and warm tonight.",
     "Dark night. Just the waves and me.",
     "Hope it holds off till morning.",
+  ],
+  cloudyMorning: [
+    "Grey morning. Still paradise.",
+  ],
+  cloudyEvening: [
+    "No sunset tonight. Too cloudy.",
   ],
   fog: [
     "Can't see a thing out here!",
@@ -144,6 +166,12 @@ window.TW_BEACH_LINES = {
   ],
   rainNight: [
     "Good night to stay in with a book.",
+  ],
+  rainMorning: [
+    "Rainy morning. The hammock can wait.",
+  ],
+  rainEvening: [
+    "Rainy evening. Good night for the hut.",
   ],
   heavy: [
     "It's really coming down!",
@@ -229,7 +257,6 @@ window.TW_BEACH_LINES = {
   // ---------- by time of day ----------
   morning: [
     "Good morning!",
-    "Sunrise over the water. Not bad.",
     "Morning! {high}° today.",
     "Coffee and the sound of the waves.",
     "Early swim, anyone?",
@@ -242,8 +269,6 @@ window.TW_BEACH_LINES = {
   ],
   evening: [
     "Good evening!",
-    "Look at that sky tonight.",
-    "Sunset from a hammock. Unbeatable.",
     "Torches are lit. Party's on.",
     "Almost time for dinner on the beach.",
   ],

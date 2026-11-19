@@ -4,6 +4,8 @@
 // To add a line, copy an existing one, keep the quotes and the comma at the end, and change the words.
 // Any group can have a Day and a Night version next to it (like clear, clearDay and clearNight): lines in clearDay are
 // only said by day (sunshine, sunglasses, blue skies…), lines in clearNight only at night (stars, the moon…).
+// Weather groups can also have a Morning, Afternoon or Evening version (like clearMorning or partlyEvening): only said
+// in that weather at that time of day (the sunrise and sunset lines, which need a sky clear enough to see them).
 window.TW_CAMP_LINES = {
 
   // ---------- by the fire in calm weather ----------
@@ -86,6 +88,13 @@ window.TW_CAMP_LINES = {
     "I can see my breath tonight.",
     "The stars are out tonight.",
   ],
+  clearMorning: [
+    "Nothing beats a sunrise in the woods.",
+  ],
+  clearEvening: [
+    "Look at that sky tonight.",
+    "Sunsets through the trees are the best.",
+  ],
   partly: [
     "A few clouds, nothing to worry about.",
     "Pretty nice out, all things considered.",
@@ -102,6 +111,13 @@ window.TW_CAMP_LINES = {
     "Nice night, all things considered.",
     "The moon keeps ducking behind the clouds.",
     "A few stars peeking through the trees.",
+  ],
+  partlyMorning: [
+    "Nothing beats a sunrise in the woods.",
+  ],
+  partlyEvening: [
+    "Look at that sky tonight.",
+    "Sunsets through the trees are the best.",
   ],
   cloudy: [
     "Bring a light jacket, just in case.",
@@ -120,6 +136,12 @@ window.TW_CAMP_LINES = {
     "Clouds are keeping it a little warmer tonight.",
     "Pitch dark past the firelight.",
     "Hope it holds off till morning.",
+  ],
+  cloudyMorning: [
+    "Grey morning. More coffee.",
+  ],
+  cloudyEvening: [
+    "No sunset tonight. Too cloudy.",
   ],
   fog: [
     "Can't see a thing out here!",
@@ -152,6 +174,12 @@ window.TW_CAMP_LINES = {
   ],
   rainNight: [
     "Good night to stay in with a book.",
+  ],
+  rainMorning: [
+    "Rainy morning in the woods. Smells great, though.",
+  ],
+  rainEvening: [
+    "Rain on the tent tonight. Cozy.",
   ],
   heavy: [
     "It's really coming down!",
@@ -242,7 +270,6 @@ window.TW_CAMP_LINES = {
   morning: [
     "Good morning!",
     "Coffee on the campfire. Perfect.",
-    "Nothing beats a sunrise in the woods.",
     "Morning! {high}° today.",
     "Up early to hit the trail.",
     "The birds woke me up again.",
@@ -255,9 +282,7 @@ window.TW_CAMP_LINES = {
   ],
   evening: [
     "Good evening!",
-    "Look at that sky tonight.",
     "Fire's just about perfect now.",
-    "Sunsets through the trees are the best.",
     "Time to start dinner.",
   ],
   night: [

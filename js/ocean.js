@@ -133,7 +133,9 @@ function pickLine(groups, extra) {
   const L = (forest ? window.TW_CAMP_LINES : tropic ? window.TW_BEACH_LINES : window.TW_LINES) || {}, pool = [];
   // each group can also have a Day and a Night version (e.g. clear, clearDay, clearNight): the one that fits the sky now joins in
   const dn = mode.tod === 'night' ? 'Night' : 'Day';
-  for (const [g, weight] of groups) for (const s of [...(L[g] || []), ...(L[g + dn] || [])]) for (let i = 0; i < weight; i++) pool.push(s);
+  // and a time-of-day version (e.g. clearMorning, partlyEvening: sunrise and sunset lines, only when the sky's clear enough to see them)
+  const td = talk.tod ? talk.tod[0].toUpperCase() + talk.tod.slice(1) : '';
+  for (const [g, weight] of groups) for (const s of [...(L[g] || []), ...(L[g + dn] || []), ...(td && L[g + td] || [])]) for (let i = 0; i < weight; i++) pool.push(s);
   let fresh = pool.filter(s => !talk.recent.includes(s));
   if (!fresh.length) fresh = pool;
   if (!fresh.length) return '';
@@ -147,7 +149,7 @@ function chooseThought() {
   if (kind === 'hurricane' || kind === 'tornado') return pickLine([[kind, 1]]);
   const groups = [[kind, 3]];
   const tod = mode.tod === 'night' ? 'night' : h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
-  groups.push([tod, 1]);
+  groups.push([tod, 1]); talk.tod = tod;
   if (W) { const f = imp() ? W.current.temperature_2m : W.current.temperature_2m * 9 / 5 + 32; if (f >= 85) groups.push(['hot', 2]); if (f <= 35) groups.push(['cold', 2]); }
   if (!holding()) groups.push(['any', 1]);       // in heavy rain and thunderstorms, only weather lines
   if (sea && sea.pose === 'fish') groups.push(['fishing', 1]);
