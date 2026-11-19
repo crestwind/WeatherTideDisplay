@@ -241,7 +241,6 @@ None appear with **Background animation** set to **Off**.
 | Event | Where | What happens | Fisherman |
 |---|---|---|---|
 | **Biplane with banner** | Sky, Ocean and Forest | Crosses the sky towing a banner, showing the next message each time (see [Changing the banner messages](#changing-the-banner-messages)) | |
-| **Giant** | Switched off for now while he's redesigned | Peeks in from the left edge, fingers curled round the screen, looks around, and ducks back out | *"Did you hear something?"* |
 | **Mermaid** | Ocean, while he's fishing | Pops up at the stern, flings three of his fish back into the sea, waves, and dives with a flick of her tail | *"Where did my fish go?"* |
 | **UFO** | Ocean, while he's fishing | Swoops in, beams three fish up out of the boat with a tractor beam, and zips away | *"No one is going to believe me."* |
 | **Eagle with the flag** | Ocean | A bald eagle flies across carrying an American flag | Stands and salutes until it's gone |

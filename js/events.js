@@ -3,14 +3,14 @@
 'use strict';
 
 /* ---------- Random events ---------- */
-// Major random events happen one at a time and never while the fisherman is thinking: the biplane, the giant, the
+// Major random events happen one at a time and never while the fisherman is thinking: the biplane, the
 // mermaid, the UFO, the eagle with the flag, and Nessie. A director starts one every 2½-5 minutes (the biplane first,
 // about 30 s after the page opens, so its banner is seen), picked at random among those that suit the scene and never
 // the same twice in a row; the fisherman stays quiet until it's over, and some end with him saying something.
 // Minor random events happen whenever, alongside anything: gulls, dolphins, jumping fish, shooting stars, Black Hawk
 // helicopters and a passenger jet. Flying events (gulls, biplane, helicopters, jet, eagle, UFO) stay away in high wind,
 // thunderstorms, hurricanes, tornadoes, heavy rain and heavy snow.
-// Testing: ?event=giant (or mermaid, ufo, eagle, nessie, biplane; ?plane works too) starts one in a couple of seconds;
+// Testing: ?event=mermaid (or ufo, eagle, nessie, biplane; ?plane works too) starts one in a couple of seconds;
 // ?heli and ?jet send those over.
 // Showcase mode (switched on for the test site by the publishing workflow, or with ?showcase): major events back to
 // back, cycling through all of them, minor events every few seconds, and no regular thoughts, to see everything quickly.
@@ -20,7 +20,7 @@ const BAD_SKY = ['windy', 'storm', 'hurricane', 'tornado', 'heavy', 'heavysnow']
 const flyOK = () => !BAD_SKY.includes(mode.kind);
 const forced = (location.search.match(/[?&]event=(\w+)/) || [])[1] || (/[?&]plane\b/.test(location.search) ? 'biplane' : '');
 const stage = { ev: null, next: performance.now() / 1000 + (forced || SHOWCASE ? 2 : 30), last: '', lastOther: '', first: true };
-const MAJORS = ['biplane', 'giant', 'mermaid', 'ufo', 'eagle', 'nessie', 'bigfoot', 'bear', 'raccoon', 'skunk', 'ranger', 'werewolf', 'batcloud', 'trickortreat', 'reaper', 'turkey', 'football', 'pie', 'nap', 'piethief'];   // (bigfoot to ranger: Forest style; the last three: Halloween)
+const MAJORS = ['biplane', 'mermaid', 'ufo', 'eagle', 'nessie', 'bigfoot', 'bear', 'raccoon', 'skunk', 'ranger', 'werewolf', 'batcloud', 'trickortreat', 'reaper', 'turkey', 'football', 'pie', 'nap', 'piethief'];   // (bigfoot to ranger: Forest style; the last three: Halloween)
 const saluting = () => !!(stage.ev && stage.ev.kind === 'eagle' && sea && (sea.pose === 'fish' || sea.pose === 'mug'));
 const ease = u => { u = Math.min(1, Math.max(0, u)); return u * u * (3 - 2 * u); };
 const randFish = () => FISH[Math.floor(Math.random() * FISH.length)];
@@ -30,7 +30,6 @@ function eligible(kind) {
   const fishing = !!sea && sea.pose === 'fish';
   switch (kind) {
     case 'biplane': return !!(window.TW_BANNERS || []).length;               // the biplane flies in any weather, in both styles
-    case 'giant': return false;   // switched off until he's redesigned (his code is kept below)
     case 'mermaid': return fishing;
     case 'ufo': return flyOK() && fishing;
     case 'eagle': return !!sea && flyOK() && !hallo;   // (no birds on Halloween)
@@ -51,7 +50,6 @@ function eligible(kind) {
 function startMajor(kind, t) {
   const e = { kind, t0: t, p: 0, dur: 10 };
   if (kind === 'biplane') { if (!startPlane(t)) return null; e.dur = Infinity; }
-  else if (kind === 'giant') { e.say = 'Did you hear something?'; e.look = 0; }
   else if (kind === 'mermaid') { e.say = 'Where did my fish go?'; e.fish = [randFish(), randFish(), randFish()]; }
   else if (kind === 'ufo') { e.dur = 11; e.say = 'No one is going to believe me.'; e.fish = [randFish(), randFish(), randFish()]; }
   else if (kind === 'eagle') { e.dir = Math.random() < .5 ? 1 : -1; e.k = Hd / 1080 * (Hd > Wd ? 1 : 1.55); e.dur = (Wd + 520 * e.k) / (160 * Math.max(.6, Math.min(Wd / 1920, 1.2))); }
@@ -180,42 +178,10 @@ function drawJet(j, t, night) {   // a passenger jet high up, with a contrail by
   g.restore();
 }
 
-// ----- major events drawn in the sky: the giant peeking in from the left, the eagle with the flag -----
+// ----- major events drawn in the sky: the eagle with the flag -----
 function drawMajorSky(ts) {
   const e = stage.ev, t = ts / 1000;
-  if (e.kind === 'giant') drawGiant(e, t);
   if (e.kind === 'eagle') drawEagle(e, t);
-}
-function drawGiant(e, t) {
-  const R = Math.min(Hd * .2, Wd * .22), p = e.p, night = mode.tod === 'night';
-  const inOut = p < .18 ? ease(p / .18) : p > .82 ? ease((1 - p) / .18) : 1;
-  const cx = -R * 1.15 + inOut * R * 1.7, cy = sea ? sea.top - R * .65 : Hd * .55;
-  // he looks right, left, right again, then back at us
-  const target = p < .3 ? .7 : p < .45 ? -.8 : p < .62 ? .9 : p < .74 ? -.4 : .15;
-  e.look += (target - e.look) * .12;
-  const blink = Math.abs(p - .4) < .012 || Math.abs(p - .69) < .012;
-  const skin = night ? '#6e5a4c' : '#b07a52', shade = night ? '#584538' : '#8f5e3c', hair = night ? '#2a1d14' : '#4a2f1d';
-  g.save(); g.translate(cx, cy); g.rotate(.1 + Math.sin(t * .8) * .04);
-  g.fillStyle = skin; g.beginPath(); g.ellipse(R * .95, R * .05, R * .14, R * .22, 0, 0, 7); g.fill();                    // ear
-  g.beginPath(); g.ellipse(0, 0, R, R * 1.12, 0, 0, 7); g.fill();                                                           // head
-  g.fillStyle = hair; g.beginPath(); g.ellipse(-R * .1, -R * .78, R * .95, R * .45, -.15, Math.PI * .95, Math.PI * 2.1); g.fill();   // hair
-  for (let i = 0; i < 7; i++) { const a = -2.6 + i * .32; g.beginPath(); g.arc(Math.cos(a) * R * .9, Math.sin(a) * R * 1.0, R * .16, 0, 7); g.fill(); }   // messy tufts
-  g.strokeStyle = hair; g.lineWidth = R * .07; g.lineCap = 'round';
-  for (const [ex, raise] of [[.25, .05], [.66, .1]]) { g.beginPath(); g.moveTo(R * (ex - .14), -R * (.42 + raise)); g.quadraticCurveTo(R * ex, -R * (.55 + raise), R * (ex + .14), -R * (.44 + raise)); g.stroke(); }   // eyebrows, raised
-  for (const [ex, er] of [[.25, .16], [.66, .14]]) {
-    if (blink) { g.strokeStyle = shade; g.lineWidth = R * .04; g.beginPath(); g.moveTo(R * (ex - er), -R * .15); g.lineTo(R * (ex + er), -R * .15); g.stroke(); continue; }
-    g.fillStyle = '#f4f1ea'; g.beginPath(); g.ellipse(R * ex, -R * .15, R * er, R * er * 1.1, 0, 0, 7); g.fill();
-    g.fillStyle = '#2a2018'; g.beginPath(); g.arc(R * (ex + e.look * er * .55), -R * .13, R * er * .45, 0, 7); g.fill();   // pupils that dart about
-  }
-  g.fillStyle = shade; g.beginPath(); g.ellipse(R * .58, R * .2, R * .17, R * .13, .2, 0, 7); g.fill();                       // big nose
-  g.beginPath(); g.ellipse(R * .48, R * .55, R * .09, R * .11, 0, 0, 7); g.fill();                                            // a curious little "o"
-  g.restore();
-  // his fingers curled round the edge of the screen
-  g.fillStyle = skin; g.strokeStyle = shade; g.lineWidth = Math.max(1, R * .015);
-  for (let i = 0; i < 4; i++) {
-    const fy = cy + R * (.45 + i * .15), fw = R * (.32 - Math.abs(i - 1.5) * .05) * inOut + R * .05;
-    g.beginPath(); g.roundRect(-R * .1, fy, fw + R * .1, R * .12, R * .06); g.fill(); g.stroke();
-  }
 }
 function drawEagle(e, t) {
   const k = e.k, span = Wd + 520 * k, x = e.dir > 0 ? -260 * k + e.p * span : Wd + 260 * k - e.p * span;

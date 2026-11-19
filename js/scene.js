@@ -260,7 +260,7 @@ function draw(ts) {
   if (plane) { g.globalAlpha = 1; drawPlane(ts); }
   if (hallo) { g.globalAlpha = 1; drawHalloSky(ts); }   // Halloween's bats and witch
   if (thanks && !forest) { g.globalAlpha = 1; drawThanksSky(ts); }   // Thanksgiving's geese and parade balloon (the Forest draws them itself, in front of its hot air balloon)
-  if (stage.ev) { g.globalAlpha = 1; drawMajorSky(ts); }   // the giant and the eagle
+  if (stage.ev) { g.globalAlpha = 1; drawMajorSky(ts); }   // the eagle
   g.globalAlpha = 1;
   if (swirl) {
     g.strokeStyle = 'rgb(222,230,234)'; g.lineCap = 'round';
