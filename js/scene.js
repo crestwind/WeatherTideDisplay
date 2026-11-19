@@ -40,7 +40,7 @@ function build() {
   clouds.sort((a, b) => a.s - b.s);
   rain = []; splashes = [];
   glass = []; gg.clearRect(0, 0, Wd, Hd);
-  glassCfg = S.motion === 'off' ? null : sc.glass || null;
+  glassCfg = sc.glass || null;   // (with Background animation Off, the drops already on the glass stay put: part of the still picture)
   if (glassCfg) for (let i = 0; i < glassCfg.max * k * .4; i++)   // start with the screen already a bit wet / snowy
     (glassCfg.snow ? spawnFlake() : spawnGlass(Math.random() < glassCfg.big * .5)).age = rnd(.2, glassCfg.snow ? 6 : 5);
   slant = sc.slant || .12; gust = 1;
@@ -54,7 +54,7 @@ function build() {
   dropImgs = sc.rain ? RAIN_LAYERS.map(L => dropSprite(20 * L.len * (sc.len || 1) * sy, L.w * sy, L.a * (sc.len < 1 ? .8 : 1))) : [];
   for (let i = 0; i < Math.round((sc.rain || 0) * k * area); i++) {
     const r = Math.random(), L = r < .35 ? 0 : r < .75 ? 1 : 2;
-    rain.push({ x: rnd(0, Wd + slant * Hd + 50), y: rnd(-Hd, Hd), L, s: rnd(.8, 1.2), v: rnd(950, 1350) * sy * RAIN_LAYERS[L].v, gy: groundY(L) });
+    rain.push({ x: rnd(0, Wd + slant * Hd + 50), y: S.motion === 'off' ? rnd(0, Hd) : rnd(-Hd, Hd), L,   /* (a still picture: all of it on screen) */ s: rnd(.8, 1.2), v: rnd(950, 1350) * sy * RAIN_LAYERS[L].v, gy: groundY(L) });
   }
   flakes = []; for (let i = 0; i < Math.round((sc.snow || 0) * k * area); i++) { const r = rnd(1.2, 3.8) * sy * (sc.size || 1); flakes.push({ x: rnd(0, Wd), y: rnd(0, Hd), r, v: (20 + r * 18) * sy * (sc.fall || 1), ph: rnd(0, 6.3) }); }
   meteor = null; nextMeteor = performance.now() / 1000 + rnd(6, 25);
@@ -340,9 +340,15 @@ function loop(ts) {
   const dt = Math.min(.1, (ts - last) / 1000); last = ts;
   update(dt, ts); draw(ts);
 }
+// Background animation Off: a still picture, the scene as just built (rain and snow spread over the screen, drops on
+// the glass, the boat nearly level, nobody in the middle of anything, no random events). It's redrawn every few
+// seconds as exactly the same frame (stillTs), so things placed on the page's boxes (the Sky style's holiday
+// decorations on the weather tiles) move with the page once the weather has loaded.
+let stillTs = 0, stillTimer = 0;
 function start() {
-  cancelAnimationFrame(raf);
-  if (S.motion === 'off' || S.display === 'mirror') { draw(performance.now()); return; }   // mirror mode hides the sky, so don't animate it
+  cancelAnimationFrame(raf); clearInterval(stillTimer);
+  if (S.display === 'mirror') { draw(performance.now()); return; }   // mirror mode hides the sky, so don't animate it
+  if (S.motion === 'off') { stillTs = performance.now(); draw(stillTs); stillTimer = setInterval(() => draw(stillTs), 4000); return; }
   last = performance.now(); raf = requestAnimationFrame(loop);
 }
 

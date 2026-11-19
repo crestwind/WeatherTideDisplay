@@ -447,7 +447,7 @@ function drawSea(ts) {
   for (let i = 0; i <= b; i++) { drawLayer(L[i], t); drawDolphins(t, i); drawSwimmers(t, i); if (i === 1 && stage.ev && stage.ev.kind === 'nessie') drawNessie(t); }
   // the boat rides layer b, rising, falling and tilting with the wave under it
   const bl = L[b], y = waveY(bl, sea.bx, t), slope = (waveY(bl, sea.bx + 30, t) - waveY(bl, sea.bx - 30, t)) / 60;
-  const roll = Math.atan(slope) * .9 + Math.sin(t * 1.3) * .015 * sea.rough + (sea.rough > 2 ? Math.sin(t * 1.9) * .05 * (sea.rough - 2) : 0);   // extra rocking in storms
+  const roll = S.motion === 'off' ? Math.atan(slope) * .25 : Math.atan(slope) * .9 + Math.sin(t * 1.3) * .015 * sea.rough + (sea.rough > 2 ? Math.sin(t * 1.9) * .05 * (sea.rough - 2) : 0);   // extra rocking in storms
   drawGlint(t, 0, y);
   const img = drawBoatSprite(t);
   g.save(); g.translate(sea.bx, y + 4 * sea.bs); g.rotate(roll); g.drawImage(img, -280 * sea.bs, -250 * sea.bs); g.restore();
